@@ -1,0 +1,34 @@
+{
+  "name": "aoc",
+  "version-string": "1.0.0",
+  "dependencies": [
+    {
+      "name": "fmt",
+      "version>=": "11.0.2#1"
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "version>=": "2022-02-06#1"
+    },
+    {
+      "name": "vcpkg-cmake",
+      "version>=": "2023-05-04"
+    },
+    {
+      "name": "glaze",
+      "version>=": "4.4.1#0"
+    },
+    {
+      "name": "ctre",
+      "version>=": "3.9.0#0"
+    },
+    {
+      "name": "xxhash",
+      "version>=": "0.8.2#0"
+    },
+    {
+      "name": "unordered-dense",
+      "version>=": "4.5.0#0"
+    }
+  ]
+}
