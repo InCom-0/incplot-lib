@@ -8,10 +8,16 @@ project(incplot)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
-include(CMake_dependencies.cmake)  ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
+include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
 
-add_library(incplot INTERFACE)
-target_sources(incplot
-    INTERFACE FILE_SET HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_library(incplot STATIC ${CMAKE_CURRENT_SOURCE_DIR}/include/incplot.hpp)
+target_include_directories(incplot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set_target_properties(incplot PROPERTIES LINKER_LANGUAGE CXX)
+
+target_link_libraries(incplot PUBLIC
+    OOF::OOF
+    glaze::glaze
+    more_concepts::more_concepts)
+
 
 add_subdirectory(demos)
