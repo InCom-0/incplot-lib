@@ -11,8 +11,12 @@
       "version>=": "2023-05-04"
     },
     {
-      "name": "glaze",
-      "version>=": "4.4.1#0"
+      "name": "nlohmann-json",
+      "version>=": "3.11.3#1"
+    },
+    {
+      "name": "dataframe",
+      "version>=": "3.4.0#0"
     }
   ]
 }

@@ -21,4 +21,5 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(OOF)
 
-find_package(glaze REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(DataFrame CONFIG REQUIRED)
