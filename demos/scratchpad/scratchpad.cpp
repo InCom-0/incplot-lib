@@ -1,36 +1,49 @@
-#include <incplot.hpp>
 #include <iostream>
 #include <print>
+#include <string>
+#include <windows.h>
 
-#include <ranges>
-#include <string_view>
 
-using json = nlohmann::json;
-
+#include <incplot.hpp>
 
 int main() {
-    std::string cont((std::istreambuf_iterator(std::cin)), std::istreambuf_iterator<char>());
+    using json = nlohmann::json;
 
-    while (cont.back() == '\n') { cont.pop_back(); }
+    // HANDLE hIn  = GetStdHandle(STD_INPUT_HANDLE);
+    // DWORD  type = GetFileType(hIn);
+    // switch (type) {
+    //     case FILE_TYPE_PIPE: break;
+    //     default:
+    //         std::cout << "STD INPUT is not 'pipe' ... exiting";
+    //         return 1;
+    //         break;
+    // }
 
-    for (auto oneLine :
-         std::views::split(cont, '\n') | std::views::transform([](auto const &in) { return std::string_view(in); })) {
+    // std::string input((std::istreambuf_iterator(std::cin)), std::istreambuf_iterator<char>());
 
-        std::cout << oneLine << '\n';
-        nlohmann::basic_json<> yyy;
+    std::string testInput(R"({"name":"CMakeFiles","size":0}
+{"name":"cmake_install.cmake","size":100}
+{"name":"incplot_scratchpad.exe","size":300})");
 
-        try {
-            yyy = json::parse(oneLine);
-        }
-        catch (const json::exception &e) {
-            std::cout << e.what() << '\n';
-            return 1;
-        }
+    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
-        for (auto &[key, val] : yyy.items()) { std::cout << key << ": " << val.type_name() << ": " << val << '\n'; }
-        std::cout << '\n';
+    auto dp = incplot::DesiredPlot();
+
+    auto dp_autoGuessed = dp.make_autoGuessedDP(ds);
+    if (not dp_autoGuessed.has_value()) {
+        std::cout << "Autoguessing DesiresPlot failed ... exiting";
+        return 1;
     }
-    // std::cout << std::string_view(sv);
+
+    auto plotDrawer = incplot::PlotDrawer(dp_autoGuessed.value(), ds, 64);
+    auto outExp     = plotDrawer.validateAndDrawPlot();
+
+
+    if (not outExp.has_value()) {
+        std::cout << "Invalid plot structure ... exiting";
+        return 1;
+    }
+    std::print("{}", outExp.value());
 
     return 0;
 }
