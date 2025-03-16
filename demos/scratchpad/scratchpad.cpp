@@ -1,6 +1,7 @@
 #include <iostream>
 #include <print>
 #include <string>
+#include <variant>
 #include <windows.h>
 
 
@@ -35,8 +36,11 @@ int main() {
         return 1;
     }
 
-    auto plotDrawer = incplot::PlotDrawer(dp_autoGuessed.value(), ds, 64);
-    auto outExp     = plotDrawer.validateAndDrawPlot();
+
+    auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds, 64, 32);
+
+    auto outExp = std::visit([&](auto const &pdVariant) { return pdVariant.validateAndDrawPlot(); }, plotDrawer2);
+
 
 
     if (not outExp.has_value()) {
