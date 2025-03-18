@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <iostream>
+#include <iterator>
 #include <more_concepts/more_concepts.hpp>
 #include <nlohmann/detail/value_t.hpp>
 #include <nlohmann/json.hpp>
@@ -9,6 +10,7 @@
 #include <ranges>
 #include <source_location>
 #include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -98,6 +100,57 @@ constexpr inline std::vector<std::string> create_tickAxis(std::string filler, st
     for (size_t i = 0; i < fillerSize; ++i) { res.push_back(std::string(filler)); }
     return res;
 }
+
+// Ring vector for future usage in 'scrolling plot' scenarios
+template <typename T>
+class RingVector {
+private:
+    std::vector<T> _m_buf;
+    size_t         head        = 0;
+    size_t         nextRead_ID = 0;
+
+public:
+    RingVector(std::vector<T> &&t) : _m_buf(t) {};
+    RingVector(std::vector<T> &t) : _m_buf(t) {};
+
+    // TODO: Might not need to create a copy here or below once std::views::concatenate from C++26 exists
+    std::vector<T> create_copy() {
+        std::vector<T> res(_m_buf.begin() + head, _m_buf.end());
+        for (int i = 0; i < head; ++i) { res.push_back(_m_buf[i]); }
+        return res;
+    }
+
+    std::vector<T> create_copy_reversed() {
+        std::vector<T> res(_m_buf.rbegin() + (_m_buf.size() - head), _m_buf.rend());
+        for (int i = (_m_buf.size() - 1); i >= head; --i) { res.push_back(_m_buf[i]); }
+        return res;
+    }
+
+    T get_cur() const { return _m_buf[nextRead_ID]; }
+    T get_cur_and_next() {
+        T res = get_cur();
+        advanceByOne();
+        return res;
+    }
+    T get_cur_and_advanceBy(size_t by = 1) {
+        T res = get_cur();
+        advanceBy(by);
+        return res;
+    }
+
+    void inline advanceByOne() { nextRead_ID = (nextRead_ID + 1) % _m_buf.size(); }
+    void inline advanceBy(int by = 1) { nextRead_ID = (nextRead_ID + by) % _m_buf.size(); }
+
+    // On insertion resets nextRead_ID to head as well
+    void insertAtHead(T &&item) { insertAtHead(item); }
+    void insertAtHead(T const &item) {
+        _m_buf[head] = item;
+        head         = (head + 1) % _m_buf.size();
+        nextRead_ID  = head;
+    }
+};
+
+
 } // namespace detail
 
 
@@ -759,12 +812,9 @@ class BarV : public Base {
 
     virtual void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds) override {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-        // TODO: What to do with BarHs axisName bottom
+            // TODO: What to do with BarHs axisName bottom
         }
-        else {
-            std::string const anRef = ds.colNames.at(dp.values_colIDs.front());
-            
-        }
+        else { std::string const anRef = ds.colNames.at(dp.values_colIDs.front()); }
     }
     virtual void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) override {}
 
