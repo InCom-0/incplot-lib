@@ -20,5 +20,4 @@ target_link_libraries(incplot PUBLIC
     more_concepts::more_concepts
     DataFrame::DataFrame)
 
-
 add_subdirectory(demos)

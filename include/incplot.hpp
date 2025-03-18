@@ -2,17 +2,15 @@
 
 #include <expected>
 #include <iostream>
-#include <iterator>
 #include <more_concepts/more_concepts.hpp>
-#include <nlohmann/detail/value_t.hpp>
 #include <nlohmann/json.hpp>
 #include <oof.h>
+#include <optional>
 #include <ranges>
 #include <source_location>
 #include <type_traits>
 #include <utility>
 #include <variant>
-#include <vector>
 
 
 namespace incom {
@@ -39,6 +37,8 @@ enum class Err_plotSpecs {
     namesIntoIDs_label,
     namesIntoIDs_vals,
     guessValCols,
+    tarWidth,
+    tarHeight,
     axisTicks
 };
 enum class Err_drawer {
@@ -156,6 +156,7 @@ public:
 
 using NLMjson = nlohmann::json;
 
+// Data storage for the actual data that are to be plotted
 struct DataStore {
     // The json this was constucted with/from ... possibly not strictly necessary to keep, but whatever
     std::vector<NLMjson> constructedWith;
@@ -220,7 +221,7 @@ struct DataStore {
 };
 
 
-// Encapsulates parsing of the input into custom data structure
+// Encapsulates parsing of the input into DataStore
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
 struct Parser {
@@ -333,7 +334,9 @@ struct Parser {
     }
 };
 
-
+// Encapsulates the 'instructions' information about the kind of plot that is desired by the user
+// Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
+// Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in'chars'
 class DesiredPlot {
 private:
     static std::expected<DesiredPlot, Err_plotSpecs> transform_namedColsIntoIDs(DesiredPlot &dp, DataStore const &ds) {
@@ -438,6 +441,15 @@ private:
         }
         return std::move(dp);
     }
+    static std::expected<DesiredPlot, Err_plotSpecs> guess_sizes(DesiredPlot &dp, DataStore const &ds) {
+        if (not dp.targetWidth.has_value() || dp.targetWidth.value() < 16) {
+            return std::unexpected(Err_plotSpecs::tarWidth);
+        }
+        if (not dp.targetHeight.has_value() || dp.targetHeight.value() < 3) {
+            dp.targetHeight = dp.targetWidth.value() / 2;
+        }
+        return std::move(dp);
+    }
 
 public:
     std::optional<std::string> plot_type_name;
@@ -448,19 +460,23 @@ public:
     std::vector<size_t>      values_colIDs; // IDs in colTypes
     std::vector<std::string> values_colNames;
 
+    std::optional<size_t> targetHeight;
+    std::optional<size_t> targetWidth;
 
-    DesiredPlot() {}
-    DesiredPlot(std::string plot_type_name, std::optional<size_t> l_colID, std::optional<std::string> l_colName,
-                std::vector<size_t> v_colIDs, std::vector<std::string> v_colNames)
-        : plot_type_name(std::move(plot_type_name)), label_colID(std::move(l_colID)),
-          label_colName(std::move(l_colName)), values_colIDs(std::move(v_colIDs)),
+    // TODO: Provide some compile time programmatic way to set the default sizes here
+    DesiredPlot(std::optional<size_t> tar_width = std::nullopt, std::optional<size_t> tar_height = std::nullopt,
+                std::optional<std::string> plot_type_name = std::nullopt, std::optional<size_t> l_colID = std::nullopt,
+                std::optional<std::string> l_colName = std::nullopt, std::vector<size_t> v_colIDs = {},
+                std::vector<std::string> v_colNames = {})
+        : targetWidth(tar_width), targetHeight(tar_height), plot_type_name(std::move(plot_type_name)),
+          label_colID(std::move(l_colID)), label_colName(std::move(l_colName)), values_colIDs(std::move(v_colIDs)),
           values_colNames(std::move(v_colNames)) {}
 
     // Guesses the missing 'desired parameters' and returns a new DesiredPlot with those filled in
-    // If impossible to guess or otherwise the user desires something impossible returns specErr.
+    // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
     std::expected<DesiredPlot, Err_plotSpecs> make_autoGuessedDP(this auto selfCopy, DataStore const &ds) {
 
-        // Could use std::bind for these ... had some trouble with that ... maybe return to it later
+        // TODO: Could use std::bind for these ... had some trouble with that ... maybe return to it later
         auto tnc = [&](DesiredPlot &dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
             return DesiredPlot::transform_namedColsIntoIDs(dp, ds);
         };
@@ -473,8 +489,11 @@ public:
         auto gvc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
             return DesiredPlot::guess_valueCols(dp, ds);
         };
+        auto gsz = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
+            return DesiredPlot::guess_sizes(dp, ds);
+        };
 
-        return tnc(selfCopy).and_then(gpt).and_then(glc).and_then(gvc);
+        return tnc(selfCopy).and_then(gpt).and_then(glc).and_then(gvc).and_then(gsz);
     }
 };
 
@@ -526,10 +545,9 @@ protected:
 
 public:
     // This needs to get called after default construction
-    bool build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds, size_t const &tar_width,
-                    size_t const &tar_height) {
+    bool build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds) {
 
-        self.compute_descriptors(dp, ds, tar_width, tar_height);
+        self.compute_descriptors(dp, ds);
 
         if (not self.validate_descriptors()) { return false; }
 
@@ -668,13 +686,12 @@ public:
     }
 
 private:
+    // TODO: Implement validate_descriptors for 'plot_structures'
     bool validate_descriptors() { return true; }
-
 
     // Pure virtual methods that need be defined in derived and are then called during construction through 'self
     // builder'
-    virtual void compute_descriptors(DesiredPlot const &dp, DataStore const &ds, size_t const &tar_width,
-                                     size_t const &tar_height) = 0;
+    virtual void compute_descriptors(DesiredPlot const &dp, DataStore const &ds) = 0;
 
     virtual void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) = 0;
     virtual void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) = 0;
@@ -701,29 +718,28 @@ private:
 class BarV : public Base {
     friend class Base;
 
-    virtual void compute_descriptors(DesiredPlot const &dp, DataStore const &ds, size_t const &tar_width,
-                                     size_t const &tar_height) override {
+    virtual void compute_descriptors(DesiredPlot const &dp, DataStore const &ds) override {
         // Vertical left labels
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             auto const &labelColRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
             auto const  labelSizes  = std::views::transform(labelColRef, [](auto const &a) { return a.size(); });
-            labels_verLeftWidth =
-                std::min(30uz, std::min(std::ranges::max(labelSizes), (tar_width - pad_left - pad_right) / 4));
+            labels_verLeftWidth     = std::min(
+                30uz, std::min(std::ranges::max(labelSizes), (dp.targetWidth.value() - pad_left - pad_right) / 4));
         }
         // TODO: Computation for numeric labels
         else {}
 
-        // Vertical right labels ... probably nothing so keeping 0 size
+        // TODO: Vertical right labels ... probably nothing so keeping 0 size
         // ...
 
         // Plot area width (-2 is for the 2 vertical axes positions)
-        areaWidth = tar_width - pad_left - labels_verLeftWidth - 2 - labels_verRightWidth - pad_right;
+        areaWidth = dp.targetWidth.value() - pad_left - labels_verLeftWidth - 2 - labels_verRightWidth - pad_right;
 
         // Labels and axis name bottom
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>() ||
             (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
              dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) &&
-                true) {} // TODO:  Proper assessment for Line and ML
+                true) {} // TODO: Proper assessment for Line and ML
         else {
             labels_horBottom_bool = true;
             axisName_horBottom    = true;
@@ -737,7 +753,7 @@ class BarV : public Base {
             areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
         }
         else {
-            areaHeight = tar_height - pad_top - axisName_horTop_bool - labels_horTop_bool - 2 - labels_horBottom_bool -
+            areaHeight = dp.targetHeight.value() - pad_top - axisName_horTop_bool - labels_horTop_bool - 2 - labels_horBottom_bool -
                          axisName_horBottom_bool - pad_bottom;
         }
 
@@ -759,6 +775,7 @@ class BarV : public Base {
     }
     virtual void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) override {
         for (auto const &_ : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
+            // TODO: Logic for vr labels
             labels_verRight.push_back("");
         }
     }
