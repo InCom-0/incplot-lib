@@ -3,34 +3,32 @@
 #include <expected>
 #include <iostream>
 #include <more_concepts/more_concepts.hpp>
+#include <nlohmann/detail/value_t.hpp>
 #include <nlohmann/json.hpp>
 #include <oof.h>
-#include <optional>
-#include <string_view>
+#include <ranges>
+#include <source_location>
 #include <type_traits>
 #include <variant>
+#include <vector>
 
 
 namespace incom {
 namespace terminal_plot {
-namespace detail {
-inline std::size_t strlen_utf8(const std::string &str) {
-    std::size_t length = 0;
-    for (char c : str) {
-        if ((c & 0xC0) != 0x80) { ++length; }
-    }
-    return length;
-}
-} // namespace detail
+// FORWARD DELCARATIONS
+struct DataStore;
+struct Parser;
+class DesiredPlot;
 
-enum class PlotType {
-    barV,
-    barH,
-    line,
-    multiline,
-    scatter,
-    bubble
-};
+namespace plot_structures {
+class Base;
+class BarV;
+class BarH;
+class Line;
+class Multiline;
+class Scatter;
+class Bubble;
+} // namespace plot_structures
 
 enum class Err_plotSpecs {
     plotType,
@@ -39,15 +37,71 @@ enum class Err_plotSpecs {
     namesIntoIDs_label,
     namesIntoIDs_vals,
     guessValCols,
+    axisTicks
 };
-
 enum class Err_drawer {
     plotStructureInvalid,
     barVplot_tooWide
 };
 
-using NLMjson = nlohmann::json;
+namespace detail {
+constexpr inline std::size_t strlen_utf8(const std::string &str) {
+    std::size_t length = 0;
+    for (char c : str) {
+        if ((c & 0xC0) != 0x80) { ++length; }
+    }
+    return length;
+}
 
+/*
+Quasi compile time reflection for typenames
+*/
+template <typename T>
+constexpr auto TypeToString() {
+    auto EmbeddingSignature = std::string{std::source_location::current().function_name()};
+    auto firstPos           = EmbeddingSignature.rfind("::") + 2;
+    return EmbeddingSignature.substr(firstPos, EmbeddingSignature.size() - firstPos - 1);
+}
+
+template <typename... Ts>
+constexpr bool __none_sameLastLevelTypeName_HLPR() {
+    std::vector<std::string> vect;
+    (vect.push_back(TypeToString<Ts>()), ...);
+    std::ranges::sort(vect, std::less());
+    auto [beg, end] = std::ranges::unique(vect);
+    vect.erase(beg, end);
+    return vect.size() == sizeof...(Ts);
+}
+
+// Just the 'last level' type name ... not the fully qualified typename
+template <typename... Ts>
+concept none_sameLastLevelTypeName = __none_sameLastLevelTypeName_HLPR<Ts...>();
+
+constexpr inline std::string middleTrim2Size(std::string const &str, size_t maxSize) {
+    if (str.size() > maxSize) {
+        size_t cutPoint = str.size() / 2;
+        return std::string(str.begin(), str.begin() + cutPoint)
+            .append("...")
+            .append(str.begin() + (maxSize - str.size()) + cutPoint + 3, str.end());
+    }
+    else { return std::string(maxSize - str.size(), ' ').append(str); }
+}
+constexpr inline std::vector<std::string> create_tickAxis(std::string filler, std::string tick, size_t steps,
+                                                          size_t totalWidth) {
+    size_t fillerSize = (totalWidth - steps) / (steps + 1);
+
+    std::vector<std::string> res;
+    for (size_t si = 0; si < steps; ++si) {
+        for (size_t fi = 0; fi < fillerSize; ++fi) { res.push_back(std::string(filler)); }
+        res.push_back(tick);
+    }
+    for (size_t i = 0; i < fillerSize; ++i) { res.push_back(std::string(filler)); }
+    return res;
+}
+} // namespace detail
+
+
+using NLMjson = nlohmann::json;
 
 struct DataStore {
     // The json this was constucted with/from ... possibly not strictly necessary to keep, but whatever
@@ -112,6 +166,7 @@ struct DataStore {
     }
 };
 
+
 // Encapsulates parsing of the input into custom data structure
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
@@ -154,6 +209,7 @@ struct Parser {
     requires std::is_convertible_v<T, std::string_view>
     static std::vector<NLMjson> parse_NDJSON(T const &stringLike) {
 
+        // Trim input 'string like' of all 'newline' chars at the end
         auto const it =
             std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(), [](auto &&chr) { return chr == '\n'; });
         std::string_view const trimmed(stringLike.begin(), stringLike.end() - (it - stringLike.rbegin()));
@@ -166,6 +222,7 @@ struct Parser {
                 oneLineJson = NLMjson::parse(oneLine);
             }
             catch (const NLMjson::exception &e) {
+                // TODO: Finally figure out how to handle exceptions somewhat professionally
                 std::cout << e.what() << '\n';
             }
             parsed.push_back(std::move(oneLineJson));
@@ -247,19 +304,23 @@ private:
         return std::move(dp);
     }
     static std::expected<DesiredPlot, Err_plotSpecs> guess_plotType(DesiredPlot &dp, DataStore const &ds) {
-        if (dp.plot_type.has_value()) { return dp; }
+        if (dp.plot_type_name.has_value()) { return dp; }
 
-        if (dp.values_colIDs.size() > 5) { return std::unexpected(Err_plotSpecs::valCols); }
-        else if (dp.values_colIDs.size() < 2) { dp.plot_type = PlotType::barV; }
-        else if (dp.values_colIDs.size() == 3 && (not dp.label_colID.has_value())) { dp.plot_type = PlotType::bubble; }
-        else if (dp.values_colIDs.size() == 2 && (not dp.label_colID.has_value())) { dp.plot_type = PlotType::scatter; }
-        else { dp.plot_type = PlotType::multiline; }
+        if (dp.values_colIDs.size() > 3) { return std::unexpected(Err_plotSpecs::valCols); }
+        else if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
+        else if (dp.values_colIDs.size() == 3 && (not dp.label_colID.has_value())) {
+            dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>();
+        }
+        else if (dp.values_colIDs.size() == 2 && (not dp.label_colID.has_value())) {
+            dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>();
+        }
+        else { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
 
         return std::move(dp);
     }
     static std::expected<DesiredPlot, Err_plotSpecs> guess_labelCol(DesiredPlot &dp, DataStore const &ds) {
         if (dp.label_colID.has_value()) { return std::move(dp); }
-        else if (dp.plot_type != PlotType::barV) { return std::move(dp); }
+        else if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return std::move(dp); }
 
         else {
             auto it = std::ranges::find_if(ds.colTypes, [](auto &&a) { return a.first == NLMjson::value_t::string; });
@@ -294,53 +355,53 @@ private:
         };
 
         // BAR PLOTS
-        if (dp.plot_type == PlotType::barV) {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             if (dp.values_colIDs.size() > 1) { return std::unexpected(Err_plotSpecs::valCols); }
             else if (not addValColsUntil(1).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
         }
-        if (dp.plot_type == PlotType::barH) {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             if (dp.values_colIDs.size() > 1) { return std::unexpected(Err_plotSpecs::valCols); }
             else if (not addValColsUntil(1).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
         }
         // LINE PLOTS
-        else if (dp.plot_type == PlotType::line) {
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>()) {
             if (dp.values_colIDs.size() > 1) { return std::unexpected(Err_plotSpecs::valCols); }
             else if (not addValColsUntil(1).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
         }
-        else if (dp.plot_type == PlotType::multiline) {
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
             if (dp.values_colIDs.size() > 5) { return std::unexpected(Err_plotSpecs::valCols); }
             else if (not addValColsUntil(2).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
         }
 
         // SCATTER PLOT
-        else if (dp.plot_type == PlotType::scatter) {
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
             if (dp.values_colIDs.size() > 2) { return std::unexpected(Err_plotSpecs::valCols); }
             else if (not addValColsUntil(2).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
         }
         // BUBBLE PLOT
-        else if (dp.plot_type == PlotType::bubble) {
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Bubble>()) {
             if (dp.values_colIDs.size() > 3) { return std::unexpected(Err_plotSpecs::valCols); }
             else if (not addValColsUntil(3).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
         }
         return std::move(dp);
     }
 
-
 public:
-    std::optional<PlotType> plot_type;
+    std::optional<std::string> plot_type_name;
 
-    std::optional<size_t>      label_colID;
+    std::optional<size_t>      label_colID; // ID in colTypes
     std::optional<std::string> label_colName;
 
-    std::vector<size_t>      values_colIDs;
+    std::vector<size_t>      values_colIDs; // IDs in colTypes
     std::vector<std::string> values_colNames;
 
 
     DesiredPlot() {}
-    DesiredPlot(PlotType pt, std::optional<size_t> l_colID, std::optional<std::string> l_colName,
+    DesiredPlot(std::string plot_type_name, std::optional<size_t> l_colID, std::optional<std::string> l_colName,
                 std::vector<size_t> v_colIDs, std::vector<std::string> v_colNames)
-        : plot_type(std::move(pt)), label_colID(std::move(l_colID)), label_colName(std::move(l_colName)),
-          values_colIDs(std::move(v_colIDs)), values_colNames(std::move(v_colNames)) {}
+        : plot_type_name(std::move(plot_type_name)), label_colID(std::move(l_colID)),
+          label_colName(std::move(l_colName)), values_colIDs(std::move(v_colIDs)),
+          values_colNames(std::move(v_colNames)) {}
 
     // Guesses the missing 'desired parameters' and returns a new DesiredPlot with those filled in
     // If impossible to guess or otherwise the user desires something impossible returns specErr.
@@ -369,46 +430,38 @@ namespace plot_structures {
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter
 // etc.)
 // Create your own 'plot structure' ie. type of plot by deriving from 'Base' class (or from other classes derived from
-// it) and overriding pure virtual functions The types properly derived from 'Base' can then be used inside 'PlotDrawer'
-// inside std::variant<...>.
-// The idea is to be able to easily customize and also possibly 'partially customize' as needed
-// You always have to make the 'Base' class a friend ... this enables really nice dynamic polymorphism coupled with
-// 'deducing this' feature of C++23
+// it) and overriding pure virtual functions. The types properly derived from 'Base' can then be used inside
+// 'PlotDrawer' inside std::variant<...>. The idea is to be able to easily customize and also possibly 'partially
+// customize' as needed You always have to make the 'Base' class a friend ... this enables really nice dynamic
+// polymorphism coupled with 'deducing this' feature of C++23
 class Base {
 protected:
     // Descriptors - First thing to be computed
-    size_t areaWidth                = 0;
-    size_t areaHeight               = 0;
-    size_t labels_vertialWidth      = 0;
-    size_t labels_vertialLeftWidth  = 0;
-    size_t labels_vertialRightWidth = 0;
+    size_t areaWidth = 0, areaHeight = 0;
+    size_t labels_verLeftWidth = 0, labels_verRightWidth = 0;
 
-    size_t padding_left   = 2;
-    size_t padding_right  = 0;
-    size_t padding_top    = 0;
-    size_t padding_bottom = 0;
+    size_t axis_verLeftSteps = 1, axis_varRightSteps = 1, axis_horTopSteps = 1, axis_horBottomSteps = 1;
 
-    bool labels_horizontalTop    = false;
-    bool labels_horizontalBottom = false;
+    size_t pad_left = 2, pad_right = 0, pad_top = 0, pad_bottom = 0;
 
-    bool axisName_horizontalTop_bool    = false;
-    bool axisName_horizontalBottom_bool = false;
+    bool labels_horTop_bool = false, labels_horBottom_bool = false;
+    bool axisName_horTop_bool = false, axisName_horBottom_bool = false;
 
 
     // Actual structure
-    std::vector<std::string> labels_verticalLeft;
-    std::string              axis_verticalLeft;
+    std::vector<std::string> labels_verLeft;
+    std::vector<std::string> axis_verLeft;
 
-    std::string              axis_verticalRight;
-    std::vector<std::string> labels_verticalRight;
+    std::vector<std::string> axis_verRight;
+    std::vector<std::string> labels_verRight;
 
-    std::string axisName_horizontalTop;
-    std::string label_horizontalTop;
-    std::string axis_horizontalTop;
+    std::string              axisName_horTop;
+    std::string              label_horTop;
+    std::vector<std::string> axis_horTop;
 
-    std::string axis_horizontalBottom;
-    std::string label_horizontalBottom;
-    std::string axisName_horizontalBottom;
+    std::vector<std::string> axis_horBottom;
+    std::string              label_horBottom;
+    std::string              axisName_horBottom;
 
     std::vector<std::string> corner_topLeft;
     std::vector<std::string> corner_bottomLeft;
@@ -448,27 +501,41 @@ public:
     bool validate_self() const { return true; }
 
     size_t compute_lengthOfSelf() const {
-        size_t lngth = 0;
+        size_t lngth = pad_top + pad_bottom;
 
-        lngth +=
-            labels_verticalLeft.empty() == true ? 0 : labels_verticalLeft.size() * labels_verticalLeft.front().size();
-        lngth += labels_verticalRight.empty() == true
-                     ? 0
-                     : labels_verticalRight.size() * labels_verticalRight.front().size();
-        lngth += axis_verticalLeft.size() + axis_verticalRight.size();
+        // Horizontal top axis name and axis labels lines
+        lngth += axisName_horTop_bool ? (axisName_horTop.size() + corner_topLeft.front().size() +
+                                         corner_topRight.front().size() + pad_left + pad_right)
+                                      : 0;
+        lngth += labels_horTop_bool ? (label_horTop.size() + corner_topLeft.front().size() +
+                                       corner_topRight.front().size() + pad_left + pad_right)
+                                    : 0;
 
-        lngth += axis_horizontalBottom.size() + label_horizontalBottom.size() + axis_horizontalBottom.size();
-        lngth += axis_horizontalTop.size() + label_horizontalTop.size() + axisName_horizontalTop.size();
+        // First and last vertical labels
+        lngth += labels_verLeft.front().size() + labels_verRight.front().size() + labels_verLeft.back().size() +
+                 labels_verRight.back().size();
 
-        lngth += 6;
+        // The 'corners'
+        lngth += sizeof("┌") + sizeof("┐") + sizeof("└") + sizeof("┘") - 4;
 
-        lngth += corner_bottomLeft.empty() == true ? 0 : corner_bottomLeft.size() * corner_bottomLeft.front().size();
-        lngth += corner_bottomRight.empty() == true ? 0 : corner_bottomRight.size() * corner_bottomRight.front().size();
-        lngth += corner_topLeft.empty() == true ? 0 : corner_topLeft.size() * corner_topLeft.front().size();
-        lngth += corner_topRight.empty() == true ? 0 : corner_topRight.size() * corner_topRight.front().size();
+        // All top and bottom axes
+        for (int i = 0; i < areaWidth; i++) { lngth += (axis_horTop.at(i).size() + axis_horBottom.at(i).size()); }
 
-        lngth += plotArea.empty() == true ? 0 : plotArea.size() * (plotArea.front().size() + 1);
+        // Main plot area
+        for (int i = 0; i < areaHeight; ++i) {
+            lngth += labels_verLeft.at(i + 1).size() + labels_verRight.at(i + 1).size();
+            lngth += axis_verLeft.at(i).size();
+            lngth += axis_verRight.at(i).size();
+            lngth += plotArea.at(i).size();
+        }
 
+        // Horizontal bottom axis name and axis labels lines
+        lngth += labels_horBottom_bool ? (label_horBottom.size() + corner_bottomLeft.front().size() +
+                                          corner_bottomRight.front().size() + pad_left + pad_right)
+                                       : 0;
+        lngth += axisName_horBottom_bool ? (axisName_horBottom.size() + corner_bottomLeft.front().size() +
+                                            corner_bottomRight.front().size() + pad_left + pad_right)
+                                         : 0;
         return lngth;
     }
 
@@ -476,72 +543,74 @@ public:
         std::string result;
         result.reserve(compute_lengthOfSelf());
 
+        for (int i = 0; i < pad_top; ++i) { result.push_back('\n'); }
+
         // Build the heading lines of the plot
-        size_t i = 0;
-        if (not axisName_horizontalTop.empty()) {
-            result.append(corner_topLeft.at(i));
-            result.append(axis_verticalLeft.substr(0, 1));
-            result.append(axisName_horizontalTop);
-            result.append(axis_verticalRight.substr(0, 1));
-            result.append(corner_topRight.at(i++));
+        if (axisName_horTop_bool) {
+            result.append(std::string(pad_left, ' '));
+            result.append(corner_topLeft.at(0));
+            result.append(label_horTop);
+            result.append(corner_topRight.at(0));
+            result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
-        if (not label_horizontalTop.empty()) {
-            result.append(corner_topLeft.at(i));
-            result.append(axis_verticalLeft.substr(1, 1));
-            result.append(label_horizontalTop);
-            result.append(axis_verticalRight.substr(1, 1));
-            result.append(corner_topRight.at(i++));
-            result.push_back('\n');
-        }
-        if (not axis_horizontalTop.empty()) {
-            result.append(labels_verticalLeft.front());
-            result.append(axis_verticalLeft.substr(2, 3));
-            result.append(axis_horizontalTop);
-            result.append(axis_verticalRight.substr(2, 3));
-            result.append(labels_verticalRight.front());
+        if (labels_horTop_bool) {
+            result.append(std::string(pad_left, ' '));
+            result.append(corner_topLeft.at(1));
+            result.append(label_horTop);
+            result.append(corner_topRight.at(1));
+            result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
 
-        // Build the main lines of the plot
-        for (size_t lineID = 0; lineID < plotArea.size(); ++lineID) {
-            result.append(labels_verticalLeft.at(lineID + 1));
-            result.append(axis_verticalLeft.substr(5 + lineID * 3, 3));
-            result.append(plotArea.at(lineID));
-            result.append(axis_verticalRight.substr(5 + lineID * 3, 3));
-            result.append(labels_verticalRight.at(lineID + 1));
+        result.append(std::string(pad_left, ' '));
+        result.append(labels_verLeft.front());
+        result.append("┌");
+        for (auto const &toAppend : axis_horTop) { result.append(toAppend); }
+        result.append("┐");
+        result.append(labels_verRight.front());
+        result.append(std::string(pad_right, ' '));
+        result.push_back('\n');
+
+
+        for (size_t i = 1; i < (areaHeight + 1); ++i) {
+            result.append(std::string(pad_left, ' '));
+            result.append(labels_verLeft.at(i));
+            result.append(axis_verLeft.at(i - 1));
+            result.append(plotArea.at(i - 1));
+            result.append(axis_verRight.at(i - 1));
+            result.append(labels_verRight.at(i));
+            result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
 
-        // Build the tail lines of the plot
-        size_t leftSide_i = i;
-        i                 = 0;
-        if (not axis_horizontalBottom.empty()) {
-            result.append(labels_verticalLeft.back());
-            result.append(axis_verticalLeft.substr(axis_verticalLeft.size() - 5, 3));
-            result.append(axis_horizontalBottom);
-            result.append(axis_verticalRight.substr(axis_verticalRight.size() - 5, 3));
-            result.append(labels_verticalRight.back());
+        result.append(std::string(pad_left, ' '));
+        result.append(labels_verLeft.back());
+        result.append("└");
+        for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
+        result.append("┘");
+        result.append(labels_verRight.back());
+        result.append(std::string(pad_right, ' '));
+        result.push_back('\n');
+
+        if (labels_horBottom_bool) {
+            result.append(std::string(pad_left, ' '));
+            result.append(corner_bottomLeft.at(0));
+            result.append(label_horBottom);
+            result.append(corner_bottomRight.at(0));
+            result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
-        if (not label_horizontalBottom.empty()) {
-            result.append(corner_bottomLeft.at(i));
-            result.push_back(' ');
-            result.append(label_horizontalBottom);
-            result.push_back(' ');
-            result.append(corner_bottomLeft.at(i++));
+        if (axisName_horBottom_bool) {
+            result.append(std::string(pad_left, ' '));
+            result.append(corner_bottomLeft.at(1));
+            result.append(axisName_horBottom);
+            result.append(corner_bottomRight.at(1));
+            result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
 
-        if (not axisName_horizontalBottom.empty()) {
-            result.append(corner_bottomLeft.at(i));
-            result.push_back(' ');
-            result.append(axisName_horizontalBottom);
-            result.push_back(' ');
-            result.append(corner_bottomLeft.at(i++));
-            result.push_back('\n');
-        }
-
+        for (int i = 0; i < pad_bottom; ++i) { result.push_back('\n'); }
         return result;
     }
 
@@ -565,8 +634,13 @@ private:
     virtual void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) = 0;
     virtual void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) = 0;
 
-    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) = 0;
-    virtual void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds) = 0;
+    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds)       = 0;
+    virtual void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds)   = 0;
+    virtual void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) = 0;
+
+    virtual void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds)       = 0;
+    virtual void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds)   = 0;
+    virtual void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) = 0;
 
     virtual void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) = 0;
 };
@@ -575,34 +649,169 @@ class BarV : public Base {
     friend class Base;
 
     virtual void compute_descriptors(DesiredPlot const &dp, DataStore const &ds, size_t const &tar_width,
-                                     size_t const &tar_height) override {}
+                                     size_t const &tar_height) override {
+        // Vertical left labels
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            auto const &labelColRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
+            auto const  labelSizes  = std::views::transform(labelColRef, [](auto const &a) { return a.size(); });
+            labels_verLeftWidth =
+                std::min(30uz, std::min(std::ranges::max(labelSizes), (tar_width - pad_left - pad_right) / 4));
+        }
+        // TODO: Computation for numeric labels
+        else {}
 
-    virtual void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) override {}
-    virtual void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) override {}
+        // Vertical right labels ... probably nothing so keeping 0 size
+        // ...
 
-    virtual void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) override {}
-    virtual void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) override {}
+        // Plot area width (-2 is for the 2 vertical axes positions)
+        areaWidth = tar_width - pad_left - labels_verLeftWidth - 2 - labels_verRightWidth - pad_right;
 
-    virtual void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) override {}
-    virtual void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) override {}
-    virtual void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) override {}
-    virtual void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) override {}
+        // Labels and axis name bottom
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>() ||
+            (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
+             dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) &&
+                true) {} // TODO:  Proper assessment for Line and ML
+        else {
+            labels_horBottom_bool = true;
+            axisName_horBottom    = true;
+        }
 
-    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) override {}
-    virtual void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds) override {}
+        // Labels and axis name top ... probably nothing so keeping 0 size
+        // ...
 
-    virtual void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) override {}
+        // Plot area height (-2 is for the 2 horizontal axes positions)
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
+        }
+        else {
+            areaHeight = tar_height - pad_top - axisName_horTop_bool - labels_horTop_bool - 2 - labels_horBottom_bool -
+                         axisName_horBottom_bool - pad_bottom;
+        }
+
+        // Axes steps
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) { axis_verLeftSteps = areaHeight; }
+        else {} // TODO: Computation for numeric labels
+
+
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) { axis_horBottomSteps = areaWidth; }
+        else {} // TODO: Computation for numeric labels
+
+        // Top and Right axes steps keeping as-is
+    }
+
+    virtual void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) override {
+        for (auto const &rawLabel : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
+            labels_verLeft.push_back(detail::middleTrim2Size(rawLabel, labels_verLeftWidth));
+        }
+    }
+    virtual void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) override {
+        for (auto const &_ : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
+            labels_verRight.push_back("");
+        }
+    }
+
+    virtual void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) override {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            axis_verLeft = detail::create_tickAxis("│", "┤", areaHeight, areaHeight);
+        }
+        // All else should have vl axis ticks according to numeric values
+        else {}
+    }
+    virtual void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) override {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            axis_verRight = std::vector(areaHeight, std::string(" "));
+        }
+    }
+
+    // All corners are simply empty as default ... but can possibly be used for something later if overrided in derived
+    virtual void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) override {
+        if (axisName_horTop_bool) { corner_topLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
+        if (labels_horTop_bool) { corner_topLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
+    }
+    virtual void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) override {
+        if (axisName_horBottom_bool) { corner_bottomLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
+        if (labels_horBottom_bool) { corner_bottomLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
+    }
+    virtual void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) override {
+        if (axisName_horTop_bool) { corner_topRight.push_back(std::string(labels_verRightWidth, ' ')); }
+        if (labels_horTop_bool) { corner_topRight.push_back(std::string(labels_verRightWidth, ' ')); }
+    }
+    virtual void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) override {
+        if (axisName_horBottom_bool) { corner_bottomRight.push_back(std::string(labels_verRightWidth, ' ')); }
+        if (labels_horBottom_bool) { corner_bottomRight.push_back(std::string(labels_verRightWidth, ' ')); }
+    }
+
+    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) override {
+        axis_horTop = std::vector(areaWidth, std::string(" "));
+    }
+    virtual void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds) override {}
+    virtual void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) override {}
+
+
+    virtual void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds) override {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+            axis_horBottom = detail::create_tickAxis("─", "┬", areaWidth, areaWidth);
+        }
+        // All else should be values according to value col #1
+        // TODO: Fix this so there are ticks by values ... must make specialized method for that
+        else { axis_horBottom = std::vector(areaWidth, std::string(" ")); }
+    }
+
+    virtual void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds) override {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+        // TODO: What to do with BarHs axisName bottom
+        }
+        else {
+            std::string const anRef = ds.colNames.at(dp.values_colIDs.front());
+            
+        }
+    }
+    virtual void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) override {}
+
+    virtual void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) override {
+        auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
+        if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
+            auto const &valColRef   = ds.doubleCols.at(valColTypeRef.second);
+            auto const [minV, maxV] = std::ranges::minmax(valColRef);
+            double stepSize         = (maxV - minV) / areaWidth;
+            for (auto const &val : valColRef) {
+                plotArea.push_back(std::string());
+                size_t rpt = static_cast<size_t>((val - minV) / stepSize);
+                for (size_t i = rpt; i > 0; --i) { plotArea.back().append("■"); }
+                for (size_t i = rpt; i < areaWidth; ++i) { plotArea.back().push_back(' '); }
+            }
+        }
+        else {
+            auto const &valColRef   = ds.llCols.at(valColTypeRef.second);
+            auto const [minV, maxV] = std::ranges::minmax(valColRef);
+            long long scalingFactor = LONG_LONG_MAX / (std::max(std::abs(maxV), std::abs(minV)));
+            long long maxV_adj      = maxV * scalingFactor;
+            long long minV_adj      = minV * scalingFactor;
+            long long stepSize      = (maxV_adj - minV_adj) / areaWidth;
+
+            for (auto const &val : valColRef) {
+                plotArea.push_back(std::string());
+                long long rpt = (val * scalingFactor - minV_adj) / stepSize;
+                for (long long i = rpt; i > 0; --i) { plotArea.back().append("■"); }
+                for (long long i = rpt; i < areaWidth; ++i) { plotArea.back().push_back(' '); }
+            }
+        }
+    }
 };
 
 class BarH : public BarV {
     friend class Base;
+
+    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) override {
+        axis_horBottomSteps = areaWidth;
+    }
 };
 
 class Line : public BarV {
     friend class Base;
 };
 
-class Multiline : public BarV {
+class Multiline : public Line {
     friend class Base;
 };
 
@@ -610,49 +819,59 @@ class Scatter : public BarV {
     friend class Base;
 };
 
-class Bubble : public BarV {
+class Bubble : public Scatter {
     friend class Base;
 };
 
 } // namespace plot_structures
 
 
-template <typename T>
-requires std::is_base_of_v<plot_structures::Base, T>
+template <typename PS>
+requires std::is_base_of_v<plot_structures::Base, PS>
 class PlotDrawer {
 private:
-    T ps;
+    PS plotStructure;
 
 public:
+    constexpr PlotDrawer() {};
     PlotDrawer(DesiredPlot const &dp, DataStore const &ds, size_t tar_width, size_t tar_height) {
-        ps.build_self(dp, ds, tar_width, tar_height);
+        plotStructure.build_self(dp, ds, tar_width, tar_height);
     }
 
     void update_newPlotStructure(DesiredPlot const &dp, DataStore const &ds, size_t tar_width, size_t tar_height) {
-        ps = T(dp, ds, tar_width, tar_height);
+        plotStructure = PS();
+        plotStructure.build_self(dp, ds, tar_width, tar_height);
     }
 
     std::expected<std::string, Err_drawer> validateAndDrawPlot() const {
-        if (ps.validate_self() == false) { return std::unexpected(Err_drawer::plotStructureInvalid); }
+        // TODO: Add some validation before drawing
+        if (plotStructure.validate_self() == false) { return std::unexpected(Err_drawer::plotStructureInvalid); }
         else { return drawPlot(); }
     }
-    std::string drawPlot() const { return ps.build_plotAsString(); }
+    std::string drawPlot() const { return plotStructure.build_plotAsString(); }
 };
 
 
-inline std::variant<PlotDrawer<plot_structures::BarV>, PlotDrawer<plot_structures::BarH>,
-                    PlotDrawer<plot_structures::Line>, PlotDrawer<plot_structures::Multiline>,
-                    PlotDrawer<plot_structures::Scatter>, PlotDrawer<plot_structures::Bubble>>
-make_plotDrawer(DesiredPlot const &dp, DataStore const &ds, size_t tar_width, size_t tar_height) {
-    switch (dp.plot_type.value()) {
-        case PlotType::barV:      return PlotDrawer<plot_structures::BarV>(dp, ds, tar_width, tar_height);
-        case PlotType::barH:      return PlotDrawer<plot_structures::BarH>(dp, ds, tar_width, tar_height);
-        case PlotType::line:      return PlotDrawer<plot_structures::Line>(dp, ds, tar_width, tar_height);
-        case PlotType::multiline: return PlotDrawer<plot_structures::Multiline>(dp, ds, tar_width, tar_height);
-        case PlotType::scatter:   return PlotDrawer<plot_structures::Scatter>(dp, ds, tar_width, tar_height);
-        case PlotType::bubble:    return PlotDrawer<plot_structures::Bubble>(dp, ds, tar_width, tar_height);
-        default:                  return PlotDrawer<plot_structures::BarV>(dp, ds, tar_width, tar_height);
-    }
+template <typename... Ts>
+requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName<Ts...>
+constexpr auto generate_PD_PS_variantTypeMap() {
+
+    std::unordered_map<std::string, std::variant<PlotDrawer<Ts>...>> res;
+    (res.insert({detail::TypeToString<Ts>(), std::variant<PlotDrawer<Ts>...>(PlotDrawer<Ts>())}), ...);
+    return res;
+}
+
+// Pass the 'plot_structure' template types that should be used by the library
+// This is the only where one 'selects' these template types
+static const auto mp_names2Types =
+    generate_PD_PS_variantTypeMap<plot_structures::BarV, plot_structures::BarH, plot_structures::Line,
+                                  plot_structures::Multiline, plot_structures::Scatter, plot_structures::Bubble>();
+
+inline decltype(mp_names2Types)::mapped_type make_plotDrawer(DesiredPlot const &dp, DataStore const &ds,
+                                                             size_t tar_width, size_t tar_height) {
+    auto ref          = mp_names2Types.at(dp.plot_type_name.value());
+    auto overload_set = [&]<typename T>(T &variantItem) -> decltype(ref) { return T(dp, ds, tar_width, tar_height); };
+    return std::visit(overload_set, ref);
 }
 
 

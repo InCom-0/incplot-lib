@@ -15,7 +15,7 @@ int main() {
     // switch (type) {
     //     case FILE_TYPE_PIPE: break;
     //     default:
-    //         std::cout << "STD INPUT is not 'pipe' ... exiting";
+    //         std::cout << "STD INPUT is not 'pipe' ... exiting";⠇
     //         return 1;
     //         break;
     // }
@@ -26,7 +26,8 @@ int main() {
 {"name":"cmake_install.cmake","size":100}
 {"name":"incplot_scratchpad.exe","size":300})");
 
-    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
+    auto ttt = incplot::mp_names2Types;
+    auto ds  = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
     auto dp = incplot::DesiredPlot();
 
@@ -36,11 +37,12 @@ int main() {
         return 1;
     }
 
+    std::string aaar("\u25a0");
+
 
     auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds, 64, 32);
 
     auto outExp = std::visit([&](auto const &pdVariant) { return pdVariant.validateAndDrawPlot(); }, plotDrawer2);
-
 
 
     if (not outExp.has_value()) {
