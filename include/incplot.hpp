@@ -1,12 +1,16 @@
 #pragma once
 
+#include <array>
+#include <climits>
+#include <cmath>
 #include <expected>
-#include <iostream>
+#include <format>
+#include <functional>
 #include <more_concepts/more_concepts.hpp>
 #include <nlohmann/json.hpp>
 #include <oof.h>
 #include <optional>
-#include <ranges>
+#include <print>
 #include <source_location>
 #include <type_traits>
 #include <utility>
@@ -30,7 +34,7 @@ class Scatter;
 class Bubble;
 } // namespace plot_structures
 
-enum class Err_plotSpecs {
+enum class Unexp_plotSpecs {
     plotType,
     labelCol,
     valCols,
@@ -81,10 +85,10 @@ concept none_sameLastLevelTypeName = __none_sameLastLevelTypeName_HLPR<Ts...>();
 
 constexpr inline std::string middleTrim2Size(std::string const &str, size_t maxSize) {
     if (str.size() > maxSize) {
-        size_t cutPoint = str.size() / 2;
+        size_t cutPoint = maxSize / 2;
         return std::string(str.begin(), str.begin() + cutPoint)
             .append("...")
-            .append(str.begin() + (maxSize - str.size()) + cutPoint + 3, str.end());
+            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
     else { return std::string(maxSize - str.size(), ' ').append(str); }
 }
@@ -149,6 +153,24 @@ public:
         nextRead_ID  = head;
     }
 };
+
+inline constexpr std::array<std::string, 21> const arr{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
+                                                       "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+inline std::pair<double, std::optional<std::string>> rebase_2_SIPreFix(T &&value) {
+    int target = value >= 1 ? (std::log10(value) / 3) : INT_MIN;
+    if (target == INT_MIN) { return {value, std::nullopt}; }
+    else { return {value / std::pow(1000, target), arr.at(target + 10)}; }
+}
+
+template <typename T>
+requires std::is_arithmetic_v<T>
+std::string format_toMax6length(T &&val) {
+    auto [rbsed, unit] = rebase_2_SIPreFix(std::forward<decltype(val)>(val));
+    return std::format("{:.{}f}{}", rbsed, unit.has_value() ? 1 : 4, unit.value_or(""));
+}
 
 
 } // namespace detail
@@ -220,7 +242,6 @@ struct DataStore {
     }
 };
 
-
 // Encapsulates parsing of the input into DataStore
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
@@ -277,7 +298,7 @@ struct Parser {
             }
             catch (const NLMjson::exception &e) {
                 // TODO: Finally figure out how to handle exceptions somewhat professionally
-                std::cout << e.what() << '\n';
+                std::print("{}\n", e.what());
             }
             parsed.push_back(std::move(oneLineJson));
         }
@@ -325,7 +346,7 @@ struct Parser {
                     oneLineJson = NLMjson::parse(oneLine);
                 }
                 catch (const NLMjson::exception &e) {
-                    std::cout << e.what() << '\n';
+                    std::print("{}\n", e.what());
                 }
                 parsed.push_back(std::move(oneLineJson));
             }
@@ -339,18 +360,19 @@ struct Parser {
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in'chars'
 class DesiredPlot {
 private:
-    static std::expected<DesiredPlot, Err_plotSpecs> transform_namedColsIntoIDs(DesiredPlot &dp, DataStore const &ds) {
+    static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
+                                                                                  DataStore const &ds) {
         if (dp.label_colName.has_value()) {
             auto it = std::ranges::find(ds.colNames, dp.label_colName.value());
-            if (it == ds.colNames.end()) { return std::unexpected(Err_plotSpecs::namesIntoIDs_label); }
+            if (it == ds.colNames.end()) { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
             else if (not dp.label_colID.has_value()) { dp.label_colID = it - ds.colNames.begin(); }
             else if ((it - ds.colNames.begin()) == dp.label_colID.value()) { dp.label_colName = std::nullopt; }
-            else { return std::unexpected(Err_plotSpecs::namesIntoIDs_label); }
+            else { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
         }
 
         for (auto const &v_colName : dp.values_colNames) {
             auto it = std::ranges::find(ds.colNames, v_colName);
-            if (it == ds.colNames.end()) { return std::unexpected(Err_plotSpecs::namesIntoIDs_label); }
+            if (it == ds.colNames.end()) { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
 
             auto it2 = std::ranges::find(dp.values_colIDs, it - ds.colNames.begin());
             if (it2 == dp.values_colIDs.end()) { dp.values_colIDs.push_back(it2 - dp.values_colIDs.begin()); }
@@ -359,10 +381,10 @@ private:
         }
         return std::move(dp);
     }
-    static std::expected<DesiredPlot, Err_plotSpecs> guess_plotType(DesiredPlot &dp, DataStore const &ds) {
+    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_plotType(DesiredPlot &&dp, DataStore const &ds) {
         if (dp.plot_type_name.has_value()) { return dp; }
 
-        if (dp.values_colIDs.size() > 3) { return std::unexpected(Err_plotSpecs::valCols); }
+        if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
         else if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
         else if (dp.values_colIDs.size() == 3 && (not dp.label_colID.has_value())) {
             dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>();
@@ -374,21 +396,21 @@ private:
 
         return std::move(dp);
     }
-    static std::expected<DesiredPlot, Err_plotSpecs> guess_labelCol(DesiredPlot &dp, DataStore const &ds) {
+    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_labelCol(DesiredPlot &&dp, DataStore const &ds) {
         if (dp.label_colID.has_value()) { return std::move(dp); }
         else if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return std::move(dp); }
 
         else {
             auto it = std::ranges::find_if(ds.colTypes, [](auto &&a) { return a.first == NLMjson::value_t::string; });
-            if (it == ds.colTypes.end()) { return std::unexpected(Err_plotSpecs::labelCol); }
+            if (it == ds.colTypes.end()) { return std::unexpected(Unexp_plotSpecs::labelCol); }
             else { dp.label_colID = it->second; }
             return std::move(dp);
         }
     }
-    static std::expected<DesiredPlot, Err_plotSpecs> guess_valueCols(DesiredPlot &dp, DataStore const &ds) {
+    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
 
-        auto addValColsUntil = [&](size_t count) -> std::expected<size_t, Err_plotSpecs> {
-            auto getAnotherValColID = [&]() -> std::expected<size_t, Err_plotSpecs> {
+        auto addValColsUntil = [&](size_t count) -> std::expected<size_t, Unexp_plotSpecs> {
+            auto getAnotherValColID = [&]() -> std::expected<size_t, Unexp_plotSpecs> {
                 auto valColTypes = std::views::filter(ds.colTypes, [](auto &&a) {
                     return (a.first == NLMjson::value_t::number_float || a.first == NLMjson::value_t::number_integer ||
                             a.first == NLMjson::value_t::number_unsigned);
@@ -400,7 +422,7 @@ private:
                     }
                 }
                 // Cannot find another one
-                return std::unexpected(Err_plotSpecs::guessValCols);
+                return std::unexpected(Unexp_plotSpecs::guessValCols);
             };
             while (dp.values_colIDs.size() < count) {
                 auto expID = getAnotherValColID();
@@ -412,42 +434,50 @@ private:
 
         // BAR PLOTS
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            if (dp.values_colIDs.size() > 1) { return std::unexpected(Err_plotSpecs::valCols); }
-            else if (not addValColsUntil(1).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            if (dp.values_colIDs.size() > 1) { return std::unexpected(Err_plotSpecs::valCols); }
-            else if (not addValColsUntil(1).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
         // LINE PLOTS
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>()) {
-            if (dp.values_colIDs.size() > 1) { return std::unexpected(Err_plotSpecs::valCols); }
-            else if (not addValColsUntil(1).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            if (dp.values_colIDs.size() > 5) { return std::unexpected(Err_plotSpecs::valCols); }
-            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > 5) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
 
         // SCATTER PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-            if (dp.values_colIDs.size() > 2) { return std::unexpected(Err_plotSpecs::valCols); }
-            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > 2) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
         // BUBBLE PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Bubble>()) {
-            if (dp.values_colIDs.size() > 3) { return std::unexpected(Err_plotSpecs::valCols); }
-            else if (not addValColsUntil(3).has_value()) { return std::unexpected(Err_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else if (not addValColsUntil(3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
         return std::move(dp);
     }
-    static std::expected<DesiredPlot, Err_plotSpecs> guess_sizes(DesiredPlot &dp, DataStore const &ds) {
+    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
         if (not dp.targetWidth.has_value() || dp.targetWidth.value() < 16) {
-            return std::unexpected(Err_plotSpecs::tarWidth);
+            return std::unexpected(Unexp_plotSpecs::tarWidth);
         }
         if (not dp.targetHeight.has_value() || dp.targetHeight.value() < 3) {
             dp.targetHeight = dp.targetWidth.value() / 2;
         }
+        return std::move(dp);
+    }
+    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds) {
+        if (not dp.valAxesNames_bool.has_value()) { dp.valAxesNames_bool = false; }
+        if (not dp.valAxesLabels_bool.has_value()) { dp.valAxesLabels_bool = false; }
+        if (not dp.valAutoFormat_bool.has_value()) { dp.valAutoFormat_bool = true; }
+        if (not dp.legend_bool.has_value()) { dp.legend_bool = false; }
+
         return std::move(dp);
     }
 
@@ -457,11 +487,18 @@ public:
     std::optional<size_t>      label_colID; // ID in colTypes
     std::optional<std::string> label_colName;
 
+    // TODO: Make both 'values_' into std::optional as well to keep the logic the same for all here
     std::vector<size_t>      values_colIDs; // IDs in colTypes
     std::vector<std::string> values_colNames;
 
     std::optional<size_t> targetHeight;
     std::optional<size_t> targetWidth;
+
+    std::optional<bool> valAxesNames_bool;
+    std::optional<bool> valAxesLabels_bool;
+    std::optional<bool> valAutoFormat_bool;
+    std::optional<bool> legend_bool;
+
 
     // TODO: Provide some compile time programmatic way to set the default sizes here
     DesiredPlot(std::optional<size_t> tar_width = std::nullopt, std::optional<size_t> tar_height = std::nullopt,
@@ -474,26 +511,33 @@ public:
 
     // Guesses the missing 'desired parameters' and returns a new DesiredPlot with those filled in
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
-    std::expected<DesiredPlot, Err_plotSpecs> make_autoGuessedDP(this auto selfCopy, DataStore const &ds) {
+    std::expected<DesiredPlot, Unexp_plotSpecs> make_autoGuessedDP(this auto selfCopy, DataStore const &ds) {
 
         // TODO: Could use std::bind for these ... had some trouble with that ... maybe return to it later
-        auto tnc = [&](DesiredPlot &dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
-            return DesiredPlot::transform_namedColsIntoIDs(dp, ds);
+        // Still can't quite figure it out ...  std::bind_back doesn't seem to cooperate with and_then ...
+
+        auto gpt = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::guess_plotType(std::forward<decltype(dp)>(dp), ds);
         };
-        auto gpt = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
-            return DesiredPlot::guess_plotType(dp, ds);
+        auto glc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::guess_labelCol(std::forward<decltype(dp)>(dp), ds);
         };
-        auto glc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
-            return DesiredPlot::guess_labelCol(dp, ds);
+        auto gvc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::guess_valueCols(std::forward<decltype(dp)>(dp), ds);
         };
-        auto gvc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
-            return DesiredPlot::guess_valueCols(dp, ds);
+        auto gsz = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::guess_sizes(std::forward<decltype(dp)>(dp), ds);
         };
-        auto gsz = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Err_plotSpecs> {
-            return DesiredPlot::guess_sizes(dp, ds);
+        auto gtff = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::guess_TFfeatures(std::forward<decltype(dp)>(dp), ds);
         };
 
-        return tnc(selfCopy).and_then(gpt).and_then(glc).and_then(gvc).and_then(gsz);
+        return DesiredPlot::transform_namedColsIntoIDs(std::move(selfCopy), ds)
+            .and_then(gpt)
+            .and_then(glc)
+            .and_then(gvc)
+            .and_then(gsz)
+            .and_then(gtff);
     }
 };
 
@@ -563,7 +607,13 @@ public:
         self.compute_corner_tr(dp, ds);
 
         self.compute_axis_ht(dp, ds);
+        self.compute_axisName_ht(dp, ds);
+        self.compute_axisLabels_ht(dp, ds);
+
         self.compute_axis_hb(dp, ds);
+        self.compute_axisName_hb(dp, ds);
+        self.compute_axisLabels_hb(dp, ds);
+
         self.compute_plot_area(dp, ds);
 
         return true;
@@ -753,8 +803,8 @@ class BarV : public Base {
             areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
         }
         else {
-            areaHeight = dp.targetHeight.value() - pad_top - axisName_horTop_bool - labels_horTop_bool - 2 - labels_horBottom_bool -
-                         axisName_horBottom_bool - pad_bottom;
+            areaHeight = dp.targetHeight.value() - pad_top - axisName_horTop_bool - labels_horTop_bool - 2 -
+                         labels_horBottom_bool - axisName_horBottom_bool - pad_bottom;
         }
 
         // Axes steps
@@ -769,15 +819,21 @@ class BarV : public Base {
     }
 
     virtual void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) override {
-        for (auto const &rawLabel : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
+        auto const &labelsRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
+        labels_verLeft.push_back(std::string(labels_verLeftWidth, ' '));
+        for (auto const &rawLabel : labelsRef) {
             labels_verLeft.push_back(detail::middleTrim2Size(rawLabel, labels_verLeftWidth));
         }
+        labels_verLeft.push_back(std::string(labels_verLeftWidth, ' '));
     }
     virtual void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) override {
+
+        labels_verRight.push_back("");
         for (auto const &_ : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
             // TODO: Logic for vr labels
             labels_verRight.push_back("");
         }
+        labels_verRight.push_back("");
     }
 
     virtual void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) override {
@@ -831,7 +887,7 @@ class BarV : public Base {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             // TODO: What to do with BarHs axisName bottom
         }
-        else { std::string const anRef = ds.colNames.at(dp.values_colIDs.front()); }
+        else { axisName_horBottom = ds.colNames.at(dp.values_colIDs.front()); }
     }
     virtual void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) override {}
 
@@ -901,13 +957,11 @@ private:
 
 public:
     constexpr PlotDrawer() {};
-    PlotDrawer(DesiredPlot const &dp, DataStore const &ds, size_t tar_width, size_t tar_height) {
-        plotStructure.build_self(dp, ds, tar_width, tar_height);
-    }
+    PlotDrawer(DesiredPlot const &dp, DataStore const &ds) { plotStructure.build_self(dp, ds); }
 
-    void update_newPlotStructure(DesiredPlot const &dp, DataStore const &ds, size_t tar_width, size_t tar_height) {
+    void update_newPlotStructure(DesiredPlot const &dp, DataStore const &ds) {
         plotStructure = PS();
-        plotStructure.build_self(dp, ds, tar_width, tar_height);
+        plotStructure.build_self(dp, ds);
     }
 
     std::expected<std::string, Err_drawer> validateAndDrawPlot() const {
@@ -934,10 +988,9 @@ static const auto mp_names2Types =
     generate_PD_PS_variantTypeMap<plot_structures::BarV, plot_structures::BarH, plot_structures::Line,
                                   plot_structures::Multiline, plot_structures::Scatter, plot_structures::Bubble>();
 
-inline decltype(mp_names2Types)::mapped_type make_plotDrawer(DesiredPlot const &dp, DataStore const &ds,
-                                                             size_t tar_width, size_t tar_height) {
+inline decltype(mp_names2Types)::mapped_type make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
     auto ref          = mp_names2Types.at(dp.plot_type_name.value());
-    auto overload_set = [&]<typename T>(T &variantItem) -> decltype(ref) { return T(dp, ds, tar_width, tar_height); };
+    auto overload_set = [&]<typename T>(T &variantItem) -> decltype(ref) { return T(dp, ds); };
     return std::visit(overload_set, ref);
 }
 
