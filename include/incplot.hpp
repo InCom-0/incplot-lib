@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <climits>
 #include <cmath>
@@ -92,16 +93,17 @@ constexpr inline std::string middleTrim2Size(std::string const &str, size_t maxS
     }
     else { return std::string(maxSize - str.size(), ' ').append(str); }
 }
-constexpr inline std::vector<std::string> create_tickAxis(std::string filler, std::string tick, size_t steps,
-                                                          size_t totalWidth) {
+// TODO: Also make a version where the tick positions are explictily specified in one vector of size_t
+constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
+                                                                size_t totalWidth) {
     size_t fillerSize = (totalWidth - steps) / (steps + 1);
 
     std::vector<std::string> res;
-    for (size_t si = 0; si < steps; ++si) {
-        for (size_t fi = 0; fi < fillerSize; ++fi) { res.push_back(std::string(filler)); }
+    for (size_t i_step = 0; i_step < steps; ++i_step) {
+        for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) { res.push_back(std::string(filler)); }
         res.push_back(tick);
     }
-    for (size_t i = 0; i < fillerSize; ++i) { res.push_back(std::string(filler)); }
+    for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) { res.push_back(std::string(filler)); }
     return res;
 }
 
@@ -171,7 +173,6 @@ std::string format_toMax6length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPreFix(std::forward<decltype(val)>(val));
     return std::format("{:.{}f}{}", rbsed, unit.has_value() ? 1 : 4, unit.value_or(""));
 }
-
 
 } // namespace detail
 
@@ -379,43 +380,39 @@ private:
 
             dp.values_colNames.clear();
         }
-        return std::move(dp);
+        return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_plotType(DesiredPlot &&dp, DataStore const &ds) {
         if (dp.plot_type_name.has_value()) { return dp; }
 
         if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
         else if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
-        else if (dp.values_colIDs.size() == 3 && (not dp.label_colID.has_value())) {
-            dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>();
-        }
-        else if (dp.values_colIDs.size() == 2 && (not dp.label_colID.has_value())) {
-            dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>();
-        }
+        else if (dp.values_colIDs.size() == 3) { dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>(); }
+        else if (dp.values_colIDs.size() == 2) { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
+        // This thing never triggers
         else { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
 
-        return std::move(dp);
+        return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_labelCol(DesiredPlot &&dp, DataStore const &ds) {
-        if (dp.label_colID.has_value()) { return std::move(dp); }
-        else if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return std::move(dp); }
-
+        if (dp.label_colID.has_value()) { return dp; }
+        else if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return dp; }
         else {
             auto it = std::ranges::find_if(ds.colTypes, [](auto &&a) { return a.first == NLMjson::value_t::string; });
             if (it == ds.colTypes.end()) { return std::unexpected(Unexp_plotSpecs::labelCol); }
             else { dp.label_colID = it->second; }
-            return std::move(dp);
+            return dp;
         }
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
 
         auto addValColsUntil = [&](size_t count) -> std::expected<size_t, Unexp_plotSpecs> {
-            auto getAnotherValColID = [&]() -> std::expected<size_t, Unexp_plotSpecs> {
-                auto valColTypes = std::views::filter(ds.colTypes, [](auto &&a) {
-                    return (a.first == NLMjson::value_t::number_float || a.first == NLMjson::value_t::number_integer ||
-                            a.first == NLMjson::value_t::number_unsigned);
-                });
+            auto valColTypes = std::views::filter(ds.colTypes, [](auto &&a) {
+                return (a.first == NLMjson::value_t::number_float || a.first == NLMjson::value_t::number_integer ||
+                        a.first == NLMjson::value_t::number_unsigned);
+            });
 
+            auto getAnotherValColID = [&]() -> std::expected<size_t, Unexp_plotSpecs> {
                 for (auto const &vct : valColTypes) {
                     if (std::ranges::find(dp.values_colIDs, vct.second) == dp.values_colIDs.end()) {
                         return vct.second;
@@ -447,7 +444,7 @@ private:
             else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            if (dp.values_colIDs.size() > 5) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
             else if (not addValColsUntil(2).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
 
@@ -461,16 +458,22 @@ private:
             if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
             else if (not addValColsUntil(3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
-        return std::move(dp);
+        return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
+        // Width always need to be provided, otherwise the whole thing doesn't work
         if (not dp.targetWidth.has_value() || dp.targetWidth.value() < 16) {
             return std::unexpected(Unexp_plotSpecs::tarWidth);
         }
-        if (not dp.targetHeight.has_value() || dp.targetHeight.value() < 3) {
-            dp.targetHeight = dp.targetWidth.value() / 2;
-        }
-        return std::move(dp);
+
+        // Height can be inferred
+        if (not dp.targetHeight.has_value()) { dp.targetHeight = dp.targetWidth.value() / 2; }
+
+        // Impossible to print with height <3 under all circumstances
+        if (dp.targetHeight.value() < 3) { return std::unexpected(Unexp_plotSpecs::tarWidth); }
+
+
+        return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds) {
         if (not dp.valAxesNames_bool.has_value()) { dp.valAxesNames_bool = false; }
@@ -478,7 +481,7 @@ private:
         if (not dp.valAutoFormat_bool.has_value()) { dp.valAutoFormat_bool = true; }
         if (not dp.legend_bool.has_value()) { dp.legend_bool = false; }
 
-        return std::move(dp);
+        return dp;
     }
 
 public:
@@ -509,11 +512,18 @@ public:
           label_colID(std::move(l_colID)), label_colName(std::move(l_colName)), values_colIDs(std::move(v_colIDs)),
           values_colNames(std::move(v_colNames)) {}
 
-    // Guesses the missing 'desired parameters' and returns a new DesiredPlot with those filled in
-    // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
-    std::expected<DesiredPlot, Unexp_plotSpecs> make_autoGuessedDP(this auto selfCopy, DataStore const &ds) {
+    // Create a new copy and guess_missingParams on it.
+    std::expected<DesiredPlot, Unexp_plotSpecs> build_guessedParamsCPY(this DesiredPlot &self, DataStore const &ds) {
+        return DesiredPlot(self).guess_missingParams(ds);
+    }
 
-        // TODO: Could use std::bind for these ... had some trouble with that ... maybe return to it later
+    // Guesses the missing 'desired parameters' and returns a DesiredPlot with those filled in
+    // Variation on a 'builder pattern'
+    // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
+    // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
+    std::expected<DesiredPlot, Unexp_plotSpecs> guess_missingParams(this DesiredPlot &&self, DataStore const &ds) {
+
+        // TODO: Could use std::bind for these ... had some trouble with that ... maybe return to it later.
         // Still can't quite figure it out ...  std::bind_back doesn't seem to cooperate with and_then ...
 
         auto gpt = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
@@ -532,7 +542,7 @@ public:
             return DesiredPlot::guess_TFfeatures(std::forward<decltype(dp)>(dp), ds);
         };
 
-        return DesiredPlot::transform_namedColsIntoIDs(std::move(selfCopy), ds)
+        return DesiredPlot::transform_namedColsIntoIDs(std::forward<decltype(self)>(self), ds)
             .and_then(gpt)
             .and_then(glc)
             .and_then(gvc)
@@ -552,7 +562,8 @@ namespace plot_structures {
 // polymorphism coupled with 'deducing this' feature of C++23
 class Base {
 protected:
-    // Descriptors - First thing to be computed
+    // Descriptors - First thing to be computed.
+    // BEWARE: The sizes are 'as displayed' not the 'size in bytes' ... need to account for UTF8
     size_t areaWidth = 0, areaHeight = 0;
     size_t labels_verLeftWidth = 0, labels_verRightWidth = 0;
 
@@ -586,12 +597,16 @@ protected:
 
     std::vector<std::string> plotArea;
 
+    std::optional<std::reference_wrapper<const DataStore>> ds_ref;
+
 
 public:
     // This needs to get called after default construction
-    bool build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds) {
+    auto build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds) {
 
-        self.compute_descriptors(dp, ds);
+        self.ds_ref = std::ref(ds);
+
+        self.compute_descriptors(dp);
 
         if (not self.validate_descriptors()) { return false; }
 
@@ -616,12 +631,15 @@ public:
 
         self.compute_plot_area(dp, ds);
 
+        self.ds_ref.reset();
+
         return true;
     }
 
     bool validate_self() const { return true; }
 
     size_t compute_lengthOfSelf() const {
+
         size_t lngth = pad_top + pad_bottom;
 
         // Horizontal top axis name and axis labels lines
@@ -664,6 +682,7 @@ public:
         std::string result;
         result.reserve(compute_lengthOfSelf());
 
+        // Add padding on top
         for (int i = 0; i < pad_top; ++i) { result.push_back('\n'); }
 
         // Build the heading lines of the plot
@@ -684,6 +703,7 @@ public:
             result.push_back('\n');
         }
 
+        // Build horizontal top axis line
         result.append(std::string(pad_left, ' '));
         result.append(labels_verLeft.front());
         result.append("┌");
@@ -693,18 +713,19 @@ public:
         result.append(std::string(pad_right, ' '));
         result.push_back('\n');
 
-
-        for (size_t i = 1; i < (areaHeight + 1); ++i) {
+        // Add plot area lines
+        for (size_t i = 0; i < areaHeight; ++i) {
             result.append(std::string(pad_left, ' '));
-            result.append(labels_verLeft.at(i));
-            result.append(axis_verLeft.at(i - 1));
-            result.append(plotArea.at(i - 1));
-            result.append(axis_verRight.at(i - 1));
-            result.append(labels_verRight.at(i));
+            result.append(labels_verLeft.at(i + 1));
+            result.append(axis_verLeft.at(i));
+            result.append(plotArea.at(i));
+            result.append(axis_verRight.at(i));
+            result.append(labels_verRight.at(i + 1));
             result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
 
+        // Add horizontal bottom axis line
         result.append(std::string(pad_left, ' '));
         result.append(labels_verLeft.back());
         result.append("└");
@@ -714,6 +735,7 @@ public:
         result.append(std::string(pad_right, ' '));
         result.push_back('\n');
 
+        // Add the bottom lines of the plot
         if (labels_horBottom_bool) {
             result.append(std::string(pad_left, ' '));
             result.append(corner_bottomLeft.at(0));
@@ -731,6 +753,7 @@ public:
             result.push_back('\n');
         }
 
+        // Add padding on bottom
         for (int i = 0; i < pad_bottom; ++i) { result.push_back('\n'); }
         return result;
     }
@@ -739,41 +762,44 @@ private:
     // TODO: Implement validate_descriptors for 'plot_structures'
     bool validate_descriptors() { return true; }
 
-    // Pure virtual methods that need be defined in derived and are then called during construction through 'self
-    // builder'
-    virtual void compute_descriptors(DesiredPlot const &dp, DataStore const &ds) = 0;
+    // One needs to define all of these in a derived class.
+    void compute_descriptors(DesiredPlot const &dp) = delete;
 
-    virtual void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) = 0;
-    virtual void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) = 0;
+    void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) = delete;
+    void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) = delete;
 
-    virtual void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) = 0;
-    virtual void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) = 0;
+    void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) = delete;
+    void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) = delete;
 
-    virtual void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) = 0;
-    virtual void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) = 0;
-    virtual void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) = 0;
-    virtual void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) = 0;
+    void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) = delete;
+    void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) = delete;
+    void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) = delete;
+    void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) = delete;
 
-    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds)       = 0;
-    virtual void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds)   = 0;
-    virtual void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) = 0;
+    void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds)       = delete;
+    void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds)   = delete;
+    void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) = delete;
 
-    virtual void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds)       = 0;
-    virtual void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds)   = 0;
-    virtual void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) = 0;
+    void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds)       = delete;
+    void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds)   = delete;
+    void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) = delete;
 
-    virtual void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) = 0;
+    void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) = delete;
 };
 
 class BarV : public Base {
     friend class Base;
 
-    virtual void compute_descriptors(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_descriptors(DesiredPlot const &dp) {
+        auto &ds = ds_ref.value().get();
         // Vertical left labels
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             auto const &labelColRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
-            auto const  labelSizes  = std::views::transform(labelColRef, [](auto const &a) { return a.size(); });
-            labels_verLeftWidth     = std::min(
+            auto const  labelSizes =
+                std::views::transform(labelColRef, [](auto const &a) { return detail::strlen_utf8(a); });
+
+            // TODO: Convert the 'hard limit' into some sort of constexpr config thing
+            labels_verLeftWidth = std::min(
                 30uz, std::min(std::ranges::max(labelSizes), (dp.targetWidth.value() - pad_left - pad_right) / 4));
         }
         // TODO: Computation for numeric labels
@@ -818,7 +844,7 @@ class BarV : public Base {
         // Top and Right axes steps keeping as-is
     }
 
-    virtual void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) {
         auto const &labelsRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
         labels_verLeft.push_back(std::string(labels_verLeftWidth, ' '));
         for (auto const &rawLabel : labelsRef) {
@@ -826,7 +852,7 @@ class BarV : public Base {
         }
         labels_verLeft.push_back(std::string(labels_verLeftWidth, ' '));
     }
-    virtual void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) {
 
         labels_verRight.push_back("");
         for (auto const &_ : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
@@ -836,62 +862,62 @@ class BarV : public Base {
         labels_verRight.push_back("");
     }
 
-    virtual void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            axis_verLeft = detail::create_tickAxis("│", "┤", areaHeight, areaHeight);
+            axis_verLeft = detail::create_tickMarkedAxis("│", "┤", areaHeight, areaHeight);
         }
         // All else should have vl axis ticks according to numeric values
         else {}
     }
-    virtual void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             axis_verRight = std::vector(areaHeight, std::string(" "));
         }
     }
 
     // All corners are simply empty as default ... but can possibly be used for something later if overrided in derived
-    virtual void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) {
         if (axisName_horTop_bool) { corner_topLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
         if (labels_horTop_bool) { corner_topLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
     }
-    virtual void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) {
         if (axisName_horBottom_bool) { corner_bottomLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
         if (labels_horBottom_bool) { corner_bottomLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
     }
-    virtual void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) {
         if (axisName_horTop_bool) { corner_topRight.push_back(std::string(labels_verRightWidth, ' ')); }
         if (labels_horTop_bool) { corner_topRight.push_back(std::string(labels_verRightWidth, ' ')); }
     }
-    virtual void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) {
         if (axisName_horBottom_bool) { corner_bottomRight.push_back(std::string(labels_verRightWidth, ' ')); }
         if (labels_horBottom_bool) { corner_bottomRight.push_back(std::string(labels_verRightWidth, ' ')); }
     }
 
-    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) {
         axis_horTop = std::vector(areaWidth, std::string(" "));
     }
-    virtual void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds) override {}
-    virtual void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) override {}
+    void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds) {}
+    void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) {}
 
 
-    virtual void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds) {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            axis_horBottom = detail::create_tickAxis("─", "┬", areaWidth, areaWidth);
+            axis_horBottom = detail::create_tickMarkedAxis("─", "┬", areaWidth, areaWidth);
         }
         // All else should be values according to value col #1
         // TODO: Fix this so there are ticks by values ... must make specialized method for that
         else { axis_horBottom = std::vector(areaWidth, std::string(" ")); }
     }
 
-    virtual void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds) {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             // TODO: What to do with BarHs axisName bottom
         }
         else { axisName_horBottom = ds.colNames.at(dp.values_colIDs.front()); }
     }
-    virtual void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) override {}
+    void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) {}
 
-    virtual void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) override {
+    void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) {
         auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
         if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
             auto const &valColRef   = ds.doubleCols.at(valColTypeRef.second);
@@ -925,9 +951,7 @@ class BarV : public Base {
 class BarH : public BarV {
     friend class Base;
 
-    virtual void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) override {
-        axis_horBottomSteps = areaWidth;
-    }
+    void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) { axis_horBottomSteps = areaWidth; }
 };
 
 class Line : public BarV {
@@ -949,27 +973,41 @@ class Bubble : public Scatter {
 } // namespace plot_structures
 
 
-template <typename PS>
-requires std::is_base_of_v<plot_structures::Base, PS>
+template <typename PS_VAR>
 class PlotDrawer {
 private:
-    PS plotStructure;
+    PS_VAR m_ps_var;
 
 public:
     constexpr PlotDrawer() {};
-    PlotDrawer(DesiredPlot const &dp, DataStore const &ds) { plotStructure.build_self(dp, ds); }
+    PlotDrawer(auto ps_var, DesiredPlot const &dp, DataStore const &ds) : m_ps_var(ps_var) {
+        auto ol = [&](auto &&var) { var.build_self(dp, ds); };
+        std::visit(ol, m_ps_var);
+    }
 
     void update_newPlotStructure(DesiredPlot const &dp, DataStore const &ds) {
-        plotStructure = PS();
-        plotStructure.build_self(dp, ds);
+        auto ol = [&](auto &&var) {
+            m_ps_var = decltype(var)();
+            var.build_self(dp, ds);
+        };
+        std::visit(ol, m_ps_var);
+    }
+
+    bool validate_self() const {
+        auto validate = [&](auto &&var) -> bool { return var.validate_self(); };
+        return std::visit(validate, m_ps_var);
     }
 
     std::expected<std::string, Err_drawer> validateAndDrawPlot() const {
         // TODO: Add some validation before drawing
-        if (plotStructure.validate_self() == false) { return std::unexpected(Err_drawer::plotStructureInvalid); }
+        if (validate_self() == false) { return std::unexpected(Err_drawer::plotStructureInvalid); }
         else { return drawPlot(); }
     }
-    std::string drawPlot() const { return plotStructure.build_plotAsString(); }
+
+    std::string drawPlot() const {
+        auto ol = [&](auto &&var) -> std::string { return var.build_plotAsString(); };
+        return std::visit(ol, m_ps_var);
+    }
 };
 
 
@@ -977,20 +1015,24 @@ template <typename... Ts>
 requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName<Ts...>
 constexpr auto generate_PD_PS_variantTypeMap() {
 
-    std::unordered_map<std::string, std::variant<PlotDrawer<Ts>...>> res;
-    (res.insert({detail::TypeToString<Ts>(), std::variant<PlotDrawer<Ts>...>(PlotDrawer<Ts>())}), ...);
+    std::unordered_map<std::string, std::variant<Ts...>> res;
+    (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
     return res;
 }
 
+// This is a map of default constructed 'plot_structures' inside an std::variant
 // Pass the 'plot_structure' template types that should be used by the library
 // This is the only where one 'selects' these template types
 static const auto mp_names2Types =
     generate_PD_PS_variantTypeMap<plot_structures::BarV, plot_structures::BarH, plot_structures::Line,
                                   plot_structures::Multiline, plot_structures::Scatter, plot_structures::Bubble>();
 
-inline decltype(mp_names2Types)::mapped_type make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
+inline decltype(auto) make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
     auto ref          = mp_names2Types.at(dp.plot_type_name.value());
-    auto overload_set = [&]<typename T>(T &variantItem) -> decltype(ref) { return T(dp, ds); };
+    using varType     = decltype(ref);
+    auto overload_set = [&]<typename T>(T const &variantItem) -> PlotDrawer<varType> {
+        return PlotDrawer<varType>(variantItem, dp, ds);
+    };
     return std::visit(overload_set, ref);
 }
 

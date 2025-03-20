@@ -184,9 +184,9 @@ int main() {
 
     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
-    auto dp = incplot::DesiredPlot(64);
 
-    auto dp_autoGuessed = dp.make_autoGuessedDP(ds);
+    auto dp_autoGuessed = incplot::DesiredPlot(96).guess_missingParams(ds);
+
     if (not dp_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
         return 1;
@@ -200,7 +200,7 @@ int main() {
 
     auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
 
-    auto outExp = std::visit([&](auto const &pdVariant) { return pdVariant.validateAndDrawPlot(); }, plotDrawer2);
+    auto outExp = plotDrawer2.validateAndDrawPlot();
 
 
     if (not outExp.has_value()) {
@@ -213,7 +213,7 @@ int main() {
 
     std::print("{}", outExp.value());
 
-    std::print("{}", incplot::detail::format_toMax6length(123456799999999999999999999999.0015836));
+    std::print("{}", incplot::detail::format_toMax6length(12345.0015836));
 
     return 0;
 }
