@@ -211,9 +211,13 @@ int main() {
     auto [val, unit] = incplot::detail::rebase_2_SIPreFix(0.001);
 
 
-    std::print("{}", outExp.value());
+    std::print("{}\n", outExp.value());
 
-    std::print("{}", incplot::detail::format_toMax6length(12345.0015836));
+    std::print("{}\n", incplot::detail::format_toMax6length(12345.0015836));
+
+    std::print("{}Viridis {}Reset \n", incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Bright_Foreground_Green), incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Default));
+    std::print("{}Reduta {}Reset \n", incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Bright_Foreground_Red), incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Default));
+    std::print("{}Tanza {}Reset \n", incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Bright_Foreground_Blue), incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Default));
 
     return 0;
 }

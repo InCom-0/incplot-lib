@@ -17,7 +17,6 @@ set_target_properties(incplot PROPERTIES LINKER_LANGUAGE CXX)
 target_link_libraries(incplot PUBLIC
     OOF::OOF
     nlohmann_json::nlohmann_json
-    more_concepts::more_concepts
-    DataFrame::DataFrame)
+    more_concepts::more_concepts)
 
 add_subdirectory(demos)

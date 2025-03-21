@@ -13,13 +13,84 @@
 #include <optional>
 #include <print>
 #include <source_location>
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 
 
 namespace incom {
 namespace terminal_plot {
+
+enum class Color_CVTS {
+    Default                   = 0,
+    Bold_or_Bright            = 1,
+    No_bold_or_bright         = 22,
+    Underline                 = 4,
+    No_underline              = 24,
+    Negative                  = 7,
+    Positive_No_negative      = 27,
+    Foreground_Black          = 30,
+    Foreground_Red            = 31,
+    Foreground_Green          = 32,
+    Foreground_Yellow         = 33,
+    Foreground_Blue           = 34,
+    Foreground_Magenta        = 35,
+    Foreground_Cyan           = 36,
+    Foreground_White          = 37,
+    Foreground_Extended       = 38,
+    Foreground_Default        = 39,
+    Background_Black          = 40,
+    Background_Red            = 41,
+    Background_Green          = 42,
+    Background_Yellow         = 43,
+    Background_Blue           = 44,
+    Background_Magenta        = 45,
+    Background_Cyan           = 46,
+    Background_White          = 47,
+    Background_Extended       = 48,
+    Background_Default        = 49,
+    Bright_Foreground_Black   = 90,
+    Bright_Foreground_Red     = 91,
+    Bright_Foreground_Green   = 92,
+    Bright_Foreground_Yellow  = 93,
+    Bright_Foreground_Blue    = 94,
+    Bright_Foreground_Magenta = 95,
+    Bright_Foreground_Cyan    = 96,
+    Bright_Foreground_White   = 97,
+    Bright_Background_Black   = 100,
+    Bright_Background_Red     = 101,
+    Bright_Background_Green   = 102,
+    Bright_Background_Yellow  = 103,
+    Bright_Background_Blue    = 104,
+    Bright_Background_Magenta = 105,
+    Bright_Background_Cyan    = 106,
+    Bright_Background_White   = 107
+};
+
+class ColorMap {
+private:
+    static constexpr auto const _m_colorMap = std::array<std::pair<int, std::string_view>, 43>{{
+        {0, "\x1b[0m"},     {1, "\x1b[1m"},     {22, "\x1b[22m"},   {4, "\x1b[4m"},     {24, "\x1b[24m"},
+        {7, "\x1b[7m"},     {27, "\x1b[27m"},   {30, "\x1b[30m"},   {31, "\x1b[31m"},   {32, "\x1b[32m"},
+        {33, "\x1b[33m"},   {34, "\x1b[34m"},   {35, "\x1b[35m"},   {36, "\x1b[36m"},   {37, "\x1b[37m"},
+        {38, "\x1b[38m"},   {39, "\x1b[39m"},   {40, "\x1b[40m"},   {41, "\x1b[41m"},   {42, "\x1b[42m"},
+        {43, "\x1b[43m"},   {44, "\x1b[44m"},   {45, "\x1b[45m"},   {46, "\x1b[46m"},   {47, "\x1b[47m"},
+        {48, "\x1b[48m"},   {49, "\x1b[49m"},   {90, "\x1b[90m"},   {91, "\x1b[91m"},   {92, "\x1b[92m"},
+        {93, "\x1b[93m"},   {94, "\x1b[94m"},   {95, "\x1b[95m"},   {96, "\x1b[96m"},   {97, "\x1b[97m"},
+        {100, "\x1b[100m"}, {101, "\x1b[101m"}, {102, "\x1b[102m"}, {103, "\x1b[103m"}, {104, "\x1b[104m"},
+        {105, "\x1b[105m"}, {106, "\x1b[106m"}, {107, "\x1b[107m"},
+    }};
+
+public:
+    static consteval auto get_termColSV(Color_CVTS const col) {
+        return std::ranges::find_if(_m_colorMap, [&](auto &&pr) { return pr.first == static_cast<int>(col); })->second;
+    }
+};
+
+
 // FORWARD DELCARATIONS
 struct DataStore;
 struct Parser;
@@ -1014,7 +1085,6 @@ public:
 template <typename... Ts>
 requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName<Ts...>
 constexpr auto generate_PD_PS_variantTypeMap() {
-
     std::unordered_map<std::string, std::variant<Ts...>> res;
     (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
     return res;
@@ -1027,7 +1097,7 @@ static const auto mp_names2Types =
     generate_PD_PS_variantTypeMap<plot_structures::BarV, plot_structures::BarH, plot_structures::Line,
                                   plot_structures::Multiline, plot_structures::Scatter, plot_structures::Bubble>();
 
-inline decltype(auto) make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
+inline auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
     auto ref          = mp_names2Types.at(dp.plot_type_name.value());
     using varType     = decltype(ref);
     auto overload_set = [&]<typename T>(T const &variantItem) -> PlotDrawer<varType> {
