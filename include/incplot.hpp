@@ -2,23 +2,16 @@
 
 #include <algorithm>
 #include <array>
-#include <climits>
-#include <cmath>
 #include <expected>
-#include <format>
-#include <functional>
-#include <more_concepts/more_concepts.hpp>
-#include <nlohmann/json.hpp>
-#include <oof.h>
 #include <optional>
-#include <print>
-#include <source_location>
 #include <string>
-#include <string_view>
-#include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <variant>
+#include <source_location>
+#include <print>
+
+#include <more_concepts/more_concepts.hpp>
+#include <nlohmann/json.hpp>
 
 
 namespace incom {
@@ -269,7 +262,7 @@ inline constexpr std::array<std::string, 21> const arr{"q", "r", "y", "z", "a", 
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-inline std::pair<double, std::optional<std::string>> rebase_2_SIPreFix(T &&value) {
+inline std::pair<double, std::optional<std::string>> rebase_2_SIPrefix(T &&value) {
     int target = value >= 1 ? (std::log10(value) / 3) : INT_MIN;
     if (target == INT_MIN) { return {value, std::nullopt}; }
     else { return {value / std::pow(1000, target), arr.at(target + 10)}; }
@@ -278,7 +271,7 @@ inline std::pair<double, std::optional<std::string>> rebase_2_SIPreFix(T &&value
 template <typename T>
 requires std::is_arithmetic_v<T>
 std::string format_toMax6length(T &&val) {
-    auto [rbsed, unit] = rebase_2_SIPreFix(std::forward<decltype(val)>(val));
+    auto [rbsed, unit] = rebase_2_SIPrefix(std::forward<decltype(val)>(val));
     return std::format("{:.{}f}{}", rbsed, unit.has_value() ? (rbsed >= 10 ? 0 : 1) : 2, unit.value_or(""));
 }
 

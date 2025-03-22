@@ -1,5 +1,4 @@
 #define OOF_IMPL
-#include <oof.h>
 #include <print>
 #include <windows.h>
 
@@ -194,9 +193,6 @@ int main() {
 
     std::string aaar("\u25a0");
 
-    auto        col    = oof::color(255, 0, 0);
-    std::string colStr = oof::fg_color(col);
-
 
     auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
 
@@ -208,7 +204,7 @@ int main() {
         return 1;
     }
 
-    auto [val, unit] = incplot::detail::rebase_2_SIPreFix(0.001);
+    auto [val, unit] = incplot::detail::rebase_2_SIPrefix(0.001);
 
 
     std::print("{}\n", outExp.value());
