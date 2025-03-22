@@ -70,10 +70,10 @@ enum class Color_CVTS {
     Bright_Background_White   = 107
 };
 
-class ColorMap {
+class TermColors {
 private:
-    static constexpr auto const _m_colorMap = std::array<std::pair<int, std::string_view>, 43>{{
-        {0, "\x1b[0m"},     {1, "\x1b[1m"},     {22, "\x1b[22m"},   {4, "\x1b[4m"},     {24, "\x1b[24m"},
+    static constexpr auto const _S_basicCVTScolMap = std::array<std::pair<int, std::string_view>, 43>{{
+        {0, "\x1b[m"},      {1, "\x1b[1m"},     {22, "\x1b[22m"},   {4, "\x1b[4m"},     {24, "\x1b[24m"},
         {7, "\x1b[7m"},     {27, "\x1b[27m"},   {30, "\x1b[30m"},   {31, "\x1b[31m"},   {32, "\x1b[32m"},
         {33, "\x1b[33m"},   {34, "\x1b[34m"},   {35, "\x1b[35m"},   {36, "\x1b[36m"},   {37, "\x1b[37m"},
         {38, "\x1b[38m"},   {39, "\x1b[39m"},   {40, "\x1b[40m"},   {41, "\x1b[41m"},   {42, "\x1b[42m"},
@@ -84,9 +84,41 @@ private:
         {105, "\x1b[105m"}, {106, "\x1b[106m"}, {107, "\x1b[107m"},
     }};
 
+    static constexpr auto const _S_extendedCVTScolMap = std::array<std::pair<int, std::string_view>, 43>{{{1, "2"}}};
+
 public:
-    static consteval auto get_termColSV(Color_CVTS const col) {
-        return std::ranges::find_if(_m_colorMap, [&](auto &&pr) { return pr.first == static_cast<int>(col); })->second;
+    static constexpr auto get_basicColor(Color_CVTS const col) {
+        return std::string(std::ranges::find_if(_S_basicCVTScolMap, [&](auto &&pr) {
+                               return pr.first == static_cast<int>(col);
+                           })->second);
+    }
+    static constexpr auto get_fgColor(int const color_256) {
+        return std::string("\x1b[38;5;").append(std::to_string(color_256)).append("m");
+    }
+    static constexpr auto get_bgColor(int const color_256) {
+        return std::string("\x1b[48;5;").append(std::to_string(color_256)).append("m");
+    }
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static constexpr auto get_colouredFG(T &&toColor, int color_256) {
+        return std::string(get_fgColor(color_256))
+            .append(std::forward<T>(toColor))
+            .append(get_basicColor(Color_CVTS::Default));
+    }
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static constexpr auto get_colouredBG(T &&toColor, int color_256) {
+        return std::string(get_bgColor(color_256))
+            .append(std::forward<T>(toColor))
+            .append(get_basicColor(Color_CVTS::Default));
+    }
+
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static constexpr auto get_coloured(T &&toColor, Color_CVTS const col) {
+        return std::string(get_basicColor(col))
+            .append(std::forward<T>(toColor))
+            .append(get_basicColor(Color_CVTS::Default));
     }
 };
 
@@ -117,9 +149,10 @@ enum class Unexp_plotSpecs {
     tarHeight,
     axisTicks
 };
-enum class Err_drawer {
+enum class Unexp_plotDrawer {
     plotStructureInvalid,
-    barVplot_tooWide
+    barVplot_tooWide,
+    unknownEerror
 };
 
 namespace detail {
@@ -171,10 +204,14 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
 
     std::vector<std::string> res;
     for (size_t i_step = 0; i_step < steps; ++i_step) {
-        for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) { res.push_back(std::string(filler)); }
-        res.push_back(tick);
+        for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) {
+            res.push_back(TermColors::get_coloured(filler, Color_CVTS::Bright_Foreground_Black));
+        }
+        res.push_back(TermColors::get_coloured(tick, Color_CVTS::Bright_Foreground_Black));
     }
-    for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) { res.push_back(std::string(filler)); }
+    for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) {
+        res.push_back(TermColors::get_coloured(tick, Color_CVTS::Bright_Foreground_Black));
+    }
     return res;
 }
 
@@ -242,7 +279,15 @@ template <typename T>
 requires std::is_arithmetic_v<T>
 std::string format_toMax6length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPreFix(std::forward<decltype(val)>(val));
-    return std::format("{:.{}f}{}", rbsed, unit.has_value() ? 1 : 4, unit.value_or(""));
+    return std::format("{:.{}f}{}", rbsed, unit.has_value() ? (rbsed >= 10 ? 0 : 1) : 2, unit.value_or(""));
+}
+
+template <typename... Ts>
+requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName<Ts...>
+constexpr auto generate_variantTypeMap() {
+    std::unordered_map<std::string, std::variant<Ts...>> res;
+    (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
+    return res;
 }
 
 } // namespace detail
@@ -429,7 +474,7 @@ struct Parser {
 
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
-// Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in'chars'
+// Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
 class DesiredPlot {
 private:
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
@@ -629,7 +674,7 @@ namespace plot_structures {
 // Create your own 'plot structure' ie. type of plot by deriving from 'Base' class (or from other classes derived from
 // it) and overriding pure virtual functions. The types properly derived from 'Base' can then be used inside
 // 'PlotDrawer' inside std::variant<...>. The idea is to be able to easily customize and also possibly 'partially
-// customize' as needed You always have to make the 'Base' class a friend ... this enables really nice dynamic
+// customize' as needed You always have to make the 'Base' class a friend ... this enables really nice static
 // polymorphism coupled with 'deducing this' feature of C++23
 class Base {
 protected:
@@ -668,43 +713,57 @@ protected:
 
     std::vector<std::string> plotArea;
 
-    std::optional<std::reference_wrapper<const DataStore>> ds_ref;
-
-
 public:
     // This needs to get called after default construction
-    auto build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds) {
+    auto build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::remove_cvref_t<decltype(self)> {
+        // Can only build it from rvalue ...
+        if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
-        self.ds_ref = std::ref(ds);
+        using expOfSelf_t = std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
-        self.compute_descriptors(dp);
+        auto c_dsc = [&](auto &&ps) -> expOfSelf_t { return ps.compute_descriptors(dp, ds); };
+        auto v_dsc = [&](auto &&ps) -> expOfSelf_t { return ps.validate_descriptors(dp, ds); };
 
-        if (not self.validate_descriptors()) { return false; }
+        auto c_lvl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_vl(dp, ds); };
+        auto c_lvr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_vr(dp, ds); };
 
-        self.compute_labels_vl(dp, ds);
-        self.compute_labels_vr(dp, ds);
+        auto c_avl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_vl(dp, ds); };
+        auto c_avr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_vr(dp, ds); };
 
-        self.compute_axis_vl(dp, ds);
-        self.compute_axis_vr(dp, ds);
+        auto c_ctl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_tl(dp, ds); };
+        auto c_cbl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_bl(dp, ds); };
+        auto c_cbr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_br(dp, ds); };
+        auto c_ctr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_tr(dp, ds); };
 
-        self.compute_corner_tl(dp, ds);
-        self.compute_corner_bl(dp, ds);
-        self.compute_corner_br(dp, ds);
-        self.compute_corner_tr(dp, ds);
+        auto c_aht  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_ht(dp, ds); };
+        auto c_anht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_ht(dp, ds); };
+        auto c_alht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisLabels_ht(dp, ds); };
 
-        self.compute_axis_ht(dp, ds);
-        self.compute_axisName_ht(dp, ds);
-        self.compute_axisLabels_ht(dp, ds);
+        auto c_ahb  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_hb(dp, ds); };
+        auto c_anhb = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_hb(dp, ds); };
+        auto c_alhb = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisLabels_hb(dp, ds); };
 
-        self.compute_axis_hb(dp, ds);
-        self.compute_axisName_hb(dp, ds);
-        self.compute_axisLabels_hb(dp, ds);
+        auto c_ap = [&](auto &&ps) -> expOfSelf_t { return ps.compute_plot_area(dp, ds); };
 
-        self.compute_plot_area(dp, ds);
+        auto res = c_dsc(std::move(self))
+                       .and_then(c_lvl)
+                       .and_then(c_lvr)
+                       .and_then(c_avl)
+                       .and_then(c_avr)
+                       .and_then(c_ctl)
+                       .and_then(c_cbl)
+                       .and_then(c_cbr)
+                       .and_then(c_ctr)
+                       .and_then(c_aht)
+                       .and_then(c_anht)
+                       .and_then(c_alht)
+                       .and_then(c_ahb)
+                       .and_then(c_anhb)
+                       .and_then(c_alhb)
+                       .and_then(c_ap);
 
-        self.ds_ref.reset();
-
-        return true;
+        return res.value();
     }
 
     bool validate_self() const { return true; }
@@ -777,9 +836,11 @@ public:
         // Build horizontal top axis line
         result.append(std::string(pad_left, ' '));
         result.append(labels_verLeft.front());
+        result.append(TermColors::get_basicColor(Color_CVTS::Bright_Foreground_Black));
         result.append("┌");
         for (auto const &toAppend : axis_horTop) { result.append(toAppend); }
         result.append("┐");
+        result.append(TermColors::get_basicColor(Color_CVTS::Default));
         result.append(labels_verRight.front());
         result.append(std::string(pad_right, ' '));
         result.push_back('\n');
@@ -799,9 +860,11 @@ public:
         // Add horizontal bottom axis line
         result.append(std::string(pad_left, ' '));
         result.append(labels_verLeft.back());
+        result.append(TermColors::get_basicColor(Color_CVTS::Bright_Foreground_Black));
         result.append("└");
         for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
         result.append("┘");
+        result.append(TermColors::get_basicColor(Color_CVTS::Default));
         result.append(labels_verRight.back());
         result.append(std::string(pad_right, ' '));
         result.push_back('\n');
@@ -831,38 +894,58 @@ public:
 
 private:
     // TODO: Implement validate_descriptors for 'plot_structures'
-    bool validate_descriptors() { return true; }
+    auto validate_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        return self;
+    }
 
     // One needs to define all of these in a derived class.
-    void compute_descriptors(DesiredPlot const &dp) = delete;
+    auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
-    void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) = delete;
-    void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) = delete;
+    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
-    void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) = delete;
-    void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) = delete;
+    auto compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
-    void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) = delete;
-    void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) = delete;
-    void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) = delete;
-    void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) = delete;
+    auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
-    void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds)       = delete;
-    void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds)   = delete;
-    void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) = delete;
+    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_axisLabels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
-    void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds)       = delete;
-    void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds)   = delete;
-    void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) = delete;
+    auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_axisLabels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
-    void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) = delete;
+    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 };
 
 class BarV : public Base {
     friend class Base;
 
-    void compute_descriptors(DesiredPlot const &dp) {
-        auto &ds = ds_ref.value().get();
+    auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
         // Vertical left labels
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             auto const &labelColRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
@@ -870,8 +953,9 @@ class BarV : public Base {
                 std::views::transform(labelColRef, [](auto const &a) { return detail::strlen_utf8(a); });
 
             // TODO: Convert the 'hard limit' into some sort of constexpr config thing
-            labels_verLeftWidth = std::min(
-                30uz, std::min(std::ranges::max(labelSizes), (dp.targetWidth.value() - pad_left - pad_right) / 4));
+            self.labels_verLeftWidth =
+                std::min(30uz, std::min(std::ranges::max(labelSizes) + 1,
+                                        (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
         }
         // TODO: Computation for numeric labels
         else {}
@@ -880,7 +964,8 @@ class BarV : public Base {
         // ...
 
         // Plot area width (-2 is for the 2 vertical axes positions)
-        areaWidth = dp.targetWidth.value() - pad_left - labels_verLeftWidth - 2 - labels_verRightWidth - pad_right;
+        self.areaWidth = dp.targetWidth.value() - self.pad_left - self.labels_verLeftWidth - 2 -
+                         self.labels_verRightWidth - self.pad_right;
 
         // Labels and axis name bottom
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>() ||
@@ -888,8 +973,8 @@ class BarV : public Base {
              dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) &&
                 true) {} // TODO: Proper assessment for Line and ML
         else {
-            labels_horBottom_bool = true;
-            axisName_horBottom    = true;
+            self.labels_horBottom_bool = true;
+            self.axisName_horBottom    = true;
         }
 
         // Labels and axis name top ... probably nothing so keeping 0 size
@@ -897,108 +982,164 @@ class BarV : public Base {
 
         // Plot area height (-2 is for the 2 horizontal axes positions)
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
+            self.areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
         }
         else {
-            areaHeight = dp.targetHeight.value() - pad_top - axisName_horTop_bool - labels_horTop_bool - 2 -
-                         labels_horBottom_bool - axisName_horBottom_bool - pad_bottom;
+            self.areaHeight = dp.targetHeight.value() - self.pad_top - self.axisName_horTop_bool -
+                              self.labels_horTop_bool - 2 - self.labels_horBottom_bool - self.axisName_horBottom_bool -
+                              self.pad_bottom;
         }
 
         // Axes steps
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) { axis_verLeftSteps = areaHeight; }
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            self.axis_verLeftSteps = self.areaHeight;
+        }
         else {} // TODO: Computation for numeric labels
 
 
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) { axis_horBottomSteps = areaWidth; }
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+            self.axis_horBottomSteps = self.areaWidth;
+        }
         else {} // TODO: Computation for numeric labels
 
         // Top and Right axes steps keeping as-is
+
+
+        return (self);
     }
 
-    void compute_labels_vl(DesiredPlot const &dp, DataStore const &ds) {
+    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         auto const &labelsRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
-        labels_verLeft.push_back(std::string(labels_verLeftWidth, ' '));
+        self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
         for (auto const &rawLabel : labelsRef) {
-            labels_verLeft.push_back(detail::middleTrim2Size(rawLabel, labels_verLeftWidth));
+            self.labels_verLeft.push_back(detail::middleTrim2Size(rawLabel, self.labels_verLeftWidth - 1));
+            self.labels_verLeft.back().push_back(' ');
         }
-        labels_verLeft.push_back(std::string(labels_verLeftWidth, ' '));
+        self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+        return (self);
     }
-    void compute_labels_vr(DesiredPlot const &dp, DataStore const &ds) {
-
-        labels_verRight.push_back("");
+    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        self.labels_verRight.push_back("");
         for (auto const &_ : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
             // TODO: Logic for vr labels
-            labels_verRight.push_back("");
+            self.labels_verRight.push_back("");
         }
-        labels_verRight.push_back("");
+        self.labels_verRight.push_back("");
+        return (self);
     }
 
-    void compute_axis_vl(DesiredPlot const &dp, DataStore const &ds) {
+    auto compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            axis_verLeft = detail::create_tickMarkedAxis("│", "┤", areaHeight, areaHeight);
+            self.axis_verLeft = detail::create_tickMarkedAxis("│", "┤", self.areaHeight, self.areaHeight);
         }
         // All else should have vl axis ticks according to numeric values
         else {}
+
+        return self;
     }
-    void compute_axis_vr(DesiredPlot const &dp, DataStore const &ds) {
+    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            axis_verRight = std::vector(areaHeight, std::string(" "));
+            self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
         }
+        return self;
     }
 
     // All corners are simply empty as default ... but can possibly be used for something later if overrided in derived
-    void compute_corner_tl(DesiredPlot const &dp, DataStore const &ds) {
-        if (axisName_horTop_bool) { corner_topLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
-        if (labels_horTop_bool) { corner_topLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
+    auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_horTop_bool) { self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth, ' ')); }
+        if (self.labels_horTop_bool) { self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth, ' ')); }
+
+        return self;
     }
-    void compute_corner_bl(DesiredPlot const &dp, DataStore const &ds) {
-        if (axisName_horBottom_bool) { corner_bottomLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
-        if (labels_horBottom_bool) { corner_bottomLeft.push_back(std::string(labels_verLeftWidth, ' ')); }
+    auto compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_horBottom_bool) {
+            self.corner_bottomLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+        }
+        if (self.labels_horBottom_bool) {
+            self.corner_bottomLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+        }
+
+        return self;
     }
-    void compute_corner_br(DesiredPlot const &dp, DataStore const &ds) {
-        if (axisName_horTop_bool) { corner_topRight.push_back(std::string(labels_verRightWidth, ' ')); }
-        if (labels_horTop_bool) { corner_topRight.push_back(std::string(labels_verRightWidth, ' ')); }
+    auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_horTop_bool) { self.corner_topRight.push_back(std::string(self.labels_verRightWidth, ' ')); }
+        if (self.labels_horTop_bool) { self.corner_topRight.push_back(std::string(self.labels_verRightWidth, ' ')); }
+
+        return self;
     }
-    void compute_corner_tr(DesiredPlot const &dp, DataStore const &ds) {
-        if (axisName_horBottom_bool) { corner_bottomRight.push_back(std::string(labels_verRightWidth, ' ')); }
-        if (labels_horBottom_bool) { corner_bottomRight.push_back(std::string(labels_verRightWidth, ' ')); }
+    auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_horBottom_bool) {
+            self.corner_bottomRight.push_back(std::string(self.labels_verRightWidth, ' '));
+        }
+        if (self.labels_horBottom_bool) {
+            self.corner_bottomRight.push_back(std::string(self.labels_verRightWidth, ' '));
+        }
+
+        return self;
     }
 
-    void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) {
-        axis_horTop = std::vector(areaWidth, std::string(" "));
+    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
+
+        return self;
     }
-    void compute_axisName_ht(DesiredPlot const &dp, DataStore const &ds) {}
-    void compute_axisLabels_ht(DesiredPlot const &dp, DataStore const &ds) {}
+    auto compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        return self;
+    }
+    auto compute_axisLabels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        return self;
+    }
 
 
-    void compute_axis_hb(DesiredPlot const &dp, DataStore const &ds) {
+    auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            axis_horBottom = detail::create_tickMarkedAxis("─", "┬", areaWidth, areaWidth);
+            self.axis_horBottom = detail::create_tickMarkedAxis("─", "┬", self.areaWidth, self.areaWidth);
         }
         // All else should be values according to value col #1
         // TODO: Fix this so there are ticks by values ... must make specialized method for that
-        else { axis_horBottom = std::vector(areaWidth, std::string(" ")); }
+        else { self.axis_horBottom = std::vector(self.areaWidth, std::string(" ")); }
+        return self;
     }
 
-    void compute_axisName_hb(DesiredPlot const &dp, DataStore const &ds) {
+    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             // TODO: What to do with BarHs axisName bottom
         }
-        else { axisName_horBottom = ds.colNames.at(dp.values_colIDs.front()); }
+        else { self.axisName_horBottom = ds.colNames.at(dp.values_colIDs.front()); }
+        return self;
     }
-    void compute_axisLabels_hb(DesiredPlot const &dp, DataStore const &ds) {}
+    auto compute_axisLabels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        return self;
+    }
 
-    void compute_plot_area(DesiredPlot const &dp, DataStore const &ds) {
+    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
         if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
             auto const &valColRef   = ds.doubleCols.at(valColTypeRef.second);
             auto const [minV, maxV] = std::ranges::minmax(valColRef);
-            double stepSize         = (maxV - minV) / areaWidth;
+            double stepSize         = (maxV - minV) / self.areaWidth;
             for (auto const &val : valColRef) {
-                plotArea.push_back(std::string());
+                self.plotArea.push_back(std::string());
                 size_t rpt = static_cast<size_t>((val - minV) / stepSize);
-                for (size_t i = rpt; i > 0; --i) { plotArea.back().append("■"); }
-                for (size_t i = rpt; i < areaWidth; ++i) { plotArea.back().push_back(' '); }
+                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Foreground_Green));
+                for (size_t i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
+                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Default));
+                for (size_t i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
             }
         }
         else {
@@ -1007,22 +1148,25 @@ class BarV : public Base {
             long long scalingFactor = LONG_LONG_MAX / (std::max(std::abs(maxV), std::abs(minV)));
             long long maxV_adj      = maxV * scalingFactor;
             long long minV_adj      = minV * scalingFactor;
-            long long stepSize      = (maxV_adj - minV_adj) / areaWidth;
+            long long stepSize      = (maxV_adj - minV_adj) / self.areaWidth;
 
             for (auto const &val : valColRef) {
-                plotArea.push_back(std::string());
+                self.plotArea.push_back(std::string());
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                for (long long i = rpt; i > 0; --i) { plotArea.back().append("■"); }
-                for (long long i = rpt; i < areaWidth; ++i) { plotArea.back().push_back(' '); }
+
+                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Foreground_Green));
+                for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
+                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Default));
+                for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
             }
         }
+
+        return self;
     }
 };
 
 class BarH : public BarV {
     friend class Base;
-
-    void compute_axis_ht(DesiredPlot const &dp, DataStore const &ds) { axis_horBottomSteps = areaWidth; }
 };
 
 class Line : public BarV {
@@ -1051,16 +1195,16 @@ private:
 
 public:
     constexpr PlotDrawer() {};
-    PlotDrawer(auto ps_var, DesiredPlot const &dp, DataStore const &ds) : m_ps_var(ps_var) {
-        auto ol = [&](auto &&var) { var.build_self(dp, ds); };
+    PlotDrawer(auto ps_var, DesiredPlot const &dp, DataStore const &ds) {
+        auto ol = [&](auto &&var) {
+            m_ps_var = std::move(var).build_self(dp, ds);
+            int a    = 0;
+        };
         std::visit(ol, m_ps_var);
     }
 
     void update_newPlotStructure(DesiredPlot const &dp, DataStore const &ds) {
-        auto ol = [&](auto &&var) {
-            m_ps_var = decltype(var)();
-            var.build_self(dp, ds);
-        };
+        auto ol = [&](auto &&var) { m_ps_var = decltype(var)().build_self(dp, ds); };
         std::visit(ol, m_ps_var);
     }
 
@@ -1069,9 +1213,9 @@ public:
         return std::visit(validate, m_ps_var);
     }
 
-    std::expected<std::string, Err_drawer> validateAndDrawPlot() const {
+    std::expected<std::string, Unexp_plotDrawer> validateAndDrawPlot() const {
         // TODO: Add some validation before drawing
-        if (validate_self() == false) { return std::unexpected(Err_drawer::plotStructureInvalid); }
+        if (validate_self() == false) { return std::unexpected(Unexp_plotDrawer::plotStructureInvalid); }
         else { return drawPlot(); }
     }
 
@@ -1082,20 +1226,12 @@ public:
 };
 
 
-template <typename... Ts>
-requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName<Ts...>
-constexpr auto generate_PD_PS_variantTypeMap() {
-    std::unordered_map<std::string, std::variant<Ts...>> res;
-    (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
-    return res;
-}
-
 // This is a map of default constructed 'plot_structures' inside an std::variant
 // Pass the 'plot_structure' template types that should be used by the library
-// This is the only where one 'selects' these template types
-static const auto mp_names2Types =
-    generate_PD_PS_variantTypeMap<plot_structures::BarV, plot_structures::BarH, plot_structures::Line,
-                                  plot_structures::Multiline, plot_structures::Scatter, plot_structures::Bubble>();
+// This is the only place where one 'selects' these template types
+static inline const auto mp_names2Types =
+    detail::generate_variantTypeMap<plot_structures::BarV, plot_structures::BarH, plot_structures::Line,
+                                    plot_structures::Multiline, plot_structures::Scatter, plot_structures::Bubble>();
 
 inline auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
     auto ref          = mp_names2Types.at(dp.plot_type_name.value());

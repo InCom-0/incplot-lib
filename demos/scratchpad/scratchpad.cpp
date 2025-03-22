@@ -185,7 +185,7 @@ int main() {
     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
 
-    auto dp_autoGuessed = incplot::DesiredPlot(96).guess_missingParams(ds);
+    auto dp_autoGuessed = incplot::DesiredPlot(64).guess_missingParams(ds);
 
     if (not dp_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
@@ -213,11 +213,11 @@ int main() {
 
     std::print("{}\n", outExp.value());
 
-    std::print("{}\n", incplot::detail::format_toMax6length(12345.0015836));
+    std::print("{}\n", incplot::detail::format_toMax6length(1234.0015836));
 
-    std::print("{}Viridis {}Reset \n", incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Bright_Foreground_Green), incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Default));
-    std::print("{}Reduta {}Reset \n", incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Bright_Foreground_Red), incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Default));
-    std::print("{}Tanza {}Reset \n", incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Bright_Foreground_Blue), incplot::ColorMap::get_termColSV(incplot::Color_CVTS::Default));
+    std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green), incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
+    std::print("{}Reduta {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Red), incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
+    std::print("{}Tanza {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Blue), incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
 
     return 0;
 }
