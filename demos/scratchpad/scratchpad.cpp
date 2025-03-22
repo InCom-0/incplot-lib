@@ -209,7 +209,7 @@ int main() {
 
     std::print("{}\n", outExp.value());
 
-    std::print("{}\n", incplot::detail::format_toMax6length(1234.0015836));
+    std::print("{}\n", incplot::detail::format_toMax4length(0.00015836));
 
     std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green), incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
     std::print("{}Reduta {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Red), incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));

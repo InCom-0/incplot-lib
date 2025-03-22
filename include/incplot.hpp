@@ -4,11 +4,12 @@
 #include <array>
 #include <expected>
 #include <optional>
+#include <print>
+#include <source_location>
 #include <string>
 #include <utility>
 #include <variant>
-#include <source_location>
-#include <print>
+
 
 #include <more_concepts/more_concepts.hpp>
 #include <nlohmann/json.hpp>
@@ -193,7 +194,8 @@ constexpr inline std::string middleTrim2Size(std::string const &str, size_t maxS
 // TODO: Also make a version where the tick positions are explictily specified in one vector of size_t
 constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
                                                                 size_t totalWidth) {
-    size_t fillerSize = (totalWidth - steps) / (steps + 1);
+    size_t fillerSize  = (totalWidth - steps) / (steps + 1) + (((totalWidth - steps) % (steps + 1)) != 0);
+    steps             -= ((totalWidth - steps) % (steps + 1)) != 0;
 
     std::vector<std::string> res;
     for (size_t i_step = 0; i_step < steps; ++i_step) {
@@ -202,11 +204,18 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
         }
         res.push_back(TermColors::get_coloured(tick, Color_CVTS::Bright_Foreground_Black));
     }
-    for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) {
-        res.push_back(TermColors::get_coloured(tick, Color_CVTS::Bright_Foreground_Black));
+    size_t sizeOfRest = totalWidth - (steps) - (steps * fillerSize);
+    for (size_t i_filler = 0; i_filler < sizeOfRest; ++i_filler) {
+        res.push_back(TermColors::get_coloured(filler, Color_CVTS::Bright_Foreground_Black));
     }
     return res;
 }
+constexpr inline size_t guess_stepsOnHorAxis(size_t width, size_t maxLabelSize = 4) {
+    // Substract the beginning and the end label sizes and -2 for spacing
+    width -= 2 * maxLabelSize - 2;
+    return (width / (maxLabelSize + 2)) + ((width % (maxLabelSize + 2)) != 0);
+}
+
 
 // Ring vector for future usage in 'scrolling plot' scenarios
 template <typename T>
@@ -263,16 +272,15 @@ inline constexpr std::array<std::string, 21> const arr{"q", "r", "y", "z", "a", 
 template <typename T>
 requires std::is_arithmetic_v<T>
 inline std::pair<double, std::optional<std::string>> rebase_2_SIPrefix(T &&value) {
-    int target = value >= 1 ? (std::log10(value) / 3) : INT_MIN;
-    if (target == INT_MIN) { return {value, std::nullopt}; }
-    else { return {value / std::pow(1000, target), arr.at(target + 10)}; }
+    int target = value >= 1 ? (std::log10(value) / 3) : (std::log10(value) / 3) - 1;
+    return {value / std::pow(1000, target), arr.at(target + 10)};
 }
 
 template <typename T>
 requires std::is_arithmetic_v<T>
-std::string format_toMax6length(T &&val) {
+std::string format_toMax4length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPrefix(std::forward<decltype(val)>(val));
-    return std::format("{:.{}f}{}", rbsed, unit.has_value() ? (rbsed >= 10 ? 0 : 1) : 2, unit.value_or(""));
+    return std::format("{:.{}f}{}", rbsed, rbsed >= 10 ? 0 : 1, unit.value_or(""));
 }
 
 template <typename... Ts>
@@ -740,6 +748,7 @@ public:
         auto c_ap = [&](auto &&ps) -> expOfSelf_t { return ps.compute_plot_area(dp, ds); };
 
         auto res = c_dsc(std::move(self))
+                       .and_then(v_dsc)
                        .and_then(c_lvl)
                        .and_then(c_lvr)
                        .and_then(c_avl)
