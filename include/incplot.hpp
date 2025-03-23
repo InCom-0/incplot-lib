@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
 #include <expected>
 #include <optional>
 #include <print>
 #include <source_location>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 
@@ -182,20 +184,44 @@ constexpr bool __none_sameLastLevelTypeName_HLPR() {
 template <typename... Ts>
 concept none_sameLastLevelTypeName = __none_sameLastLevelTypeName_HLPR<Ts...>();
 
-constexpr inline std::string middleTrim2Size(std::string const &str, size_t maxSize) {
+constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) {
+    // TODO: Need to somehow handle unicode in labels in this function
     if (str.size() > maxSize) {
         size_t cutPoint = maxSize / 2;
         return std::string(str.begin(), str.begin() + cutPoint)
             .append("...")
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
-    else { return std::string(maxSize - str.size(), ' ').append(str); }
+    else { return std::string(maxSize - strlen_utf8(str), ' ').append(str); }
 }
+constexpr std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
+    // TODO: Need to somehow handle unicode in labels in this function
+    if (str.size() > maxSize) {
+        size_t cutPoint = maxSize / 2;
+        return std::string(str.begin(), str.begin() + cutPoint)
+            .append("...")
+            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
+    }
+    else {
+        return std::string((maxSize - strlen_utf8(str)) / 2, ' ')
+            .append(str)
+            .append(std::string(((maxSize - strlen_utf8(str)) / 2) + ((maxSize - strlen_utf8(str)) % 2), ' '));
+    }
+}
+constexpr size_t get_axisFillerSize(size_t axisLength, size_t axisStepCount) {
+    return (axisLength - axisStepCount) / (axisStepCount + 1);
+}
+
+static inline const std::array<size_t, 1024> axisSizeToSteps_arr = []() {
+    std::array<size_t, 1024> res;
+    for (size_t i = 0; auto &item : res) { item = (i++); }
+    return res;
+}();
+
 // TODO: Also make a version where the tick positions are explictily specified in one vector of size_t
 constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
                                                                 size_t totalWidth) {
-    size_t fillerSize  = (totalWidth - steps) / (steps + 1) + (((totalWidth - steps) % (steps + 1)) != 0);
-    steps             -= ((totalWidth - steps) % (steps + 1)) != 0;
+    size_t fillerSize = get_axisFillerSize(totalWidth, steps);
 
     std::vector<std::string> res;
     for (size_t i_step = 0; i_step < steps; ++i_step) {
@@ -212,8 +238,8 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
 }
 constexpr inline size_t guess_stepsOnHorAxis(size_t width, size_t maxLabelSize = 4) {
     // Substract the beginning and the end label sizes and -2 for spacing
-    width -= 2 * maxLabelSize - 2;
-    return (width / (maxLabelSize + 2)) + ((width % (maxLabelSize + 2)) != 0);
+    width += (-2 * maxLabelSize + 2) - 2;
+    return (width / (maxLabelSize + 4));
 }
 
 
@@ -270,14 +296,17 @@ inline constexpr std::array<std::string, 21> const arr{"q", "r", "y", "z", "a", 
                                                        "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
 
 template <typename T>
-requires std::is_arithmetic_v<T>
+requires std::is_arithmetic_v<std::decay_t<T>>
 inline std::pair<double, std::optional<std::string>> rebase_2_SIPrefix(T &&value) {
-    int target = value >= 1 ? (std::log10(value) / 3) : (std::log10(value) / 3) - 1;
-    return {value / std::pow(1000, target), arr.at(target + 10)};
+    if (value == 0) { return {0, ""}; }
+    else {
+        int target = value >= 1 ? (std::log10(value) / 3) : (std::log10(value) / 3) - 1;
+        return {value / std::pow(1000, target), arr.at(target + 10)};
+    }
 }
 
 template <typename T>
-requires std::is_arithmetic_v<T>
+requires std::is_arithmetic_v<std::decay_t<T>>
 std::string format_toMax4length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPrefix(std::forward<decltype(val)>(val));
     return std::format("{:.{}f}{}", rbsed, rbsed >= 10 ? 0 : 1, unit.value_or(""));
@@ -522,17 +551,13 @@ private:
         }
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
-
         auto addValColsUntil = [&](size_t count) -> std::expected<size_t, Unexp_plotSpecs> {
-            auto valColTypes = std::views::filter(ds.colTypes, [](auto &&a) {
-                return (a.first == NLMjson::value_t::number_float || a.first == NLMjson::value_t::number_integer ||
-                        a.first == NLMjson::value_t::number_unsigned);
-            });
-
             auto getAnotherValColID = [&]() -> std::expected<size_t, Unexp_plotSpecs> {
-                for (auto const &vct : valColTypes) {
-                    if (std::ranges::find(dp.values_colIDs, vct.second) == dp.values_colIDs.end()) {
-                        return vct.second;
+                for (size_t i = 0; i < ds.colTypes.size(); ++i) {
+                    if (ds.colTypes[i].first == NLMjson::value_t::number_float ||
+                        ds.colTypes[i].first == NLMjson::value_t::number_integer ||
+                        ds.colTypes[i].first == NLMjson::value_t::number_unsigned) {
+                        if (std::ranges::find(dp.values_colIDs, i) == dp.values_colIDs.end()) { return i; }
                     }
                 }
                 // Cannot find another one
@@ -684,7 +709,7 @@ protected:
     size_t areaWidth = 0, areaHeight = 0;
     size_t labels_verLeftWidth = 0, labels_verRightWidth = 0;
 
-    size_t axis_verLeftSteps = 1, axis_varRightSteps = 1, axis_horTopSteps = 1, axis_horBottomSteps = 1;
+    size_t axis_verLeftSteps = 0, axis_varRightSteps = 0, axis_horTopSteps = 0, axis_horBottomSteps = 0;
 
     size_t pad_left = 2, pad_right = 0, pad_top = 0, pad_bottom = 0;
 
@@ -820,17 +845,17 @@ public:
         // Build the heading lines of the plot
         if (axisName_horTop_bool) {
             result.append(std::string(pad_left, ' '));
-            result.append(corner_topLeft.at(0));
+            result.append(corner_topLeft.front());
             result.append(label_horTop);
-            result.append(corner_topRight.at(0));
+            result.append(corner_topRight.front());
             result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
         if (labels_horTop_bool) {
             result.append(std::string(pad_left, ' '));
-            result.append(corner_topLeft.at(1));
+            result.append(corner_topLeft.back());
             result.append(label_horTop);
-            result.append(corner_topRight.at(1));
+            result.append(corner_topRight.back());
             result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
@@ -865,6 +890,7 @@ public:
         result.append(TermColors::get_basicColor(Color_CVTS::Bright_Foreground_Black));
         result.append("└");
         for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
+        result.append(TermColors::get_basicColor(Color_CVTS::Bright_Foreground_Black));
         result.append("┘");
         result.append(TermColors::get_basicColor(Color_CVTS::Default));
         result.append(labels_verRight.back());
@@ -874,17 +900,17 @@ public:
         // Add the bottom lines of the plot
         if (labels_horBottom_bool) {
             result.append(std::string(pad_left, ' '));
-            result.append(corner_bottomLeft.at(0));
+            result.append(corner_bottomLeft.front());
             result.append(label_horBottom);
-            result.append(corner_bottomRight.at(0));
+            result.append(corner_bottomRight.front());
             result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
         if (axisName_horBottom_bool) {
             result.append(std::string(pad_left, ' '));
-            result.append(corner_bottomLeft.at(1));
+            result.append(corner_bottomLeft.back());
             result.append(axisName_horBottom);
-            result.append(corner_bottomRight.at(1));
+            result.append(corner_bottomRight.back());
             result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
@@ -959,7 +985,7 @@ class BarV : public Base {
                 std::min(30uz, std::min(std::ranges::max(labelSizes) + 1,
                                         (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
         }
-        // TODO: Computation for numeric labels
+        // TODO: Computation for vertical numeric labels
         else {}
 
         // TODO: Vertical right labels ... probably nothing so keeping 0 size
@@ -975,8 +1001,8 @@ class BarV : public Base {
              dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) &&
                 true) {} // TODO: Proper assessment for Line and ML
         else {
-            self.labels_horBottom_bool = true;
-            self.axisName_horBottom    = true;
+            self.labels_horBottom_bool   = true;
+            self.axisName_horBottom_bool = true;
         }
 
         // Labels and axis name top ... probably nothing so keeping 0 size
@@ -1002,7 +1028,9 @@ class BarV : public Base {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.axis_horBottomSteps = self.areaWidth;
         }
-        else {} // TODO: Computation for numeric labels
+        else {
+            self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth);
+        } // TODO: Computation for numeric labels
 
         // Top and Right axes steps keeping as-is
 
@@ -1015,7 +1043,7 @@ class BarV : public Base {
         auto const &labelsRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
         self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
         for (auto const &rawLabel : labelsRef) {
-            self.labels_verLeft.push_back(detail::middleTrim2Size(rawLabel, self.labels_verLeftWidth - 1));
+            self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth - 1));
             self.labels_verLeft.back().push_back(' ');
         }
         self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
@@ -1109,60 +1137,111 @@ class BarV : public Base {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.axis_horBottom = detail::create_tickMarkedAxis("─", "┬", self.areaWidth, self.areaWidth);
         }
-        // All else should be values according to value col #1
-        // TODO: Fix this so there are ticks by values ... must make specialized method for that
-        else { self.axis_horBottom = std::vector(self.areaWidth, std::string(" ")); }
+        else {
+            // Axis with ticks is contructed according to num of 'steps' which is the num of ticks and the areaWidth
+            self.axis_horBottom = detail::create_tickMarkedAxis("─", "┬", self.axis_horBottomSteps, self.areaWidth);
+        }
         return self;
     }
 
     auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            // TODO: What to do with BarHs axisName bottom
+            self.axisName_horBottom = std::string(self.areaWidth + 2, ' ');
         }
-        else { self.axisName_horBottom = ds.colNames.at(dp.values_colIDs.front()); }
+        else {
+            self.axisName_horBottom = ds.colNames.at(dp.values_colIDs.front());
+            self.axisName_horBottom = detail::trim2Size_leadingEnding(self.axisName_horBottom, self.areaWidth + 2);
+        }
         return self;
     }
     auto compute_axisLabels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
+        auto computeLabels = [&](auto const &valColRef) -> void {
+            size_t const fillerSize = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
+            auto const [minV, maxV] = std::ranges::minmax(valColRef);
+            auto   stepSize         = (maxV - minV) / (self.areaWidth + 1);
+            size_t placedChars      = 0;
+
+            // Construct the [0:0] point label
+            std::string tempStr = detail::format_toMax4length(minV);
+            self.label_horBottom.append(tempStr);
+            placedChars += detail::strlen_utf8(tempStr);
+
+            // Construct the tick labels
+            for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
+                while (placedChars < (i * (fillerSize + 1) + fillerSize)) {
+                    self.label_horBottom.push_back(' ');
+                    placedChars++;
+                }
+                tempStr = detail::format_toMax4length(minV + ((i * (fillerSize + 1) + fillerSize) * stepSize));
+                self.label_horBottom.append(tempStr);
+                placedChars += detail::strlen_utf8(tempStr);
+            }
+
+            // Construct the [0:end] point label
+            tempStr = detail::format_toMax4length(maxV);
+            for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
+                self.label_horBottom.push_back(' ');
+            }
+            self.label_horBottom.append(tempStr);
+        };
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+            self.label_horBottom = std::string(self.areaWidth + 2, ' ');
+        }
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
+                 dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+            // TODO: What to do with Line and Multiline axisLabel bottom
+        }
+        else {
+            auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
+            if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
+                auto const &valColRef = ds.doubleCols.at(valColTypeRef.second);
+                computeLabels(valColRef);
+            }
+            else {
+                auto const &valColRef = ds.llCols.at(valColTypeRef.second);
+                computeLabels(valColRef);
+            }
+        }
+
+
+        // Construct the [0:end] point label
         return self;
     }
 
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
-        if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
-            auto const &valColRef   = ds.doubleCols.at(valColTypeRef.second);
+
+        auto computePA = [&]<typename T>(T const &valColRef) -> void {
             auto const [minV, maxV] = std::ranges::minmax(valColRef);
-            double stepSize         = (maxV - minV) / self.areaWidth;
-            for (auto const &val : valColRef) {
-                self.plotArea.push_back(std::string());
-                size_t rpt = static_cast<size_t>((val - minV) / stepSize);
-                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Foreground_Green));
-                for (size_t i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
-                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Default));
-                for (size_t i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
+            long long scalingFactor;
+            if constexpr (std::is_integral_v<std::decay_t<typename T::value_type>>) {
+                scalingFactor = LONG_LONG_MAX / (std::max(std::abs(maxV), std::abs(minV)));
             }
-        }
-        else {
-            auto const &valColRef   = ds.llCols.at(valColTypeRef.second);
-            auto const [minV, maxV] = std::ranges::minmax(valColRef);
-            long long scalingFactor = LONG_LONG_MAX / (std::max(std::abs(maxV), std::abs(minV)));
-            long long maxV_adj      = maxV * scalingFactor;
-            long long minV_adj      = minV * scalingFactor;
-            long long stepSize      = (maxV_adj - minV_adj) / self.areaWidth;
+            else if constexpr (std::is_floating_point_v<std::decay_t<typename T::value_type>>) { scalingFactor = 1; }
+            else { static_assert(false); } // Can't plot non-numeric values
+
+            auto maxV_adj = maxV * scalingFactor;
+            auto minV_adj = minV * scalingFactor;
+            auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth + 1);
 
             for (auto const &val : valColRef) {
                 self.plotArea.push_back(std::string());
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-
                 self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Foreground_Green));
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
                 self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Default));
                 for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
             }
-        }
+        };
 
+        auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
+        if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
+            computePA(ds.doubleCols.at(valColTypeRef.second));
+        }
+        else { computePA(ds.llCols.at(valColTypeRef.second)); }
         return self;
     }
 };
