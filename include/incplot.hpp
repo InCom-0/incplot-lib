@@ -83,6 +83,10 @@ private:
     static constexpr auto const _S_extendedCVTScolMap = std::array<std::pair<int, std::string_view>, 43>{{{1, "2"}}};
 
 public:
+    // Class should be impossible to instantiate
+    TermColors()                    = delete;
+    void *operator new(std::size_t) = delete;
+
     static constexpr auto get_basicColor(Color_CVTS const col) {
         return std::string(std::ranges::find_if(_S_basicCVTScolMap, [&](auto &&pr) {
                                return pr.first == static_cast<int>(col);
@@ -147,8 +151,20 @@ public:
 
     static constexpr std::string term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
 
+    // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
+    static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⠁', U'⠈', U'⠂', U'⠐', U'⠄', U'⠠', U'⡀', U'⢀'};
+    static constexpr char32_t                               braille_blank = U'⠀';
+
+    static constexpr std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
+    static constexpr std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
+    static constexpr std::array<char32_t, 4> blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
+
+
 private:
 public:
+    // Class should be impossible to instantiate
+    Config()                        = delete;
+    void *operator new(std::size_t) = delete;
 };
 
 
