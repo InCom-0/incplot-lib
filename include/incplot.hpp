@@ -12,8 +12,6 @@
 #include <utility>
 #include <variant>
 
-
-#include <more_concepts/more_concepts.hpp>
 #include <nlohmann/json.hpp>
 
 
@@ -525,7 +523,7 @@ struct Parser {
     }
 
     template <typename T>
-    requires more_concepts::container<T> && std::is_convertible_v<typename T::value_type, std::string_view>
+    requires std::is_convertible_v<typename T::value_type, std::string_view>
     static DataStore parse_NDJSON(T containerOfStringLike) {
 
         for (auto &oneStr : containerOfStringLike) {

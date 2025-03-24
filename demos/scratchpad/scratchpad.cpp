@@ -1,7 +1,6 @@
 #include <codecvt>
 #include <locale>
 #include <string>
-#define OOF_IMPL
 #include <print>
 #include <windows.h>
 

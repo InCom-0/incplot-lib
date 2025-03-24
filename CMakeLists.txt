@@ -15,7 +15,6 @@ target_include_directories(incplot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set_target_properties(incplot PROPERTIES LINKER_LANGUAGE CXX)
 
 target_link_libraries(incplot PUBLIC
-    nlohmann_json::nlohmann_json
-    more_concepts::more_concepts)
+    nlohmann_json::nlohmann_json)
 
 add_subdirectory(demos)
