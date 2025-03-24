@@ -118,6 +118,39 @@ public:
     }
 };
 
+class Config {
+public:
+    static constexpr std::string axisTick_l = "┤";
+    static constexpr std::string axisTick_b = "┬";
+    static constexpr std::string axisTick_r = "├";
+    static constexpr std::string axisTick_t = "┴";
+
+    static constexpr std::string axisFiller_l = "│";
+    static constexpr std::string axisFiller_b = "─";
+    static constexpr std::string axisFiller_r = "│";
+    static constexpr std::string axisFiller_t = "─";
+
+    static constexpr std::string areaCorner_tl = "┌";
+    static constexpr std::string areaCorner_bl = "└";
+    static constexpr std::string areaCorner_br = "┘";
+    static constexpr std::string areaCorner_tr = "┐";
+
+    static constexpr Color_CVTS color_Axes_enum  = Color_CVTS::Bright_Foreground_Black;
+    static constexpr Color_CVTS color_Vals1_enum = Color_CVTS::Foreground_Green;
+    static constexpr Color_CVTS color_Vals2_enum = Color_CVTS::Foreground_Red;
+    static constexpr Color_CVTS color_Vals3_enum = Color_CVTS::Foreground_Blue;
+
+    static constexpr std::string color_Axes  = TermColors::get_basicColor(color_Axes_enum);
+    static constexpr std::string color_Vals1 = TermColors::get_basicColor(color_Vals1_enum);
+    static constexpr std::string color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
+    static constexpr std::string color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
+
+    static constexpr std::string term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
+
+private:
+public:
+};
+
 
 // FORWARD DELCARATIONS
 struct DataStore;
@@ -226,13 +259,13 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
     std::vector<std::string> res;
     for (size_t i_step = 0; i_step < steps; ++i_step) {
         for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) {
-            res.push_back(TermColors::get_coloured(filler, Color_CVTS::Bright_Foreground_Black));
+            res.push_back(TermColors::get_coloured(filler, Config::color_Axes_enum));
         }
-        res.push_back(TermColors::get_coloured(tick, Color_CVTS::Bright_Foreground_Black));
+        res.push_back(TermColors::get_coloured(tick, Config::color_Axes_enum));
     }
     size_t sizeOfRest = totalWidth - (steps) - (steps * fillerSize);
     for (size_t i_filler = 0; i_filler < sizeOfRest; ++i_filler) {
-        res.push_back(TermColors::get_coloured(filler, Color_CVTS::Bright_Foreground_Black));
+        res.push_back(TermColors::get_coloured(filler, Config::color_Axes_enum));
     }
     return res;
 }
@@ -531,11 +564,32 @@ private:
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_plotType(DesiredPlot &&dp, DataStore const &ds) {
         if (dp.plot_type_name.has_value()) { return dp; }
 
-        if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
-        else if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
-        else if (dp.values_colIDs.size() == 3) { dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>(); }
-        else if (dp.values_colIDs.size() == 2) { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
-        // This thing never triggers
+        // Helpers
+        auto   valColTypeRng = std::views::filter(ds.colTypes, [](auto &&a) {
+            return (a.first == NLMjson::value_t::number_float || a.first == NLMjson::value_t::number_integer ||
+                    a.first == NLMjson::value_t::number_unsigned);
+        });
+        size_t valCols_sz    = std::ranges::count_if(valColTypeRng, [](auto &&a) { return true; });
+
+        auto labelColTypeRng =
+            std::views::filter(ds.colTypes, [](auto &&a) { return (a.first == NLMjson::value_t::string); });
+        size_t labelCols_sz = std::ranges::count_if(labelColTypeRng, [](auto &&a) { return true; });
+
+        // Actual decision making
+        if (valCols_sz > 4) { return std::unexpected(Unexp_plotSpecs::valCols); }
+        // BarV
+        else if (valCols_sz == 1 && labelCols_sz > 0) {
+            dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
+        }
+        // Bubble ? Maybe later
+        // else if (valCols_sz == 3) { dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>(); }
+
+        // Scatter
+        else if (valCols_sz == 2 && labelCols_sz == 0) {
+            dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>();
+        }
+        // Single line
+        else if (valCols_sz == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::Line>(); }
         else { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
 
         return dp;
@@ -863,11 +917,12 @@ public:
         // Build horizontal top axis line
         result.append(std::string(pad_left, ' '));
         result.append(labels_verLeft.front());
-        result.append(TermColors::get_basicColor(Color_CVTS::Bright_Foreground_Black));
+        result.append(Config::color_Axes);
         result.append("┌");
         for (auto const &toAppend : axis_horTop) { result.append(toAppend); }
+        result.append(Config::color_Axes);
         result.append("┐");
-        result.append(TermColors::get_basicColor(Color_CVTS::Default));
+        result.append(Config::term_setDefault);
         result.append(labels_verRight.front());
         result.append(std::string(pad_right, ' '));
         result.push_back('\n');
@@ -887,12 +942,12 @@ public:
         // Add horizontal bottom axis line
         result.append(std::string(pad_left, ' '));
         result.append(labels_verLeft.back());
-        result.append(TermColors::get_basicColor(Color_CVTS::Bright_Foreground_Black));
+        result.append(Config::color_Axes);
         result.append("└");
         for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
-        result.append(TermColors::get_basicColor(Color_CVTS::Bright_Foreground_Black));
+        result.append(Config::color_Axes);
         result.append("┘");
-        result.append(TermColors::get_basicColor(Color_CVTS::Default));
+        result.append(Config::term_setDefault);
         result.append(labels_verRight.back());
         result.append(std::string(pad_right, ' '));
         result.push_back('\n');
@@ -1063,7 +1118,8 @@ class BarV : public Base {
     auto compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            self.axis_verLeft = detail::create_tickMarkedAxis("│", "┤", self.areaHeight, self.areaHeight);
+            self.axis_verLeft = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight,
+                                                              self.areaHeight);
         }
         // All else should have vl axis ticks according to numeric values
         else {}
@@ -1135,11 +1191,13 @@ class BarV : public Base {
     auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            self.axis_horBottom = detail::create_tickMarkedAxis("─", "┬", self.areaWidth, self.areaWidth);
+            self.axis_horBottom =
+                detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b, self.areaWidth, self.areaWidth);
         }
         else {
             // Axis with ticks is contructed according to num of 'steps' which is the num of ticks and the areaWidth
-            self.axis_horBottom = detail::create_tickMarkedAxis("─", "┬", self.axis_horBottomSteps, self.areaWidth);
+            self.axis_horBottom = detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b,
+                                                                self.axis_horBottomSteps, self.areaWidth);
         }
         return self;
     }
@@ -1230,9 +1288,9 @@ class BarV : public Base {
             for (auto const &val : valColRef) {
                 self.plotArea.push_back(std::string());
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Foreground_Green));
+                self.plotArea.back().append(Config::color_Vals1);
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
-                self.plotArea.back().append(TermColors::get_basicColor(Color_CVTS::Default));
+                self.plotArea.back().append(Config::term_setDefault);
                 for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
             }
         };
@@ -1317,7 +1375,7 @@ static inline const auto mp_names2Types =
 inline auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
     auto ref          = mp_names2Types.at(dp.plot_type_name.value());
     using varType     = decltype(ref);
-    auto overload_set = [&]<typename T>(T const &variantItem) -> PlotDrawer<varType> {
+    auto overload_set = [&](auto const &variantItem) -> PlotDrawer<varType> {
         return PlotDrawer<varType>(variantItem, dp, ds);
     };
     return std::visit(overload_set, ref);
