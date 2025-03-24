@@ -1,8 +1,9 @@
 #include <codecvt>
 #include <locale>
-#include <string>
 #include <print>
+#include <string>
 #include <windows.h>
+
 
 #include <incplot.hpp>
 
@@ -91,7 +92,7 @@ int main() {
 
     std::array<std::array<char32_t, 2>, 4> ttt{U'⠁', U'⠈', U'⠂', U'⠐', U'⠄', U'⠠', U'⡀', U'⢀'};
 
-    char32_t test = ttt[0][0] | ttt[0][1] | ttt[1][0] | ttt[1][1] | ttt[2][0] | ttt[2][1] | ttt[3][0]| ttt[3][0];
+    char32_t test = ttt[0][0] | ttt[0][1] | ttt[1][0] | ttt[1][1] | ttt[2][0] | ttt[2][1] | ttt[3][0] | ttt[3][0];
 
     std::u32string testStr(1, test);
     std::string    retu(testStr.begin(), testStr.end());
@@ -99,6 +100,11 @@ int main() {
     std::print("{}", conv.to_bytes(testStr));
 
     auto rp = incplot::Config::max_valLabelSize;
+
+
+    auto bd_res = incplot::detail::BrailleDrawer::drawPoints(32, 8, {1, 3, 5,2,4,8,10,10,16,11,10,9,9,9,8,4}, {1,1,1,1,2,2,2,2,5,6,7,12,17,15, 15, 27});
+
+    for (auto const &line : bd_res) { std::print("{0}\n", line); }
 
     return 0;
 }

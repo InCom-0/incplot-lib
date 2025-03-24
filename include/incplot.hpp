@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <expected>
 #include <optional>
@@ -12,6 +13,7 @@
 #include <variant>
 
 #include <nlohmann/json.hpp>
+#include <vector>
 
 
 namespace incom {
@@ -174,7 +176,7 @@ public:
                                                                    "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
 
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
-    static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⠁', U'⠈', U'⠂', U'⠐', U'⠄', U'⠠', U'⡀', U'⢀'};
+    static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⡀', U'⢀', U'⠄', U'⠠', U'⠂', U'⠐', U'⠁', U'⠈'};
     static constexpr char32_t                               braille_blank = U'⠀';
 
     static constexpr std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
@@ -237,6 +239,16 @@ enum class Unexp_plotDrawer {
 // UNEXPECTED AND OTHER SIMILAR ENUMS --- END
 
 namespace detail {
+constexpr inline std::string convert_u32u8(std::u32string const &str) {
+    static std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
+    return conv.to_bytes(str);
+}
+
+constexpr inline std::u32string convert_u32u8(std::string const &str) {
+    static std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
+    return conv.from_bytes(str);
+}
+
 // Compute 'on display' size of a string (correctly taking into account UTF8 glyphs)
 constexpr inline std::size_t strlen_utf8(const std::string &str) {
     std::size_t length = 0;
@@ -391,11 +403,68 @@ constexpr inline std::string format_toMax5length(T &&val) {
 
 template <typename... Ts>
 requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName_v<Ts...>
-constexpr auto generate_variantTypeMap() {
+constexpr inline auto generate_variantTypeMap() {
     std::unordered_map<std::string, std::variant<Ts...>> res;
     (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
     return res;
 }
+
+class BrailleDrawer {
+private:
+    std::vector<std::vector<std::u32string>> m_canvasColors;
+    std::vector<std::vector<char32_t>>       m_canvasBraille;
+    std::vector<std::u32string>              m_colorPallete = std::vector<std::u32string>{
+        detail::convert_u32u8(Config::color_Vals1), detail::convert_u32u8(Config::color_Vals2),
+        detail::convert_u32u8(Config::color_Vals3)};
+    std::u32string s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
+
+public:
+    BrailleDrawer() {};
+    BrailleDrawer(size_t canvas_width, size_t canvas_height)
+        : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
+          m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))) {};
+
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height,
+                                                         std::vector<double> const &&y_values,
+                                                         std::vector<double> const &&x_values) {
+        BrailleDrawer bd(canvas_width, canvas_height);
+
+        auto [yMin, yMax] = std::ranges::minmax(y_values);
+        auto [xMin, xMax] = std::ranges::minmax(x_values);
+
+        auto yStepSize = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
+        auto xStepSize = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
+
+        auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal) {
+            auto y       = static_cast<size_t>(((yVal - yMin) / yStepSize)) / 4;
+            auto yChrPos = static_cast<size_t>(((yVal - yMin) / yStepSize)) % 4;
+
+            auto x       = static_cast<size_t>(((xVal - xMin) / xStepSize)) / 2;
+            auto xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
+
+            bd.m_canvasBraille[y][x] |= Config::braille_map[yChrPos][xChrPos];
+            bd.m_canvasColors[y][x]   = bd.m_colorPallete.front();
+        };
+
+        for (size_t i = 0; i < x_values.size(); ++i) { placePointOnCanvas(y_values[i], x_values[i]); }
+
+        std::vector<std::string> res;
+        for (int rowID = bd.m_canvasBraille.size() - 1; rowID > -1; --rowID) {
+            std::u32string oneLine;
+            for (size_t colID = 0; colID < bd.m_canvasBraille.front().size(); ++colID) {
+                if (bd.m_canvasColors[rowID][colID].empty()) { oneLine.push_back(bd.m_canvasBraille[rowID][colID]); }
+                else {
+                    oneLine.append(bd.m_canvasColors[rowID][colID]);
+                    oneLine.push_back(bd.m_canvasBraille[rowID][colID]);
+                    oneLine.append(bd.s_terminalDefault);
+                }
+            }
+            res.push_back(detail::convert_u32u8(oneLine));
+        }
+
+        return res;
+    }
+};
 
 } // namespace detail
 
@@ -1160,12 +1229,9 @@ class BarV : public Base {
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         self.labels_verRight.push_back("");
-        for (auto const &_ : ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second)) {
-            // TODO: Logic for vr labels
-            self.labels_verRight.push_back("");
-        }
+        for (int i = 0; i < self.areaHeight; ++i) { self.labels_verRight.push_back(""); }
         self.labels_verRight.push_back("");
-        return (self);
+        return self;
     }
 
     auto compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -1175,15 +1241,19 @@ class BarV : public Base {
                                                               self.areaHeight);
         }
         // All else should have vl axis ticks according to numeric values
-        else {}
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+            auto tmpAxis = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l,
+                                                         self.axis_verLeftSteps, self.areaHeight);
+            std::ranges::reverse(tmpAxis);
+            self.axis_verLeft = std::move(tmpAxis);
+        }
 
         return self;
     }
     auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
-        }
+        if (false) {}
+        else { self.axis_verRight = std::vector(self.areaHeight, std::string(" ")); }
         return self;
     }
 
@@ -1317,9 +1387,6 @@ class BarV : public Base {
                 computeLabels(valColRef);
             }
         }
-
-
-        // Construct the [0:end] point label
         return self;
     }
 
@@ -1372,6 +1439,66 @@ class Multiline : public Line {
 
 class Scatter : public BarV {
     friend class Base;
+
+    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        // TODO: Special logic for value labels of vertical axes
+        return (self);
+    }
+
+    auto compute_axisLabels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
+        auto computeLabels = [&](auto const &valColRef) -> void {
+            size_t const fillerSize = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
+            auto const [minV, maxV] = std::ranges::minmax(valColRef);
+            auto   stepSize         = ((maxV - minV) / ((2 * self.areaWidth) + 1)) * 2;
+            size_t placedChars      = 0;
+
+            // Construct the [0:0] point label
+            std::string tempStr = detail::format_toMax5length(minV - stepSize);
+            self.label_horBottom.append(tempStr);
+            placedChars += detail::strlen_utf8(tempStr);
+
+            // Construct the tick labels
+            for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
+                while (placedChars < (i * (fillerSize + 1) + fillerSize)) {
+                    self.label_horBottom.push_back(' ');
+                    placedChars++;
+                }
+                tempStr =
+                    detail::format_toMax5length((minV - stepSize) + ((i * (fillerSize + 1) + fillerSize) * stepSize));
+                self.label_horBottom.append(tempStr);
+                placedChars += detail::strlen_utf8(tempStr);
+            }
+
+            // Construct the [0:end] point label
+            tempStr = detail::format_toMax5length(maxV + (stepSize / 2));
+            for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
+                self.label_horBottom.push_back(' ');
+            }
+            self.label_horBottom.append(tempStr);
+        };
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+            self.label_horBottom = std::string(self.areaWidth + 2, ' ');
+        }
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
+                 dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+            // TODO: What to do with Line and Multiline axisLabel bottom
+        }
+        else {
+            auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
+            if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
+                auto const &valColRef = ds.doubleCols.at(valColTypeRef.second);
+                computeLabels(valColRef);
+            }
+            else {
+                auto const &valColRef = ds.llCols.at(valColTypeRef.second);
+                computeLabels(valColRef);
+            }
+        }
+        return self;
+    }
 };
 
 class Bubble : public Scatter {
