@@ -73,7 +73,7 @@ int main() {
 
     std::print("{}\n", outExp.value());
 
-    std::print("{}\n", incplot::detail::format_toMax4length(0.00015836));
+    std::print("{}\n", incplot::detail::format_toMax5length(0.00015836));
 
     std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green),
                incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
@@ -97,6 +97,8 @@ int main() {
     std::string    retu(testStr.begin(), testStr.end());
 
     std::print("{}", conv.to_bytes(testStr));
+
+    auto rp = incplot::Config::max_valLabelSize;
 
     return 0;
 }

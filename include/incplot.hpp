@@ -1,11 +1,10 @@
 #pragma once
 
-#include <algorithm>
-#include <array>
-#include <cstddef>
+#include <cmath>
 #include <expected>
 #include <optional>
 #include <print>
+#include <ranges>
 #include <source_location>
 #include <string>
 #include <type_traits>
@@ -17,6 +16,23 @@
 
 namespace incom {
 namespace terminal_plot {
+
+// FORWARD DELCARATIONS
+namespace plot_structures {
+class Base;
+class BarV;
+class BarH;
+class Line;
+class Multiline;
+class Scatter;
+class Bubble;
+} // namespace plot_structures
+
+struct DataStore;
+struct Parser;
+class DesiredPlot;
+
+// FORWARD DELCARATIONS --- END
 
 enum class Color_CVTS {
     Default                   = 0,
@@ -147,7 +163,15 @@ public:
     static constexpr std::string color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
     static constexpr std::string color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
 
+    static constexpr size_t max_numOfValCols = 4uz;
+
+    static constexpr size_t axisLabels_maxLength_vl = 30uz;
+    static constexpr size_t axisLabels_maxLength_vr = 30uz;
+
     static constexpr std::string term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
+
+    static constexpr std::array<std::string, 21> const si_prefixes{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
+                                                                   "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
 
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
     static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⠁', U'⠈', U'⠂', U'⠐', U'⠄', U'⠠', U'⡀', U'⢀'};
@@ -157,6 +181,34 @@ public:
     static constexpr std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
     static constexpr std::array<char32_t, 4> blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
 
+    // TODO: Fix this so that valLabelSize is calculated from the actual possible label strings of values ... this will
+    // be tremendously easier with c++26 so for the time being this is assuming maxLabelSize of 5
+    static constexpr size_t max_valLabelSize = []() {
+        /* std::vector<std::string> vect;
+
+        double maxVal = std::numeric_limits<double>::max();
+        double minVal = std::numeric_limits<double>::min();
+        while (maxVal != 0 && minVal != 0) {
+            vect.push_back(std::string("AAAAA"));
+            vect.push_back(std::string("AAAAA"));
+            maxVal /= 10;
+            minVal /= 10;
+        }
+
+        long long maxVal_ll = std::numeric_limits<long long>::max();
+        long long minVal_ll = std::numeric_limits<long long>::min();
+        while (maxVal_ll != 0 && minVal_ll != 0) {
+            vect.push_back(std::string("AAAAA"));
+            vect.push_back(std::string("AAAAA"));
+            maxVal_ll /= 10;
+            minVal_ll /= 10;
+        }
+
+        size_t maxSz = 0;
+        for (auto const &item : vect) { maxSz = std::max(maxSz, item.size()); }
+        return maxSz; */
+        return 5uz;
+    }();
 
 private:
 public:
@@ -165,22 +217,7 @@ public:
     void *operator new(std::size_t) = delete;
 };
 
-
-// FORWARD DELCARATIONS
-struct DataStore;
-struct Parser;
-class DesiredPlot;
-
-namespace plot_structures {
-class Base;
-class BarV;
-class BarH;
-class Line;
-class Multiline;
-class Scatter;
-class Bubble;
-} // namespace plot_structures
-
+// UNEXPECTED AND OTHER SIMILAR ENUMS
 enum class Unexp_plotSpecs {
     plotType,
     labelCol,
@@ -197,8 +234,10 @@ enum class Unexp_plotDrawer {
     barVplot_tooWide,
     unknownEerror
 };
+// UNEXPECTED AND OTHER SIMILAR ENUMS --- END
 
 namespace detail {
+// Compute 'on display' size of a string (correctly taking into account UTF8 glyphs)
 constexpr inline std::size_t strlen_utf8(const std::string &str) {
     std::size_t length = 0;
     for (char c : str) {
@@ -207,9 +246,7 @@ constexpr inline std::size_t strlen_utf8(const std::string &str) {
     return length;
 }
 
-/*
-Quasi compile time reflection for typenames
-*/
+// Quasi compile time reflection for typenames
 template <typename T>
 constexpr auto TypeToString() {
     auto EmbeddingSignature = std::string{std::source_location::current().function_name()};
@@ -218,18 +255,20 @@ constexpr auto TypeToString() {
 }
 
 template <typename... Ts>
-constexpr bool __none_sameLastLevelTypeName_HLPR() {
-    std::vector<std::string> vect;
-    (vect.push_back(TypeToString<Ts>()), ...);
-    std::ranges::sort(vect, std::less());
-    auto [beg, end] = std::ranges::unique(vect);
-    vect.erase(beg, end);
-    return vect.size() == sizeof...(Ts);
-}
+struct none_sameLastLevelTypeName {
+    static consteval bool operator()() {
+        std::vector<std::string> vect;
+        (vect.push_back(TypeToString<Ts>()), ...);
+        std::ranges::sort(vect, std::less());
+        auto [beg, end] = std::ranges::unique(vect);
+        vect.erase(beg, end);
+        return vect.size() == sizeof...(Ts);
+    }
+};
 
 // Just the 'last level' type name ... not the fully qualified typename
 template <typename... Ts>
-concept none_sameLastLevelTypeName = __none_sameLastLevelTypeName_HLPR<Ts...>();
+concept none_sameLastLevelTypeName_v = none_sameLastLevelTypeName<Ts...>::operator()();
 
 constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
@@ -259,12 +298,6 @@ constexpr size_t get_axisFillerSize(size_t axisLength, size_t axisStepCount) {
     return (axisLength - axisStepCount) / (axisStepCount + 1);
 }
 
-static inline const std::array<size_t, 1024> axisSizeToSteps_arr = []() {
-    std::array<size_t, 1024> res;
-    for (size_t i = 0; auto &item : res) { item = (i++); }
-    return res;
-}();
-
 // TODO: Also make a version where the tick positions are explictily specified in one vector of size_t
 constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
                                                                 size_t totalWidth) {
@@ -283,7 +316,7 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
     }
     return res;
 }
-constexpr inline size_t guess_stepsOnHorAxis(size_t width, size_t maxLabelSize = 4) {
+constexpr inline size_t guess_stepsOnHorAxis(size_t width, size_t maxLabelSize = Config::max_valLabelSize) {
     // Substract the beginning and the end label sizes and -2 for spacing
     width += (-2 * maxLabelSize + 2) - 2;
     return (width / (maxLabelSize + 4));
@@ -339,28 +372,25 @@ public:
     }
 };
 
-inline constexpr std::array<std::string, 21> const arr{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
-                                                       "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
-
 template <typename T>
 requires std::is_arithmetic_v<std::decay_t<T>>
-inline std::pair<double, std::optional<std::string>> rebase_2_SIPrefix(T &&value) {
+constexpr inline std::pair<double, std::optional<std::string>> rebase_2_SIPrefix(T &&value) {
     if (value == 0) { return {0, ""}; }
     else {
         int target = value >= 1 ? (std::log10(value) / 3) : (std::log10(value) / 3) - 1;
-        return {value / std::pow(1000, target), arr.at(target + 10)};
+        return {value / std::pow(1000, target), Config::si_prefixes.at(target + 10)};
     }
 }
 
 template <typename T>
 requires std::is_arithmetic_v<std::decay_t<T>>
-std::string format_toMax4length(T &&val) {
+constexpr inline std::string format_toMax5length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPrefix(std::forward<decltype(val)>(val));
     return std::format("{:.{}f}{}", rbsed, rbsed >= 10 ? 0 : 1, unit.value_or(""));
 }
 
 template <typename... Ts>
-requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName<Ts...>
+requires(std::is_base_of_v<plot_structures::Base, Ts>, ...) && detail::none_sameLastLevelTypeName_v<Ts...>
 constexpr auto generate_variantTypeMap() {
     std::unordered_map<std::string, std::variant<Ts...>> res;
     (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
@@ -370,13 +400,13 @@ constexpr auto generate_variantTypeMap() {
 } // namespace detail
 
 
-using NLMjson = nlohmann::json;
-
 // Data storage for the actual data that are to be plotted
 struct DataStore {
+    using NLMjson = nlohmann::json;
     // The json this was constucted with/from ... possibly not strictly necessary to keep, but whatever
     std::vector<NLMjson> constructedWith;
 
+    // TODO: Maybe provide my own 'ColType' enum ... consider
     // Data descriptors
     std::vector<std::string>                         colNames;
     std::vector<std::pair<NLMjson::value_t, size_t>> colTypes; // First =  ColType, Second = ID in data vector
@@ -440,7 +470,7 @@ struct DataStore {
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
 struct Parser {
-
+    using NLMjson = nlohmann::json;
     static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
         // Validate that all the JSON objects parsed above have the same structure
         for (auto const &js : jsonVec) {
@@ -553,6 +583,8 @@ struct Parser {
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
 class DesiredPlot {
+    using NLMjson = nlohmann::json;
+
 private:
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
                                                                                   DataStore const &ds) {
@@ -590,7 +622,7 @@ private:
         size_t labelCols_sz = std::ranges::count_if(labelColTypeRng, [](auto &&a) { return true; });
 
         // Actual decision making
-        if (valCols_sz > 4) { return std::unexpected(Unexp_plotSpecs::valCols); }
+        if (valCols_sz > Config::max_numOfValCols) { return std::unexpected(Unexp_plotSpecs::valCols); }
         // BarV
         else if (valCols_sz == 1 && labelCols_sz > 0) {
             dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
@@ -765,15 +797,15 @@ public:
 namespace plot_structures {
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter
 // etc.)
-// Create your own 'plot structure' ie. type of plot by deriving from 'Base' class (or from other classes derived from
-// it) and overriding pure virtual functions. The types properly derived from 'Base' can then be used inside
+// Create your own 'plot structure' ie. type of plot by deriving from 'Base' class (or from other classes derived
+// from it) and overriding pure virtual functions. The types properly derived from 'Base' can then be used inside
 // 'PlotDrawer' inside std::variant<...>. The idea is to be able to easily customize and also possibly 'partially
 // customize' as needed You always have to make the 'Base' class a friend ... this enables really nice static
 // polymorphism coupled with 'deducing this' feature of C++23
 class Base {
 protected:
     // Descriptors - First thing to be computed.
-    // BEWARE: The sizes are 'as displayed' not the 'size in bytes' ... need to account for UTF8
+    // BEWARE: The sizes here are 'as displayed' not the 'size in bytes' ... need to account for UTF8
     size_t areaWidth = 0, areaHeight = 0;
     size_t labels_verLeftWidth = 0, labels_verRightWidth = 0;
 
@@ -806,6 +838,50 @@ protected:
     std::vector<std::string> corner_topRight;
 
     std::vector<std::string> plotArea;
+
+    // Compute size in bytes (for reserving the output str size), not size in 'displayed characters'
+    size_t compute_lengthOfSelf() const {
+
+        size_t lngth = pad_top + pad_bottom;
+
+        // Horizontal top axis name and axis labels lines
+        lngth += axisName_horTop_bool ? (axisName_horTop.size() + corner_topLeft.front().size() +
+                                         corner_topRight.front().size() + pad_left + pad_right)
+                                      : 0;
+        lngth += labels_horTop_bool ? (label_horTop.size() + corner_topLeft.front().size() +
+                                       corner_topRight.front().size() + pad_left + pad_right)
+                                    : 0;
+
+        // First and last vertical labels
+        lngth += labels_verLeft.front().size() + labels_verRight.front().size() + labels_verLeft.back().size() +
+                 labels_verRight.back().size();
+
+        // The 'corners'
+        lngth += Config::areaCorner_tl.size() + Config::areaCorner_tr.size() + Config::areaCorner_bl.size() +
+                 Config::areaCorner_br.size();
+
+        // All top and bottom axes
+        for (int i = 0; i < areaWidth; i++) { lngth += (axis_horTop.at(i).size() + axis_horBottom.at(i).size()); }
+
+        // Main plot area
+        for (int i = 0; i < areaHeight; ++i) {
+            lngth += labels_verLeft.at(i + 1).size() + labels_verRight.at(i + 1).size();
+            lngth += axis_verLeft.at(i).size();
+            lngth += axis_verRight.at(i).size();
+            lngth += plotArea.at(i).size();
+        }
+
+        lngth += ((areaHeight + 2) * (pad_left + pad_right));
+
+        // Horizontal bottom axis name and axis labels lines
+        lngth += labels_horBottom_bool ? (label_horBottom.size() + corner_bottomLeft.front().size() +
+                                          corner_bottomRight.front().size() + pad_left + pad_right)
+                                       : 0;
+        lngth += axisName_horBottom_bool ? (axisName_horBottom.size() + corner_bottomLeft.front().size() +
+                                            corner_bottomRight.front().size() + pad_left + pad_right)
+                                         : 0;
+        return lngth;
+    }
 
 public:
     // This needs to get called after default construction
@@ -861,47 +937,9 @@ public:
         return res.value();
     }
 
+    // TODO: Implement 'valiate_self()' ... consider if it is even needed or if its not already done elsewhere
     bool validate_self() const { return true; }
 
-    size_t compute_lengthOfSelf() const {
-
-        size_t lngth = pad_top + pad_bottom;
-
-        // Horizontal top axis name and axis labels lines
-        lngth += axisName_horTop_bool ? (axisName_horTop.size() + corner_topLeft.front().size() +
-                                         corner_topRight.front().size() + pad_left + pad_right)
-                                      : 0;
-        lngth += labels_horTop_bool ? (label_horTop.size() + corner_topLeft.front().size() +
-                                       corner_topRight.front().size() + pad_left + pad_right)
-                                    : 0;
-
-        // First and last vertical labels
-        lngth += labels_verLeft.front().size() + labels_verRight.front().size() + labels_verLeft.back().size() +
-                 labels_verRight.back().size();
-
-        // The 'corners'
-        lngth += sizeof("┌") + sizeof("┐") + sizeof("└") + sizeof("┘") - 4;
-
-        // All top and bottom axes
-        for (int i = 0; i < areaWidth; i++) { lngth += (axis_horTop.at(i).size() + axis_horBottom.at(i).size()); }
-
-        // Main plot area
-        for (int i = 0; i < areaHeight; ++i) {
-            lngth += labels_verLeft.at(i + 1).size() + labels_verRight.at(i + 1).size();
-            lngth += axis_verLeft.at(i).size();
-            lngth += axis_verRight.at(i).size();
-            lngth += plotArea.at(i).size();
-        }
-
-        // Horizontal bottom axis name and axis labels lines
-        lngth += labels_horBottom_bool ? (label_horBottom.size() + corner_bottomLeft.front().size() +
-                                          corner_bottomRight.front().size() + pad_left + pad_right)
-                                       : 0;
-        lngth += axisName_horBottom_bool ? (axisName_horBottom.size() + corner_bottomLeft.front().size() +
-                                            corner_bottomRight.front().size() + pad_left + pad_right)
-                                         : 0;
-        return lngth;
-    }
 
     std::string build_plotAsString() const {
         std::string result;
@@ -1051,8 +1089,9 @@ class BarV : public Base {
 
             // TODO: Convert the 'hard limit' into some sort of constexpr config thing
             self.labels_verLeftWidth =
-                std::min(30uz, std::min(std::ranges::max(labelSizes) + 1,
-                                        (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
+                std::min(Config::axisLabels_maxLength_vl,
+                         std::min(std::ranges::max(labelSizes) + 1,
+                                  (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
         }
         // TODO: Computation for vertical numeric labels
         else {}
@@ -1148,7 +1187,8 @@ class BarV : public Base {
         return self;
     }
 
-    // All corners are simply empty as default ... but can possibly be used for something later if overrided in derived
+    // All corners are simply empty as default ... but can possibly be used for something later if overrided in
+    // derived
     auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horTop_bool) { self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth, ' ')); }
@@ -1237,7 +1277,7 @@ class BarV : public Base {
             size_t placedChars      = 0;
 
             // Construct the [0:0] point label
-            std::string tempStr = detail::format_toMax4length(minV);
+            std::string tempStr = detail::format_toMax5length(minV);
             self.label_horBottom.append(tempStr);
             placedChars += detail::strlen_utf8(tempStr);
 
@@ -1247,13 +1287,13 @@ class BarV : public Base {
                     self.label_horBottom.push_back(' ');
                     placedChars++;
                 }
-                tempStr = detail::format_toMax4length(minV + ((i * (fillerSize + 1) + fillerSize) * stepSize));
+                tempStr = detail::format_toMax5length(minV + ((i * (fillerSize + 1) + fillerSize) * stepSize));
                 self.label_horBottom.append(tempStr);
                 placedChars += detail::strlen_utf8(tempStr);
             }
 
             // Construct the [0:end] point label
-            tempStr = detail::format_toMax4length(maxV);
+            tempStr = detail::format_toMax5length(maxV);
             for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
                 self.label_horBottom.push_back(' ');
             }
