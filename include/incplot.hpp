@@ -170,6 +170,12 @@ public:
     static constexpr size_t axisLabels_maxLength_vl = 30uz;
     static constexpr size_t axisLabels_maxLength_vr = 30uz;
 
+    static constexpr size_t axis_stepSize_vl = 5uz;
+    static constexpr size_t axis_stepSize_vr = 5uz;
+
+    static constexpr size_t axis_verName_width_vl = 3uz;
+    static constexpr size_t axis_verName_width_vr = 3uz;
+
     static constexpr std::string term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
 
     static constexpr std::array<std::string, 21> const si_prefixes{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
@@ -333,6 +339,11 @@ constexpr inline size_t guess_stepsOnHorAxis(size_t width, size_t maxLabelSize =
     width += (-2 * maxLabelSize + 2) - 2;
     return (width / (maxLabelSize + 4));
 }
+constexpr inline size_t guess_stepsOnVerAxis(size_t height, size_t verticalStepSize = Config::axis_stepSize_vl) {
+    // Substract the beginning and the end label sizes and -2 for spacing
+    height += (-2) - (verticalStepSize - 1);
+    return (height / verticalStepSize);
+}
 
 
 // Ring vector for future usage in 'scrolling plot' scenarios
@@ -418,12 +429,13 @@ private:
         detail::convert_u32u8(Config::color_Vals3)};
     std::u32string s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
 
-public:
+
     BrailleDrawer() {};
     BrailleDrawer(size_t canvas_width, size_t canvas_height)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))) {};
 
+public:
     static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height,
                                                          std::vector<double> const &&y_values,
                                                          std::vector<double> const &&x_values) {
@@ -878,6 +890,7 @@ protected:
     size_t areaWidth = 0, areaHeight = 0;
     size_t labels_verLeftWidth = 0, labels_verRightWidth = 0;
 
+
     size_t axis_verLeftSteps = 0, axis_varRightSteps = 0, axis_horTopSteps = 0, axis_horBottomSteps = 0;
 
     size_t pad_left = 2, pad_right = 0, pad_top = 0, pad_bottom = 0;
@@ -885,11 +898,15 @@ protected:
     bool labels_horTop_bool = false, labels_horBottom_bool = false;
     bool axisName_horTop_bool = false, axisName_horBottom_bool = false;
 
+    bool axisName_verLeft_bool = false, axisName_verRight_bool = false;
+
 
     // Actual structure
+    std::string              axisName_verLeft;
     std::vector<std::string> labels_verLeft;
     std::vector<std::string> axis_verLeft;
 
+    std::string              axisName_verRight;
     std::vector<std::string> axis_verRight;
     std::vector<std::string> labels_verRight;
 
@@ -921,11 +938,11 @@ protected:
                                        corner_topRight.front().size() + pad_left + pad_right)
                                     : 0;
 
-        // First and last vertical labels
+        // First and last vertical labels + padding + vert axes names if present
         lngth += labels_verLeft.front().size() + labels_verRight.front().size() + labels_verLeft.back().size() +
                  labels_verRight.back().size();
 
-        // The 'corners'
+        // The 'area corner symbols'
         lngth += Config::areaCorner_tl.size() + Config::areaCorner_tr.size() + Config::areaCorner_bl.size() +
                  Config::areaCorner_br.size();
 
@@ -940,7 +957,8 @@ protected:
             lngth += plotArea.at(i).size();
         }
 
-        lngth += ((areaHeight + 2) * (pad_left + pad_right));
+        lngth += ((areaHeight + 2) * (pad_left + pad_right + (Config::axis_verName_width_vl * (axisName_verLeft_bool)) +
+                                      (Config::axis_verName_width_vr * (axisName_verRight_bool))));
 
         // Horizontal bottom axis name and axis labels lines
         lngth += labels_horBottom_bool ? (label_horBottom.size() + corner_bottomLeft.front().size() +
@@ -964,6 +982,9 @@ public:
         auto c_dsc = [&](auto &&ps) -> expOfSelf_t { return ps.compute_descriptors(dp, ds); };
         auto v_dsc = [&](auto &&ps) -> expOfSelf_t { return ps.validate_descriptors(dp, ds); };
 
+        auto c_anvl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_vl(dp, ds); };
+        auto c_anvr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_vr(dp, ds); };
+
         auto c_lvl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_vl(dp, ds); };
         auto c_lvr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_vr(dp, ds); };
 
@@ -977,16 +998,18 @@ public:
 
         auto c_aht  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_ht(dp, ds); };
         auto c_anht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_ht(dp, ds); };
-        auto c_alht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisLabels_ht(dp, ds); };
+        auto c_alht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_ht(dp, ds); };
 
         auto c_ahb  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_hb(dp, ds); };
         auto c_anhb = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_hb(dp, ds); };
-        auto c_alhb = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisLabels_hb(dp, ds); };
+        auto c_alhb = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_hb(dp, ds); };
 
         auto c_ap = [&](auto &&ps) -> expOfSelf_t { return ps.compute_plot_area(dp, ds); };
 
         auto res = c_dsc(std::move(self))
                        .and_then(v_dsc)
+                       .and_then(c_anvl)
+                       .and_then(c_anvr)
                        .and_then(c_lvl)
                        .and_then(c_lvr)
                        .and_then(c_avl)
@@ -1036,7 +1059,7 @@ public:
         }
 
         // Build horizontal top axis line
-        result.append(std::string(pad_left, ' '));
+        result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), ' '));
         result.append(labels_verLeft.front());
         result.append(Config::color_Axes);
         result.append("┌");
@@ -1045,23 +1068,27 @@ public:
         result.append("┐");
         result.append(Config::term_setDefault);
         result.append(labels_verRight.front());
-        result.append(std::string(pad_right, ' '));
+        result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), ' '));
         result.push_back('\n');
 
         // Add plot area lines
         for (size_t i = 0; i < areaHeight; ++i) {
             result.append(std::string(pad_left, ' '));
+            if (axisName_verLeft_bool) { result.push_back(axisName_verLeft.at(i)); }
+            result.append(std::string((Config::axis_verName_width_vl - 1) * axisName_verLeft_bool, ' '));
             result.append(labels_verLeft.at(i + 1));
             result.append(axis_verLeft.at(i));
             result.append(plotArea.at(i));
             result.append(axis_verRight.at(i));
             result.append(labels_verRight.at(i + 1));
+            result.append(std::string((Config::axis_verName_width_vr - 1) * axisName_verRight_bool, ' '));
+            if (axisName_verRight_bool) { result.push_back(axisName_verRight.at(i)); }
             result.append(std::string(pad_right, ' '));
             result.push_back('\n');
         }
 
         // Add horizontal bottom axis line
-        result.append(std::string(pad_left, ' '));
+        result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), ' '));
         result.append(labels_verLeft.back());
         result.append(Config::color_Axes);
         result.append("└");
@@ -1070,7 +1097,7 @@ public:
         result.append("┘");
         result.append(Config::term_setDefault);
         result.append(labels_verRight.back());
-        result.append(std::string(pad_right, ' '));
+        result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), ' '));
         result.push_back('\n');
 
         // Add the bottom lines of the plot
@@ -1107,6 +1134,11 @@ private:
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
+    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -1130,14 +1162,14 @@ private:
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
     auto compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
-    auto compute_axisLabels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
     auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
     auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
-    auto compute_axisLabels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -1162,15 +1194,27 @@ class BarV : public Base {
                          std::min(std::ranges::max(labelSizes) + 1,
                                   (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
         }
-        // TODO: Computation for vertical numeric labels
-        else {}
+        else { self.labels_verLeftWidth = Config::max_valLabelSize; }
 
         // TODO: Vertical right labels ... probably nothing so keeping 0 size
         // ...
 
+        // Vertical axes names ... LEFT always, RIGHT never
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            self.axisName_verLeft_bool  = false;
+            self.axisName_verRight_bool = false;
+        }
+        else {
+            self.axisName_verLeft_bool  = true;
+            self.axisName_verRight_bool = false;
+        }
+
+
         // Plot area width (-2 is for the 2 vertical axes positions)
-        self.areaWidth = dp.targetWidth.value() - self.pad_left - self.labels_verLeftWidth - 2 -
-                         self.labels_verRightWidth - self.pad_right;
+        self.areaWidth = dp.targetWidth.value() - self.pad_left -
+                         (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
+                         self.labels_verRightWidth - (Config::axis_verName_width_vl * self.axisName_verRight_bool) -
+                         self.pad_right;
 
         // Labels and axis name bottom
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>() ||
@@ -1199,20 +1243,37 @@ class BarV : public Base {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             self.axis_verLeftSteps = self.areaHeight;
         }
-        else {} // TODO: Computation for numeric labels
+        else { self.axis_verLeftSteps = detail::guess_stepsOnVerAxis(self.areaHeight); }
 
 
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.axis_horBottomSteps = self.areaWidth;
         }
-        else {
-            self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth);
-        } // TODO: Computation for numeric labels
+        else { self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth); }
 
         // Top and Right axes steps keeping as-is
 
+        return self;
+    }
 
-        return (self);
+    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_verLeft_bool) {
+            if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+                self.axisName_verLeft =
+                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.label_colID.value()), self.areaHeight);
+            }
+            else {
+                self.axisName_verLeft =
+                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.front()), self.areaHeight);
+            }
+        }
+
+        return self;
+    }
+    auto compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        return self;
     }
 
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -1261,36 +1322,52 @@ class BarV : public Base {
     // derived
     auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        if (self.axisName_horTop_bool) { self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth, ' ')); }
-        if (self.labels_horTop_bool) { self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth, ' ')); }
+        if (self.axisName_horTop_bool) {
+            self.corner_topLeft.push_back(std::string(
+                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+        }
+        if (self.labels_horTop_bool) {
+            self.corner_topLeft.push_back(std::string(
+                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+        }
 
         return self;
     }
     auto compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horBottom_bool) {
-            self.corner_bottomLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+            self.corner_bottomLeft.push_back(std::string(
+                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
         }
         if (self.labels_horBottom_bool) {
-            self.corner_bottomLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+            self.corner_bottomLeft.push_back(std::string(
+                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
         }
 
         return self;
     }
     auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        if (self.axisName_horTop_bool) { self.corner_topRight.push_back(std::string(self.labels_verRightWidth, ' ')); }
-        if (self.labels_horTop_bool) { self.corner_topRight.push_back(std::string(self.labels_verRightWidth, ' ')); }
+        if (self.axisName_horTop_bool) {
+            self.corner_topRight.push_back(std::string(
+                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+        }
+        if (self.labels_horTop_bool) {
+            self.corner_topRight.push_back(std::string(
+                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+        }
 
         return self;
     }
     auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horBottom_bool) {
-            self.corner_bottomRight.push_back(std::string(self.labels_verRightWidth, ' '));
+            self.corner_bottomRight.push_back(std::string(
+                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
         }
         if (self.labels_horBottom_bool) {
-            self.corner_bottomRight.push_back(std::string(self.labels_verRightWidth, ' '));
+            self.corner_bottomRight.push_back(std::string(
+                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
         }
 
         return self;
@@ -1306,7 +1383,7 @@ class BarV : public Base {
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         return self;
     }
-    auto compute_axisLabels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         return self;
     }
@@ -1325,19 +1402,26 @@ class BarV : public Base {
         }
         return self;
     }
-
     auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            self.axisName_horBottom = std::string(self.areaWidth + 2, ' ');
+            // Name of the LABEL column
+            self.axisName_horBottom =
+                detail::trim2Size_leadingEnding(ds.colNames.at(dp.label_colID.value()), self.areaWidth);
+        }
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            // Name of the FIRST value column
+            self.axisName_horBottom =
+                detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.front()), self.areaWidth);
         }
         else {
-            self.axisName_horBottom = ds.colNames.at(dp.values_colIDs.front());
-            self.axisName_horBottom = detail::trim2Size_leadingEnding(self.axisName_horBottom, self.areaWidth + 2);
+            // Name of the SECOND value column
+            self.axisName_horBottom =
+                detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(1)), self.areaWidth);
         }
         return self;
     }
-    auto compute_axisLabels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
         auto computeLabels = [&](auto const &valColRef) -> void {
@@ -1446,7 +1530,7 @@ class Scatter : public BarV {
         return (self);
     }
 
-    auto compute_axisLabels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
         auto computeLabels = [&](auto const &valColRef) -> void {
@@ -1487,7 +1571,8 @@ class Scatter : public BarV {
             // TODO: What to do with Line and Multiline axisLabel bottom
         }
         else {
-            auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
+            // The SECOND value column is plotted on hb axis
+            auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.at(1));
             if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
                 auto const &valColRef = ds.doubleCols.at(valColTypeRef.second);
                 computeLabels(valColRef);
@@ -1497,6 +1582,40 @@ class Scatter : public BarV {
                 computeLabels(valColRef);
             }
         }
+        return self;
+    }
+
+    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
+        auto computePA = [&]<typename T>(T const &valColRef) -> void {
+            auto const [minV, maxV] = std::ranges::minmax(valColRef);
+            long long scalingFactor;
+            if constexpr (std::is_integral_v<std::decay_t<typename T::value_type>>) {
+                scalingFactor = LONG_LONG_MAX / (std::max(std::abs(maxV), std::abs(minV)));
+            }
+            else if constexpr (std::is_floating_point_v<std::decay_t<typename T::value_type>>) { scalingFactor = 1; }
+            else { static_assert(false); } // Can't plot non-numeric values
+
+            auto maxV_adj = maxV * scalingFactor;
+            auto minV_adj = minV * scalingFactor;
+            auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth + 1);
+
+            for (auto const &val : valColRef) {
+                self.plotArea.push_back(std::string());
+                long long rpt = (val * scalingFactor - minV_adj) / stepSize;
+                self.plotArea.back().append(Config::color_Vals1);
+                for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
+                self.plotArea.back().append(Config::term_setDefault);
+                for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
+            }
+        };
+
+        auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
+        if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
+            computePA(ds.doubleCols.at(valColTypeRef.second));
+        }
+        else { computePA(ds.llCols.at(valColTypeRef.second)); }
         return self;
     }
 };

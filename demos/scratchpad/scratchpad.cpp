@@ -83,26 +83,9 @@ int main() {
     std::print("{}Tanza {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Blue),
                incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
 
-    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
-    std::string                                                 converted = conv.to_bytes(aa);
-
-    std::u32string tempStr(1, aa);
-    std::string    converted2(tempStr.begin(), tempStr.end());
-
-
-    std::array<std::array<char32_t, 2>, 4> ttt{U'⠁', U'⠈', U'⠂', U'⠐', U'⠄', U'⠠', U'⡀', U'⢀'};
-
-    char32_t test = ttt[0][0] | ttt[0][1] | ttt[1][0] | ttt[1][1] | ttt[2][0] | ttt[2][1] | ttt[3][0] | ttt[3][0];
-
-    std::u32string testStr(1, test);
-    std::string    retu(testStr.begin(), testStr.end());
-
-    std::print("{}", conv.to_bytes(testStr));
-
-    auto rp = incplot::Config::max_valLabelSize;
-
 
     auto bd_res = incplot::detail::BrailleDrawer::drawPoints(32, 8, {1, 3, 5,2,4,8,10,10,16,11,10,9,9,9,8,4}, {1,1,1,1,2,2,2,2,5,6,7,12,17,15, 15, 27});
+
 
     for (auto const &line : bd_res) { std::print("{0}\n", line); }
 
