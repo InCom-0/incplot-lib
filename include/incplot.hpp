@@ -169,6 +169,8 @@ public:
 
     static constexpr size_t axisLabels_maxLength_vl = 30uz;
     static constexpr size_t axisLabels_maxLength_vr = 30uz;
+    static constexpr size_t axisLabels_padRight_vl  = 1uz;
+    static constexpr size_t axisLabels_padLeft_vr   = 1uz;
 
     static constexpr size_t axis_stepSize_vl = 5uz;
     static constexpr size_t axis_stepSize_vr = 5uz;
@@ -287,7 +289,6 @@ struct none_sameLastLevelTypeName {
 // Just the 'last level' type name ... not the fully qualified typename
 template <typename... Ts>
 concept none_sameLastLevelTypeName_v = none_sameLastLevelTypeName<Ts...>::operator()();
-
 constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
     if (str.size() > maxSize) {
@@ -297,6 +298,9 @@ constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) 
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
     else { return std::string(maxSize - strlen_utf8(str), ' ').append(str); }
+}
+constexpr std::string trim2Size_leading(std::string const &&str, size_t maxSize) {
+    return trim2Size_leading(str, maxSize);
 }
 constexpr std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
@@ -312,14 +316,18 @@ constexpr std::string trim2Size_leadingEnding(std::string const &str, size_t max
             .append(std::string(((maxSize - strlen_utf8(str)) / 2) + ((maxSize - strlen_utf8(str)) % 2), ' '));
     }
 }
+constexpr std::string trim2Size_leadingEnding(std::string const &&str, size_t maxSize) {
+    return trim2Size_leadingEnding(str, maxSize);
+}
+
 constexpr size_t get_axisFillerSize(size_t axisLength, size_t axisStepCount) {
     return (axisLength - axisStepCount) / (axisStepCount + 1);
 }
 
 // TODO: Also make a version where the tick positions are explictily specified in one vector of size_t
 constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
-                                                                size_t totalWidth) {
-    size_t fillerSize = get_axisFillerSize(totalWidth, steps);
+                                                                size_t totalLength) {
+    size_t fillerSize = get_axisFillerSize(totalLength, steps);
 
     std::vector<std::string> res;
     for (size_t i_step = 0; i_step < steps; ++i_step) {
@@ -328,7 +336,7 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
         }
         res.push_back(TermColors::get_coloured(tick, Config::color_Axes_enum));
     }
-    size_t sizeOfRest = totalWidth - (steps) - (steps * fillerSize);
+    size_t sizeOfRest = totalLength - (steps) - (steps * fillerSize);
     for (size_t i_filler = 0; i_filler < sizeOfRest; ++i_filler) {
         res.push_back(TermColors::get_coloured(filler, Config::color_Axes_enum));
     }
@@ -341,7 +349,7 @@ constexpr inline size_t guess_stepsOnHorAxis(size_t width, size_t maxLabelSize =
 }
 constexpr inline size_t guess_stepsOnVerAxis(size_t height, size_t verticalStepSize = Config::axis_stepSize_vl) {
     // Substract the beginning and the end label sizes and -2 for spacing
-    height += (-2) - (verticalStepSize - 1);
+    height += -(verticalStepSize - 1);
     return (height / verticalStepSize);
 }
 
@@ -1197,10 +1205,9 @@ class BarV : public Base {
                 std::views::transform(labelColRef, [](auto const &a) { return detail::strlen_utf8(a); });
 
             // TODO: Convert the 'hard limit' into some sort of constexpr config thing
-            self.labels_verLeftWidth =
-                std::min(Config::axisLabels_maxLength_vl,
-                         std::min(std::ranges::max(labelSizes) + 1,
-                                  (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
+            self.labels_verLeftWidth = std::min(
+                Config::axisLabels_maxLength_vl,
+                std::min(std::ranges::max(labelSizes), (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
         }
         else { self.labels_verLeftWidth = Config::max_valLabelSize; }
 
@@ -1216,7 +1223,6 @@ class BarV : public Base {
             self.axisName_verLeft_bool  = true;
             self.axisName_verRight_bool = false;
         }
-
 
         // Plot area width (-2 is for the 2 vertical axes positions)
         self.areaWidth = dp.targetWidth.value() - self.pad_left -
@@ -1290,7 +1296,7 @@ class BarV : public Base {
         self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
         for (auto const &rawLabel : labelsRef) {
             self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth - 1));
-            self.labels_verLeft.back().push_back(' ');
+            for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) { self.labels_verLeft.back().push_back(' '); }
         }
         self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
         return (self);
@@ -1329,11 +1335,11 @@ class BarV : public Base {
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horTop_bool) {
             self.corner_topLeft.push_back(std::string(
-                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
         }
         if (self.labels_horTop_bool) {
             self.corner_topLeft.push_back(std::string(
-                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
         }
 
         return self;
@@ -1342,11 +1348,11 @@ class BarV : public Base {
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horBottom_bool) {
             self.corner_bottomLeft.push_back(std::string(
-                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
         }
         if (self.labels_horBottom_bool) {
             self.corner_bottomLeft.push_back(std::string(
-                self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
         }
 
         return self;
@@ -1355,11 +1361,11 @@ class BarV : public Base {
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horTop_bool) {
             self.corner_topRight.push_back(std::string(
-                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
         }
         if (self.labels_horTop_bool) {
             self.corner_topRight.push_back(std::string(
-                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
         }
 
         return self;
@@ -1368,11 +1374,11 @@ class BarV : public Base {
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horBottom_bool) {
             self.corner_bottomRight.push_back(std::string(
-                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
         }
         if (self.labels_horBottom_bool) {
             self.corner_bottomRight.push_back(std::string(
-                self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
         }
 
         return self;
@@ -1529,9 +1535,54 @@ class Scatter : public BarV {
 
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        // TODO: Special logic for value labels of vertical axes
-        for (size_t i = 0; i < self.areaHeight + 2; ++i) {
-            self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+
+
+        auto getValLabels = [&](double const &minVal, double const &maxVal, size_t areaLength,
+                                size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
+            auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
+            std::string filler(labelsWidth, ' ');
+            auto        stepSize = (maxVal - minVal) / (areaLength + 1);
+
+            // Construct with 'left padding' in place
+            std::vector<std::string> res(areaLength + 2, std::string(padLeft, ' '));
+
+            // Value label of 'zero point'
+            res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
+
+            for (int id = 0; id < self.axis_verLeftSteps; ++id) {
+                for (int fillID = 0; fillID < fillerLength; ++fillID) {
+                    res.at(id * (fillerLength + 1) + fillID + 1).append(filler);
+                }
+                // Value label at the current position
+                res.at(id * (fillerLength + 1) + fillerLength + 1)
+                    .append(detail::trim2Size_leading(
+                        detail::format_toMax5length(minVal + (stepSize * (id + 1) * (fillerLength + 1))), labelsWidth));
+            }
+
+            // Filler up to 'max point'
+            for (int i = self.axis_verLeftSteps * (fillerLength + 1) + 1; i < res.size() - 1; ++i) {
+                res.at(i).append(filler);
+            }
+
+            // Value label of 'max point'
+            res.back().append(detail::trim2Size_leading(detail::format_toMax5length(maxVal), labelsWidth));
+            for (auto &line : res) {
+                for (int i = 0; i < padRight; ++i) { line.push_back(' '); }
+            }
+            std::ranges::reverse(res);
+            return res;
+        };
+
+        auto const &valColTypeRef_y = ds.colTypes.at(dp.values_colIDs.front());
+        if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
+            auto [minV, maxV] = std::ranges::minmax(ds.doubleCols.at(valColTypeRef_y.second));
+            self.labels_verLeft =
+                getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
+        }
+        else {
+            auto [minV, maxV] = std::ranges::minmax(ds.llCols.at(valColTypeRef_y.second));
+            self.labels_verLeft =
+                getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
         }
 
         return (self);
@@ -1539,8 +1590,8 @@ class Scatter : public BarV {
 
     auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
-        for (size_t i = 0; i < self.areaHeight; ++i) { self.axis_verRight.push_back(Config::axisFiller_r); }
+        self.axis_verRight =
+            detail::create_tickMarkedAxis(Config::axisFiller_r, Config::axisTick_r, 0, self.areaHeight);
         return self;
     }
 
