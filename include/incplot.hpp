@@ -186,6 +186,7 @@ public:
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
     static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⡀', U'⢀', U'⠄', U'⠠', U'⠂', U'⠐', U'⠁', U'⠈'};
     static constexpr char32_t                               braille_blank = U'⠀';
+    static constexpr char                                   space         = ' ';
 
     static constexpr std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
     static constexpr std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
@@ -297,7 +298,7 @@ constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) 
             .append("...")
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
-    else { return std::string(maxSize - strlen_utf8(str), ' ').append(str); }
+    else { return std::string(maxSize - strlen_utf8(str), Config::space).append(str); }
 }
 constexpr std::string trim2Size_leading(std::string const &&str, size_t maxSize) {
     return trim2Size_leading(str, maxSize);
@@ -311,9 +312,10 @@ constexpr std::string trim2Size_leadingEnding(std::string const &str, size_t max
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
     else {
-        return std::string((maxSize - strlen_utf8(str)) / 2, ' ')
+        return std::string((maxSize - strlen_utf8(str)) / 2, Config::space)
             .append(str)
-            .append(std::string(((maxSize - strlen_utf8(str)) / 2) + ((maxSize - strlen_utf8(str)) % 2), ' '));
+            .append(
+                std::string(((maxSize - strlen_utf8(str)) / 2) + ((maxSize - strlen_utf8(str)) % 2), Config::space));
     }
 }
 constexpr std::string trim2Size_leadingEnding(std::string const &&str, size_t maxSize) {
@@ -1058,24 +1060,24 @@ public:
 
         // Build the heading lines of the plot
         if (axisName_horTop_bool) {
-            result.append(std::string(pad_left, ' '));
+            result.append(std::string(pad_left, Config::space));
             result.append(corner_topLeft.front());
             result.append(label_horTop);
             result.append(corner_topRight.front());
-            result.append(std::string(pad_right, ' '));
+            result.append(std::string(pad_right, Config::space));
             result.push_back('\n');
         }
         if (labels_horTop_bool) {
-            result.append(std::string(pad_left, ' '));
+            result.append(std::string(pad_left, Config::space));
             result.append(corner_topLeft.back());
             result.append(label_horTop);
             result.append(corner_topRight.back());
-            result.append(std::string(pad_right, ' '));
+            result.append(std::string(pad_right, Config::space));
             result.push_back('\n');
         }
 
         // Build horizontal top axis line
-        result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), ' '));
+        result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
         result.append(labels_verLeft.front());
         result.append(Config::color_Axes);
         result.append("┌");
@@ -1084,27 +1086,27 @@ public:
         result.append("┐");
         result.append(Config::term_setDefault);
         result.append(labels_verRight.front());
-        result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), ' '));
+        result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), Config::space));
         result.push_back('\n');
 
         // Add plot area lines
         for (size_t i = 0; i < areaHeight; ++i) {
-            result.append(std::string(pad_left, ' '));
+            result.append(std::string(pad_left, Config::space));
             if (axisName_verLeft_bool) { result.push_back(axisName_verLeft.at(i)); }
-            result.append(std::string((Config::axis_verName_width_vl - 1) * axisName_verLeft_bool, ' '));
+            result.append(std::string((Config::axis_verName_width_vl - 1) * axisName_verLeft_bool, Config::space));
             result.append(labels_verLeft.at(i + 1));
             result.append(axis_verLeft.at(i));
             result.append(plotArea.at(i));
             result.append(axis_verRight.at(i));
             result.append(labels_verRight.at(i + 1));
-            result.append(std::string((Config::axis_verName_width_vr - 1) * axisName_verRight_bool, ' '));
+            result.append(std::string((Config::axis_verName_width_vr - 1) * axisName_verRight_bool, Config::space));
             if (axisName_verRight_bool) { result.push_back(axisName_verRight.at(i)); }
-            result.append(std::string(pad_right, ' '));
+            result.append(std::string(pad_right, Config::space));
             result.push_back('\n');
         }
 
         // Add horizontal bottom axis line
-        result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), ' '));
+        result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
         result.append(labels_verLeft.back());
         result.append(Config::color_Axes);
         result.append("└");
@@ -1113,24 +1115,24 @@ public:
         result.append("┘");
         result.append(Config::term_setDefault);
         result.append(labels_verRight.back());
-        result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), ' '));
+        result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), Config::space));
         result.push_back('\n');
 
         // Add the bottom lines of the plot
         if (labels_horBottom_bool) {
-            result.append(std::string(pad_left, ' '));
+            result.append(std::string(pad_left, Config::space));
             result.append(corner_bottomLeft.front());
             result.append(label_horBottom);
             result.append(corner_bottomRight.front());
-            result.append(std::string(pad_right, ' '));
+            result.append(std::string(pad_right, Config::space));
             result.push_back('\n');
         }
         if (axisName_horBottom_bool) {
-            result.append(std::string(pad_left, ' '));
+            result.append(std::string(pad_left, Config::space));
             result.append(corner_bottomLeft.back());
             result.append(axisName_horBottom);
             result.append(corner_bottomRight.back());
-            result.append(std::string(pad_right, ' '));
+            result.append(std::string(pad_right, Config::space));
             result.push_back('\n');
         }
 
@@ -1293,12 +1295,16 @@ class BarV : public Base {
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         auto const &labelsRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
-        self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+        self.labels_verLeft.push_back(
+            std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
         for (auto const &rawLabel : labelsRef) {
-            self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth - 1));
-            for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) { self.labels_verLeft.back().push_back(' '); }
+            self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
+            for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
+                self.labels_verLeft.back().push_back(Config::space);
+            }
         }
-        self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+        self.labels_verLeft.push_back(
+            std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
         return (self);
     }
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -1334,12 +1340,16 @@ class BarV : public Base {
     auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horTop_bool) {
-            self.corner_topLeft.push_back(std::string(
-                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+            self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth +
+                                                          (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
+                                                          Config::axisLabels_padRight_vl,
+                                                      Config::space));
         }
         if (self.labels_horTop_bool) {
-            self.corner_topLeft.push_back(std::string(
-                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+            self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth +
+                                                          (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
+                                                          Config::axisLabels_padRight_vl,
+                                                      Config::space));
         }
 
         return self;
@@ -1347,38 +1357,50 @@ class BarV : public Base {
     auto compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horBottom_bool) {
-            self.corner_bottomLeft.push_back(std::string(
-                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
+            self.corner_bottomLeft.push_back(
+                std::string(self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
+                                Config::axisLabels_padRight_vl,
+                            Config::space));
         }
         if (self.labels_horBottom_bool) {
-            self.corner_bottomLeft.push_back(std::string(
-                self.labels_verLeftWidth + 1 + (Config::axis_verName_width_vl * self.axisName_verLeft_bool), ' '));
-        }
-
-        return self;
-    }
-    auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        if (self.axisName_horTop_bool) {
-            self.corner_topRight.push_back(std::string(
-                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
-        }
-        if (self.labels_horTop_bool) {
-            self.corner_topRight.push_back(std::string(
-                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+            self.corner_bottomLeft.push_back(
+                std::string(self.labels_verLeftWidth + (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
+                                Config::axisLabels_padRight_vl,
+                            Config::space));
         }
 
         return self;
     }
     auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_horTop_bool) {
+            self.corner_topRight.push_back(
+                std::string(self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
+                                Config::axisLabels_padLeft_vr,
+                            Config::space));
+        }
+        if (self.labels_horTop_bool) {
+            self.corner_topRight.push_back(
+                std::string(self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
+                                Config::axisLabels_padLeft_vr,
+                            Config::space));
+        }
+
+        return self;
+    }
+    auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         if (self.axisName_horBottom_bool) {
-            self.corner_bottomRight.push_back(std::string(
-                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+            self.corner_bottomRight.push_back(
+                std::string(self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
+                                Config::axisLabels_padLeft_vr,
+                            Config::space));
         }
         if (self.labels_horBottom_bool) {
-            self.corner_bottomRight.push_back(std::string(
-                self.labels_verRightWidth + 1 + (Config::axis_verName_width_vr * self.axisName_verRight_bool), ' '));
+            self.corner_bottomRight.push_back(
+                std::string(self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
+                                Config::axisLabels_padLeft_vr,
+                            Config::space));
         }
 
         return self;
@@ -1447,7 +1469,7 @@ class BarV : public Base {
             // Construct the tick labels
             for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
                 while (placedChars < (i * (fillerSize + 1) + fillerSize)) {
-                    self.label_horBottom.push_back(' ');
+                    self.label_horBottom.push_back(Config::space);
                     placedChars++;
                 }
                 tempStr = detail::format_toMax5length(minV + ((i * (fillerSize + 1) + fillerSize) * stepSize));
@@ -1458,12 +1480,12 @@ class BarV : public Base {
             // Construct the [0:end] point label
             tempStr = detail::format_toMax5length(maxV);
             for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
-                self.label_horBottom.push_back(' ');
+                self.label_horBottom.push_back(Config::space);
             }
             self.label_horBottom.append(tempStr);
         };
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            self.label_horBottom = std::string(self.areaWidth + 2, ' ');
+            self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
         }
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
                  dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
@@ -1505,7 +1527,7 @@ class BarV : public Base {
                 self.plotArea.back().append(Config::color_Vals1);
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
                 self.plotArea.back().append(Config::term_setDefault);
-                for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
+                for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(Config::space); }
             }
         };
 
@@ -1540,11 +1562,11 @@ class Scatter : public BarV {
         auto getValLabels = [&](double const &minVal, double const &maxVal, size_t areaLength,
                                 size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
             auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
-            std::string filler(labelsWidth, ' ');
+            std::string filler(labelsWidth, Config::space);
             auto        stepSize = (maxVal - minVal) / (areaLength + 1);
 
             // Construct with 'left padding' in place
-            std::vector<std::string> res(areaLength + 2, std::string(padLeft, ' '));
+            std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space));
 
             // Value label of 'zero point'
             res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
@@ -1567,7 +1589,7 @@ class Scatter : public BarV {
             // Value label of 'max point'
             res.back().append(detail::trim2Size_leading(detail::format_toMax5length(maxVal), labelsWidth));
             for (auto &line : res) {
-                for (int i = 0; i < padRight; ++i) { line.push_back(' '); }
+                for (int i = 0; i < padRight; ++i) { line.push_back(Config::space); }
             }
             std::ranges::reverse(res);
             return res;
@@ -1618,7 +1640,7 @@ class Scatter : public BarV {
             // Construct the tick labels
             for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
                 while (placedChars < (i * (fillerSize + 1) + fillerSize)) {
-                    self.label_horBottom.push_back(' ');
+                    self.label_horBottom.push_back(Config::space);
                     placedChars++;
                 }
                 tempStr =
@@ -1630,12 +1652,12 @@ class Scatter : public BarV {
             // Construct the [0:end] point label
             tempStr = detail::format_toMax5length(maxV + (stepSize / 2));
             for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
-                self.label_horBottom.push_back(' ');
+                self.label_horBottom.push_back(Config::space);
             }
             self.label_horBottom.append(tempStr);
         };
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            self.label_horBottom = std::string(self.areaWidth + 2, ' ');
+            self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
         }
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
                  dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
