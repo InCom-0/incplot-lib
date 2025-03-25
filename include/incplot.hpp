@@ -436,9 +436,17 @@ private:
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))) {};
 
 public:
-    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height,
-                                                         std::vector<double> const &&y_values,
-                                                         std::vector<double> const &&x_values) {
+    template <typename Y, typename X>
+    requires std::is_arithmetic_v<typename X::value_type> && std::is_arithmetic_v<typename Y::value_type>
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, Y const &&y_values,
+                                                         X const &&x_values) {
+        return drawPoints(canvas_width, canvas_height, y_values, x_values);
+    }
+
+    template <typename Y, typename X>
+    requires std::is_arithmetic_v<typename X::value_type> && std::is_arithmetic_v<typename Y::value_type>
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, Y const &y_values,
+                                                         X const &x_values) {
         BrailleDrawer bd(canvas_width, canvas_height);
 
         auto [yMin, yMax] = std::ranges::minmax(y_values);
@@ -1289,9 +1297,7 @@ class BarV : public Base {
     }
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        self.labels_verRight.push_back("");
-        for (int i = 0; i < self.areaHeight; ++i) { self.labels_verRight.push_back(""); }
-        self.labels_verRight.push_back("");
+        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
         return self;
     }
 
@@ -1302,7 +1308,7 @@ class BarV : public Base {
                                                               self.areaHeight);
         }
         // All else should have vl axis ticks according to numeric values
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+        else {
             auto tmpAxis = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l,
                                                          self.axis_verLeftSteps, self.areaHeight);
             std::ranges::reverse(tmpAxis);
@@ -1313,8 +1319,7 @@ class BarV : public Base {
     }
     auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        if (false) {}
-        else { self.axis_verRight = std::vector(self.areaHeight, std::string(" ")); }
+        self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
         return self;
     }
 
@@ -1376,7 +1381,6 @@ class BarV : public Base {
     auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
-
         return self;
     }
     auto compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -1387,7 +1391,6 @@ class BarV : public Base {
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         return self;
     }
-
 
     auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
@@ -1527,7 +1530,24 @@ class Scatter : public BarV {
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         // TODO: Special logic for value labels of vertical axes
+        for (size_t i = 0; i < self.areaHeight + 2; ++i) {
+            self.labels_verLeft.push_back(std::string(self.labels_verLeftWidth, ' '));
+        }
+
         return (self);
+    }
+
+    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
+        for (size_t i = 0; i < self.areaHeight; ++i) { self.axis_verRight.push_back(Config::axisFiller_r); }
+        return self;
+    }
+
+    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        for (size_t i = 0; i < self.areaWidth; ++i) { self.axis_horTop.push_back(Config::axisFiller_t); }
+        return self;
     }
 
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -1588,34 +1608,36 @@ class Scatter : public BarV {
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        auto computePA = [&]<typename T>(T const &valColRef) -> void {
-            auto const [minV, maxV] = std::ranges::minmax(valColRef);
-            long long scalingFactor;
-            if constexpr (std::is_integral_v<std::decay_t<typename T::value_type>>) {
-                scalingFactor = LONG_LONG_MAX / (std::max(std::abs(maxV), std::abs(minV)));
+        auto const &valColTypeRef_y = ds.colTypes.at(dp.values_colIDs.front());
+        auto const &valColTypeRef_x = ds.colTypes.at(dp.values_colIDs.at(1));
+
+
+        if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
+            if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
+                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                                  ds.doubleCols.at(valColTypeRef_y.second),
+                                                                  ds.doubleCols.at(valColTypeRef_x.second));
             }
-            else if constexpr (std::is_floating_point_v<std::decay_t<typename T::value_type>>) { scalingFactor = 1; }
-            else { static_assert(false); } // Can't plot non-numeric values
-
-            auto maxV_adj = maxV * scalingFactor;
-            auto minV_adj = minV * scalingFactor;
-            auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth + 1);
-
-            for (auto const &val : valColRef) {
-                self.plotArea.push_back(std::string());
-                long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.back().append(Config::color_Vals1);
-                for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
-                self.plotArea.back().append(Config::term_setDefault);
-                for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(' '); }
+            else {
+                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                                  ds.doubleCols.at(valColTypeRef_y.second),
+                                                                  ds.llCols.at(valColTypeRef_x.second));
             }
-        };
-
-        auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
-        if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
-            computePA(ds.doubleCols.at(valColTypeRef.second));
         }
-        else { computePA(ds.llCols.at(valColTypeRef.second)); }
+        else {
+            if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
+                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                                  ds.llCols.at(valColTypeRef_y.second),
+                                                                  ds.doubleCols.at(valColTypeRef_x.second));
+            }
+            else {
+                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                                  ds.llCols.at(valColTypeRef_y.second),
+                                                                  ds.llCols.at(valColTypeRef_x.second));
+            }
+        }
+
+
         return self;
     }
 };
@@ -1636,7 +1658,7 @@ public:
     constexpr PlotDrawer() {};
     PlotDrawer(auto ps_var, DesiredPlot const &dp, DataStore const &ds) {
         auto ol = [&](auto &&var) {
-            m_ps_var = std::move(var).build_self(dp, ds);
+            m_ps_var = std::move(ps_var).build_self(dp, ds);
             int a    = 0;
         };
         std::visit(ol, m_ps_var);

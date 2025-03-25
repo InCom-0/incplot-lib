@@ -1,7 +1,7 @@
-#include <codecvt>
-#include <locale>
+#include <optional>
 #include <print>
 #include <string>
+#include <vector>
 #include <windows.h>
 
 
@@ -40,41 +40,179 @@ int main() {
 {"name":"The Riftbreaker","size":4096}
 {"name":"VTune","size":0})");
 
-    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
+
+    std::string testInput_petal(R"({"sepal_length":5.1,"petal_length":1.4}
+{"sepal_length":4.9,"petal_length":1.4}
+{"sepal_length":4.7,"petal_length":1.3}
+{"sepal_length":4.6,"petal_length":1.5}
+{"sepal_length":5,"petal_length":1.4}
+{"sepal_length":5.4,"petal_length":1.7}
+{"sepal_length":4.6,"petal_length":1.4}
+{"sepal_length":5,"petal_length":1.5}
+{"sepal_length":4.4,"petal_length":1.4}
+{"sepal_length":4.9,"petal_length":1.5}
+{"sepal_length":5.4,"petal_length":1.5}
+{"sepal_length":4.8,"petal_length":1.6}
+{"sepal_length":4.8,"petal_length":1.4}
+{"sepal_length":4.3,"petal_length":1.1}
+{"sepal_length":5.8,"petal_length":1.2}
+{"sepal_length":5.7,"petal_length":1.5}
+{"sepal_length":5.4,"petal_length":1.3}
+{"sepal_length":5.1,"petal_length":1.4}
+{"sepal_length":5.7,"petal_length":1.7}
+{"sepal_length":5.1,"petal_length":1.5}
+{"sepal_length":5.4,"petal_length":1.7}
+{"sepal_length":5.1,"petal_length":1.5}
+{"sepal_length":4.6,"petal_length":1}
+{"sepal_length":5.1,"petal_length":1.7}
+{"sepal_length":4.8,"petal_length":1.9}
+{"sepal_length":5,"petal_length":1.6}
+{"sepal_length":5,"petal_length":1.6}
+{"sepal_length":5.2,"petal_length":1.5}
+{"sepal_length":5.2,"petal_length":1.4}
+{"sepal_length":4.7,"petal_length":1.6}
+{"sepal_length":4.8,"petal_length":1.6}
+{"sepal_length":5.4,"petal_length":1.5}
+{"sepal_length":5.2,"petal_length":1.5}
+{"sepal_length":5.5,"petal_length":1.4}
+{"sepal_length":4.9,"petal_length":1.5}
+{"sepal_length":5,"petal_length":1.2}
+{"sepal_length":5.5,"petal_length":1.3}
+{"sepal_length":4.9,"petal_length":1.5}
+{"sepal_length":4.4,"petal_length":1.3}
+{"sepal_length":5.1,"petal_length":1.5}
+{"sepal_length":5,"petal_length":1.3}
+{"sepal_length":4.5,"petal_length":1.3}
+{"sepal_length":4.4,"petal_length":1.3}
+{"sepal_length":5,"petal_length":1.6}
+{"sepal_length":5.1,"petal_length":1.9}
+{"sepal_length":4.8,"petal_length":1.4}
+{"sepal_length":5.1,"petal_length":1.6}
+{"sepal_length":4.6,"petal_length":1.4}
+{"sepal_length":5.3,"petal_length":1.5}
+{"sepal_length":5,"petal_length":1.4}
+{"sepal_length":7,"petal_length":4.7}
+{"sepal_length":6.4,"petal_length":4.5}
+{"sepal_length":6.9,"petal_length":4.9}
+{"sepal_length":5.5,"petal_length":4}
+{"sepal_length":6.5,"petal_length":4.6}
+{"sepal_length":5.7,"petal_length":4.5}
+{"sepal_length":6.3,"petal_length":4.7}
+{"sepal_length":4.9,"petal_length":3.3}
+{"sepal_length":6.6,"petal_length":4.6}
+{"sepal_length":5.2,"petal_length":3.9}
+{"sepal_length":5,"petal_length":3.5}
+{"sepal_length":5.9,"petal_length":4.2}
+{"sepal_length":6,"petal_length":4}
+{"sepal_length":6.1,"petal_length":4.7}
+{"sepal_length":5.6,"petal_length":3.6}
+{"sepal_length":6.7,"petal_length":4.4}
+{"sepal_length":5.6,"petal_length":4.5}
+{"sepal_length":5.8,"petal_length":4.1}
+{"sepal_length":6.2,"petal_length":4.5}
+{"sepal_length":5.6,"petal_length":3.9}
+{"sepal_length":5.9,"petal_length":4.8}
+{"sepal_length":6.1,"petal_length":4}
+{"sepal_length":6.3,"petal_length":4.9}
+{"sepal_length":6.1,"petal_length":4.7}
+{"sepal_length":6.4,"petal_length":4.3}
+{"sepal_length":6.6,"petal_length":4.4}
+{"sepal_length":6.8,"petal_length":4.8}
+{"sepal_length":6.7,"petal_length":5}
+{"sepal_length":6,"petal_length":4.5}
+{"sepal_length":5.7,"petal_length":3.5}
+{"sepal_length":5.5,"petal_length":3.8}
+{"sepal_length":5.5,"petal_length":3.7}
+{"sepal_length":5.8,"petal_length":3.9}
+{"sepal_length":6,"petal_length":5.1}
+{"sepal_length":5.4,"petal_length":4.5}
+{"sepal_length":6,"petal_length":4.5}
+{"sepal_length":6.7,"petal_length":4.7}
+{"sepal_length":6.3,"petal_length":4.4}
+{"sepal_length":5.6,"petal_length":4.1}
+{"sepal_length":5.5,"petal_length":4}
+{"sepal_length":5.5,"petal_length":4.4}
+{"sepal_length":6.1,"petal_length":4.6}
+{"sepal_length":5.8,"petal_length":4}
+{"sepal_length":5,"petal_length":3.3}
+{"sepal_length":5.6,"petal_length":4.2}
+{"sepal_length":5.7,"petal_length":4.2}
+{"sepal_length":5.7,"petal_length":4.2}
+{"sepal_length":6.2,"petal_length":4.3}
+{"sepal_length":5.1,"petal_length":3}
+{"sepal_length":5.7,"petal_length":4.1}
+{"sepal_length":6.3,"petal_length":6}
+{"sepal_length":5.8,"petal_length":5.1}
+{"sepal_length":7.1,"petal_length":5.9}
+{"sepal_length":6.3,"petal_length":5.6}
+{"sepal_length":6.5,"petal_length":5.8}
+{"sepal_length":7.6,"petal_length":6.6}
+{"sepal_length":4.9,"petal_length":4.5}
+{"sepal_length":7.3,"petal_length":6.3}
+{"sepal_length":6.7,"petal_length":5.8}
+{"sepal_length":7.2,"petal_length":6.1}
+{"sepal_length":6.5,"petal_length":5.1}
+{"sepal_length":6.4,"petal_length":5.3}
+{"sepal_length":6.8,"petal_length":5.5}
+{"sepal_length":5.7,"petal_length":5}
+{"sepal_length":5.8,"petal_length":5.1}
+{"sepal_length":6.4,"petal_length":5.3}
+{"sepal_length":6.5,"petal_length":5.5}
+{"sepal_length":7.7,"petal_length":6.7}
+{"sepal_length":7.7,"petal_length":6.9}
+{"sepal_length":6,"petal_length":5}
+{"sepal_length":6.9,"petal_length":5.7}
+{"sepal_length":5.6,"petal_length":4.9}
+{"sepal_length":7.7,"petal_length":6.7}
+{"sepal_length":6.3,"petal_length":4.9}
+{"sepal_length":6.7,"petal_length":5.7}
+{"sepal_length":7.2,"petal_length":6}
+{"sepal_length":6.2,"petal_length":4.8}
+{"sepal_length":6.1,"petal_length":4.9}
+{"sepal_length":6.4,"petal_length":5.6}
+{"sepal_length":7.2,"petal_length":5.8}
+{"sepal_length":7.4,"petal_length":6.1}
+{"sepal_length":7.9,"petal_length":6.4}
+{"sepal_length":6.4,"petal_length":5.6}
+{"sepal_length":6.3,"petal_length":5.1}
+{"sepal_length":6.1,"petal_length":5.6}
+{"sepal_length":7.7,"petal_length":6.1}
+{"sepal_length":6.3,"petal_length":5.6}
+{"sepal_length":6.4,"petal_length":5.5}
+{"sepal_length":6,"petal_length":4.8}
+{"sepal_length":6.9,"petal_length":5.4}
+{"sepal_length":6.7,"petal_length":5.6}
+{"sepal_length":6.9,"petal_length":5.1}
+{"sepal_length":5.8,"petal_length":5.1}
+{"sepal_length":6.8,"petal_length":5.9}
+{"sepal_length":6.7,"petal_length":5.7}
+{"sepal_length":6.7,"petal_length":5.2}
+{"sepal_length":6.3,"petal_length":5}
+{"sepal_length":6.5,"petal_length":5.2}
+{"sepal_length":6.2,"petal_length":5.4}
+{"sepal_length":5.9,"petal_length":5.1})");
+
+    // auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
 
-    auto dp_autoGuessed = incplot::DesiredPlot(96).guess_missingParams(ds);
+    // auto dp_autoGuessed = incplot::DesiredPlot(96).guess_missingParams(ds);
 
-    if (not dp_autoGuessed.has_value()) {
-        std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
-        return 1;
-    }
+    // if (not dp_autoGuessed.has_value()) {
+    //     std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
+    //     return 1;
+    // }
 
-    std::u32string aaar(U"\u25a0");
+    // auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
 
+    // auto outExp = plotDrawer2.validateAndDrawPlot();
 
-    auto aa = U'\u25a0';
+    // if (not outExp.has_value()) {
+    //     std::print("{0}{1}", "Invalid plot structure", "Exiting ...");
+    //     return 1;
+    // }
 
+    // std::print("{}\n", outExp.value());
 
-    size_t sz = aaar.size();
-
-
-    auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
-
-    auto outExp = plotDrawer2.validateAndDrawPlot();
-
-
-    if (not outExp.has_value()) {
-        std::print("{0}{1}", "Invalid plot structure", "Exiting ...");
-        return 1;
-    }
-
-    auto [val, unit] = incplot::detail::rebase_2_SIPrefix(0.001);
-
-
-    std::print("{}\n", outExp.value());
-
-    std::print("{}\n", incplot::detail::format_toMax5length(0.00015836));
 
     std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green),
                incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
@@ -84,10 +222,25 @@ int main() {
                incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
 
 
-    auto bd_res = incplot::detail::BrailleDrawer::drawPoints(32, 8, {1, 3, 5,2,4,8,10,10,16,11,10,9,9,9,8,4}, {1,1,1,1,2,2,2,2,5,6,7,12,17,15, 15, 27});
+    auto ds2 = incplot::Parser::parse_NDJSON_intoDS(testInput_petal);
 
+    auto dp2_autoGuessed = incplot::DesiredPlot(48, 12, "Scatter").guess_missingParams(ds2);
 
-    for (auto const &line : bd_res) { std::print("{0}\n", line); }
+    if (not dp2_autoGuessed.has_value()) {
+        std::print("{0}{1}", "Autoguessing of 'DesiresPlot_2' parameters failed \n", "Exiting ...");
+        return 1;
+    }
+
+    auto plotDrawer3 = incplot::make_plotDrawer(dp2_autoGuessed.value(), ds2);
+
+    auto outExp2 = plotDrawer3.validateAndDrawPlot();
+
+    if (not outExp2.has_value()) {
+        std::print("{0}{1}", "Invalid plot structure 2", "Exiting ...");
+        return 1;
+    }
+
+    std::print("{}\n", outExp2.value());
 
     return 0;
 }
