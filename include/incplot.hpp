@@ -290,6 +290,7 @@ struct none_sameLastLevelTypeName {
 // Just the 'last level' type name ... not the fully qualified typename
 template <typename... Ts>
 concept none_sameLastLevelTypeName_v = none_sameLastLevelTypeName<Ts...>::operator()();
+
 constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
     if (str.size() > maxSize) {
@@ -911,7 +912,7 @@ protected:
 
     size_t axis_verLeftSteps = 0, axis_varRightSteps = 0, axis_horTopSteps = 0, axis_horBottomSteps = 0;
 
-    size_t pad_left = 2, pad_right = 0, pad_top = 0, pad_bottom = 0;
+    size_t pad_left = 2, pad_right = 0, pad_top = 1, pad_bottom = 0;
 
     bool labels_horTop_bool = false, labels_horBottom_bool = false;
     bool axisName_horTop_bool = false, axisName_horBottom_bool = false;
