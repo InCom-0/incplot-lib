@@ -1522,10 +1522,11 @@ class BarV : public Base {
             auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth + 1);
 
             for (auto const &val : valColRef) {
-                self.plotArea.push_back(std::string());
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.back().append(Config::color_Vals1);
+                self.plotArea.push_back(Config::color_Vals1);
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
+                self.plotArea.back().append(Config::color_Axes);
+
                 self.plotArea.back().append(Config::term_setDefault);
                 for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(Config::space); }
             }
