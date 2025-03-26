@@ -228,5 +228,17 @@ int main() {
 
     std::print("{}\n", outExp2.value());
 
+    std::string firstBLock  = "███████████████";
+    std::string firstBLock1 = "█████████";
+    std::string firstBLock2 = "███████████████████████";
+
+    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock, incplot::Color_CVTS::Foreground_Green));
+    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock1, incplot::Color_CVTS::Foreground_Red));
+    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock2, incplot::Color_CVTS::Foreground_Blue));
+    std::print("{}\n", "" );
+    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock, incplot::Color_CVTS::Foreground_Green));
+    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock1, incplot::Color_CVTS::Foreground_Red));
+    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock2, incplot::Color_CVTS::Foreground_Blue));
+
     return 0;
 }

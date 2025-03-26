@@ -96,8 +96,6 @@ private:
         {105, "\x1b[105m"}, {106, "\x1b[106m"}, {107, "\x1b[107m"},
     }};
 
-    static constexpr auto const _S_extendedCVTScolMap = std::array<std::pair<int, std::string_view>, 43>{{{1, "2"}}};
-
 public:
     // Class should be impossible to instantiate
     TermColors()                    = delete;
@@ -133,6 +131,22 @@ public:
     requires std::is_convertible_v<T, std::string_view>
     static constexpr auto get_coloured(T &&toColor, Color_CVTS const col) {
         return std::string(get_basicColor(col))
+            .append(std::forward<T>(toColor))
+            .append(get_basicColor(Color_CVTS::Default));
+    }
+
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static constexpr auto get_coloured(T &&toColor, int fg_color_256) {
+        return std::string(get_fgColor(fg_color_256))
+            .append(std::forward<T>(toColor))
+            .append(get_basicColor(Color_CVTS::Default));
+    }
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static constexpr auto get_coloured(T &&toColor, int fg_color_256, int bg_color_256) {
+        return std::string(get_fgColor(fg_color_256))
+            .append(get_bgColor(bg_color_256))
             .append(std::forward<T>(toColor))
             .append(get_basicColor(Color_CVTS::Default));
     }
