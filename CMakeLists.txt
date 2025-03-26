@@ -10,11 +10,11 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
 
-add_library(incplot STATIC ${CMAKE_CURRENT_SOURCE_DIR}/include/incplot.hpp)
-target_include_directories(incplot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_library(incplot INTERFACE)
+target_include_directories(incplot INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set_target_properties(incplot PROPERTIES LINKER_LANGUAGE CXX)
 
-target_link_libraries(incplot PUBLIC
+target_link_libraries(incplot INTERFACE
     nlohmann_json::nlohmann_json)
 
 add_subdirectory(demos)
