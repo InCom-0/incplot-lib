@@ -232,13 +232,18 @@ int main() {
     std::string firstBLock1 = "█████████";
     std::string firstBLock2 = "███████████████████████";
 
+    // std::print("{0}{1}\n", "\e]4;2;?\e\\", 123);
+    // std::print("{0}{1}\n", "\e]10;?\e\\", 123);
+
     std::print("{}\n", incplot::TermColors::get_coloured(firstBLock, incplot::Color_CVTS::Foreground_Green));
     std::print("{}\n", incplot::TermColors::get_coloured(firstBLock1, incplot::Color_CVTS::Foreground_Red));
     std::print("{}\n", incplot::TermColors::get_coloured(firstBLock2, incplot::Color_CVTS::Foreground_Blue));
-    std::print("{}\n", "" );
+    std::print("{}\n", "");
     std::print("{}\n", incplot::TermColors::get_coloured(firstBLock, incplot::Color_CVTS::Foreground_Green));
     std::print("{}\n", incplot::TermColors::get_coloured(firstBLock1, incplot::Color_CVTS::Foreground_Red));
     std::print("{}\n", incplot::TermColors::get_coloured(firstBLock2, incplot::Color_CVTS::Foreground_Blue));
+
+    // std::print("{0}{1}\n", "\e]10;rgb:00/80/00\e\\", 123);
 
     return 0;
 }

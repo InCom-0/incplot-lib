@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <conio.h>
 #include <expected>
 #include <optional>
 #include <print>
@@ -11,6 +12,8 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include <windows.h>
+
 
 #include <nlohmann/json.hpp>
 #include <vector>
