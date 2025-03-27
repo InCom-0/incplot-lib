@@ -1,10 +1,12 @@
 #pragma once
 
-#include <print>
 #include <incplot/datastore.hpp>
+#include <print>
+
 
 namespace incom {
-namespace terminal_plot { // Encapsulates parsing of the input into DataStore
+namespace terminal_plot {
+// Encapsulates parsing of the input into DataStore
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
 struct Parser {
@@ -13,16 +15,16 @@ struct Parser {
         // Validate that all the JSON objects parsed above have the same structure
         for (auto const &js : jsonVec) {
             // Different number of items in this line vs the firstline
-            if (js.size() != jsonVec.front().size()) { return false; } // throw something here
+            if (js.size() != jsonVec.front().size()) { return false; }
 
             auto firstLineIT = jsonVec.front().items().begin();
             for (auto const &[key, val] : js.items()) {
 
                 // Key is not the same as in the first line
-                if (key != firstLineIT.key()) { return false; } // throw something here
+                if (key != firstLineIT.key()) { return false; }
 
                 // Type is not the same as in the first line
-                if (val.type() != firstLineIT.value().type()) { return false; } // throw something here
+                if (val.type() != firstLineIT.value().type()) { return false; }
                 ++firstLineIT;
             }
         }

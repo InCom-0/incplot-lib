@@ -3,7 +3,6 @@
 #include <array>
 #include <incplot/detail/color.hpp>
 #include <string>
-#include <vector>
 
 
 namespace incom {
@@ -36,8 +35,10 @@ public:
     static constexpr std::string color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
     static constexpr std::string color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
 
-    static constexpr std::array<std::array<unsigned int, 3>, 3> colors_DefaulRaw{197u, 15u, 31u, 19u, 161u,
-                                                                                 14u,  0,   55,  218};
+    static constexpr std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{197u, 15u, 31u, 19u, 161u,
+                                                                                 14u,  0u,  55u, 218u};
+
+    static constexpr std::array<unsigned int, 3> colors_blackRaw{12, 12, 12};
 
     static constexpr size_t max_numOfValCols = 4uz;
 
