@@ -208,9 +208,12 @@ int main() {
                incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
 
 
+    // std::print("{0}{1}\n", "\x1b[38;2;125;125;0m", "TESTEST");
+
+
     auto ds2 = incplot::Parser::parse_NDJSON_intoDS(testInput_petal);
 
-    auto dp2_autoGuessed = incplot::DesiredPlot(32, 16, "Scatter").guess_missingParams(ds2);
+    auto dp2_autoGuessed = incplot::DesiredPlot(40, 16, "Scatter").guess_missingParams(ds2);
 
     if (not dp2_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot_2' parameters failed \n", "Exiting ...");
@@ -228,20 +231,10 @@ int main() {
 
     std::print("{}\n", outExp2.value());
 
-    std::string firstBLock  = "███████████████";
-    std::string firstBLock1 = "█████████";
-    std::string firstBLock2 = "███████████████████████";
-
     // std::print("{0}{1}\n", "\e]4;2;?\e\\", 123);
     // std::print("{0}{1}\n", "\e]10;?\e\\", 123);
 
-    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock, incplot::Color_CVTS::Foreground_Green));
-    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock1, incplot::Color_CVTS::Foreground_Red));
-    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock2, incplot::Color_CVTS::Foreground_Blue));
-    std::print("{}\n", "");
-    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock, incplot::Color_CVTS::Foreground_Green));
-    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock1, incplot::Color_CVTS::Foreground_Red));
-    std::print("{}\n", incplot::TermColors::get_coloured(firstBLock2, incplot::Color_CVTS::Foreground_Blue));
+
 
     // std::print("{0}{1}\n", "\e]10;rgb:00/80/00\e\\", 123);
 

@@ -1,11 +1,13 @@
 #pragma once
 
+#include "incplot/config.hpp"
+#include "incplot/detail/color.hpp"
 #include <cmath>
 #include <codecvt>
 #include <format>
 #include <locale>
 
-#include <incplot/config.hpp>
+#include <incplot/color_mixer.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
 
@@ -17,10 +19,17 @@ constexpr inline std::string convert_u32u8(std::u32string const &str) {
     static std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
     return conv.to_bytes(str);
 }
+constexpr inline std::string convert_u32u8(std::u32string const &&str) {
+    return convert_u32u8(str);
+}
+
 
 constexpr inline std::u32string convert_u32u8(std::string const &str) {
     static std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
     return conv.from_bytes(str);
+}
+constexpr inline std::u32string convert_u32u8(std::string const &&str) {
+    return convert_u32u8(str);
 }
 
 // Compute 'on display' size of a string (correctly taking into account UTF8 glyphs)
@@ -191,6 +200,17 @@ public:
     requires std::is_arithmetic_v<typename X::value_type> && std::is_arithmetic_v<typename Y::value_type>
     static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, Y const &y_values,
                                                          X const &x_values) {
+        size_t numOfCols = 3;
+
+        std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> pointsCountPerPos_perColor =
+            (std::vector(
+                canvas_height,
+                std::vector(canvas_width, std::array<std::array<std::vector<size_t>, 2>, 4>{
+                                              std::vector<size_t>(numOfCols, 0), std::vector<size_t>(numOfCols, 0),
+                                              std::vector<size_t>(numOfCols, 0), std::vector<size_t>(numOfCols, 0),
+                                              std::vector<size_t>(numOfCols, 0), std::vector<size_t>(numOfCols, 0),
+                                              std::vector<size_t>(numOfCols, 0), std::vector<size_t>(numOfCols, 0)})));
+
         BrailleDrawer bd(canvas_width, canvas_height);
 
         auto [yMin, yMax] = std::ranges::minmax(y_values);
@@ -199,7 +219,7 @@ public:
         auto yStepSize = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
         auto xStepSize = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
 
-        auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal) {
+        auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal, size_t const &groupID) {
             auto y       = static_cast<size_t>(((yVal - yMin) / yStepSize)) / 4;
             auto yChrPos = static_cast<size_t>(((yVal - yMin) / yStepSize)) % 4;
 
@@ -207,12 +227,25 @@ public:
             auto xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
 
             bd.m_canvasBraille[y][x] |= Config::braille_map[yChrPos][xChrPos];
-            bd.m_canvasColors[y][x]   = bd.m_colorPallete.front();
+            pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
-        for (size_t i = 0; i < x_values.size(); ++i) { placePointOnCanvas(y_values[i], x_values[i]); }
+
+        for (size_t i = 0; i < x_values.size(); ++i) { placePointOnCanvas(y_values[i], x_values[i], 0); }
+        ColorMixer cm(ColorMixer::compute_maxStepsPerColor(pointsCountPerPos_perColor));
+
+
+        for (size_t rowID = 0; rowID < pointsCountPerPos_perColor.size(); ++rowID) {
+            for (size_t colID = 0; colID < pointsCountPerPos_perColor[rowID].size(); ++colID) {
+                if (bd.m_canvasBraille[rowID][colID] != Config::braille_blank) {
+                    bd.m_canvasColors[rowID][colID] = detail::convert_u32u8(
+                        TermColors::get_fgColor(cm.compute_colorOfPosition(pointsCountPerPos_perColor[rowID][colID])));
+                }
+            }
+        }
 
         std::vector<std::string> res;
+        // Gotta start rows from the back because axes cross bottom left and 'row 0' is top left
         for (int rowID = bd.m_canvasBraille.size() - 1; rowID > -1; --rowID) {
             std::u32string oneLine;
             for (size_t colID = 0; colID < bd.m_canvasBraille.front().size(); ++colID) {

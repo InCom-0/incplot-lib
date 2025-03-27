@@ -76,12 +76,45 @@ public:
                                return pr.first == static_cast<int>(col);
                            })->second);
     }
+    // Get color by ASCI defined fixed 256 palette
     static constexpr auto get_fgColor(int const color_256) {
         return std::string("\x1b[38;5;").append(std::to_string(color_256)).append("m");
     }
     static constexpr auto get_bgColor(int const color_256) {
         return std::string("\x1b[48;5;").append(std::to_string(color_256)).append("m");
     }
+
+    // Get color by RGB composition
+    static constexpr auto get_fgColor(unsigned int r, unsigned int g, unsigned int b) {
+        std::string res("\x1b[38;2;");
+        res.append(std::to_string(r));
+        res.push_back(';');
+        res.append(std::to_string(g));
+        res.push_back(';');
+        res.append(std::to_string(b));
+        res.push_back('m');
+        return res;
+    }
+    static constexpr auto get_fgColor(std::array<unsigned int, 3> color) {
+        return get_fgColor(color[0], color[1], color[2]);
+    }
+
+
+    static constexpr auto get_bgColor(unsigned int r, unsigned int g, unsigned int b) {
+        std::string res("\x1b[48;2;");
+        res.append(std::to_string(r));
+        res.push_back(';');
+        res.append(std::to_string(g));
+        res.push_back(';');
+        res.append(std::to_string(b));
+        res.push_back('m');
+        return res;
+    }
+    static constexpr auto get_bgColor(std::array<unsigned int, 3> color) {
+        return get_bgColor(color[0], color[1], color[2]);
+    }
+
+
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
     static constexpr auto get_colouredFG(T &&toColor, int color_256) {
