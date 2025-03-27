@@ -1,21 +1,12 @@
 #pragma once
 
-#include <algorithm>
-#include <cmath>
-#include <conio.h>
 #include <expected>
-#include <optional>
 #include <ranges>
-#include <string>
-#include <type_traits>
 #include <utility>
-#include <variant>
-#include <windows.h>
 
 #include <incplot/datastore.hpp>
 #include <incplot/detail.hpp>
 #include <incplot/parser.hpp>
-#include <nlohmann/json.hpp>
 
 
 namespace incom {
