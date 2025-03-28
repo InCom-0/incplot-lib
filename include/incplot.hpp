@@ -1,12 +1,14 @@
 #pragma once
 
 #include <expected>
+#include <functional>
 #include <ranges>
 #include <utility>
 
 #include <incplot/datastore.hpp>
 #include <incplot/detail.hpp>
 #include <incplot/parser.hpp>
+#include <vector>
 
 
 namespace incom {
@@ -73,11 +75,11 @@ private:
         else if (valCols_sz == 1 && labelCols_sz > 0) {
             dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
         }
-        // Bubble ? Maybe later
+        // Bubble ? Maybe later ... correction: probably never because it sucks visually :-)
         // else if (valCols_sz == 3) { dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>(); }
 
         // Scatter
-        else if (valCols_sz == 2 && labelCols_sz == 0) {
+        else if (valCols_sz > 1 && labelCols_sz == 0) {
             dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>();
         }
         // Single line
@@ -138,8 +140,8 @@ private:
 
         // SCATTER PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-            if (dp.values_colIDs.size() > 2) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > 4) { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else if (not addValColsUntil(4).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
         // BUBBLE PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Bubble>()) {
@@ -1029,32 +1031,44 @@ class Scatter : public BarV {
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
         auto const &valColTypeRef_y = ds.colTypes.at(dp.values_colIDs.front());
-        auto const &valColTypeRef_x = ds.colTypes.at(dp.values_colIDs.at(1));
 
+        std::vector<std::vector<double>> xVal_columns;
+        for (int i = 1; i < dp.values_colIDs.size(); ++i) {
+            if (ds.colTypes.at(dp.values_colIDs.at(i)).first == nlohmann::detail::value_t::number_float) {}
+        }
+
+        std::vector<double> fakeVectD;
+        auto                yCol = detail::BrailleDrawer::variadicColumns(std::make_pair("FV", std::ref(fakeVectD)));
+        std::vector<detail::BrailleDrawer::variadicColumns> xCols;
 
         if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
-            if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
-                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                                  ds.doubleCols.at(valColTypeRef_y.second),
-                                                                  ds.doubleCols.at(valColTypeRef_x.second));
-            }
-            else {
-                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                                  ds.doubleCols.at(valColTypeRef_y.second),
-                                                                  ds.llCols.at(valColTypeRef_x.second));
-            }
+            yCol = detail::BrailleDrawer::variadicColumns(std::make_pair(
+                ds.colNames.at(dp.values_colIDs.front()), std::ref(ds.doubleCols.at(valColTypeRef_y.second))));
         }
         else {
-            if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
-                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                                  ds.llCols.at(valColTypeRef_y.second),
-                                                                  ds.doubleCols.at(valColTypeRef_x.second));
+            yCol = detail::BrailleDrawer::variadicColumns(std::make_pair(
+                ds.colNames.at(dp.values_colIDs.front()), std::ref(ds.llCols.at(valColTypeRef_y.second))));
+        }
+
+        for (int i = 1; i < dp.values_colIDs.size(); ++i) {
+            if (ds.colTypes.at(dp.values_colIDs.at(i)).first == nlohmann::detail::value_t::number_float) {
+                xCols.push_back(
+                    std::make_pair(ds.colNames.at(dp.values_colIDs.at(i)),
+                                   std::ref(ds.doubleCols.at(ds.colTypes.at(dp.values_colIDs.at(i)).second))));
             }
             else {
-                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                                  ds.llCols.at(valColTypeRef_y.second),
-                                                                  ds.llCols.at(valColTypeRef_x.second));
+                xCols.push_back(std::make_pair(ds.colNames.at(dp.values_colIDs.at(i)),
+                                               std::ref(ds.llCols.at(ds.colTypes.at(dp.values_colIDs.at(i)).second))));
             }
+        }
+
+        if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
+            self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                              ds.doubleCols.at(valColTypeRef_y.second), xCols);
+        }
+        else {
+            self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                              ds.llCols.at(valColTypeRef_y.second), xCols);
         }
 
 

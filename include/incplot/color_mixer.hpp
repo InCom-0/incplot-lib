@@ -28,16 +28,19 @@ public:
     C       m_maxRGBVals;
     C const m_blackColor;
 
-    ColorMixer(std::vector<size_t>                      maxSteps_perColor,
+    ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect = 3uz,
                std::vector<std::array<unsigned int, 3>> selectColorsFrom = {Config::colors_defaulRaw.at(0),
                                                                             Config::colors_defaulRaw.at(1),
                                                                             Config::colors_defaulRaw.at(2)},
-               size_t num_colorsToSelect = 3uz, std::array<unsigned int, 3> blackRGB = Config::colors_blackRaw)
+               std::array<unsigned int, 3> blackRGB                      = Config::colors_blackRaw)
         : m_maxSteps_perColor(std::move(maxSteps_perColor)), m_blackColor{blackRGB[0], blackRGB[1], blackRGB[2]},
           m_stepSize_perColor(num_colorsToSelect, C_StepSize()) {
 
         // Construct vector of actual colors (in RGB)
-        for (auto const &inpArr : selectColorsFrom) { m_selColors.push_back(C{inpArr[0], inpArr[1], inpArr[2]}); }
+        for (size_t fromColID = 0; fromColID < num_colorsToSelect; ++fromColID) {
+            m_selColors.push_back(C{selectColorsFrom.at(fromColID)[0], selectColorsFrom.at(fromColID)[1],
+                                    selectColorsFrom.at(fromColID)[2]});
+        }
 
         // Compute max RGB per channel
         m_maxRGBVals.r = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.r < r.r; })->r;
@@ -55,10 +58,11 @@ public:
         }
     }
 
-    ColorMixer(std::vector<std::array<unsigned int, 3>> selectColorsFrom = {Config::colors_defaulRaw.at(0),
+    ColorMixer(size_t num_colorsToSelect                                 = 3uz,
+               std::vector<std::array<unsigned int, 3>> selectColorsFrom = {Config::colors_defaulRaw.at(0),
                                                                             Config::colors_defaulRaw.at(1),
                                                                             Config::colors_defaulRaw.at(2)})
-        : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), selectColorsFrom) {}
+        : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), num_colorsToSelect, selectColorsFrom) {}
 
 
     static constexpr std::vector<size_t> compute_maxStepsPerColor(
