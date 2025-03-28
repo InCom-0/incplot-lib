@@ -178,26 +178,26 @@ int main() {
 {"sepal_length":6.2,"sepal_width":3.4,"petal_length":5.4,"petal_width":2.3}
 {"sepal_length":5.9,"sepal_width":3,"petal_length":5.1,"petal_width":1.8})");
 
-    // auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
+    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
 
-    // auto dp_autoGuessed = incplot::DesiredPlot(96).guess_missingParams(ds);
+    auto dp_autoGuessed = incplot::DesiredPlot(96).guess_missingParams(ds);
 
-    // if (not dp_autoGuessed.has_value()) {
-    //     std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
-    //     return 1;
-    // }
+    if (not dp_autoGuessed.has_value()) {
+        std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
+        return 1;
+    }
 
-    // auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
+    auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
 
-    // auto outExp = plotDrawer2.validateAndDrawPlot();
+    auto outExp = plotDrawer2.validateAndDrawPlot();
 
-    // if (not outExp.has_value()) {
-    //     std::print("{0}{1}", "Invalid plot structure", "Exiting ...");
-    //     return 1;
-    // }
+    if (not outExp.has_value()) {
+        std::print("{0}{1}", "Invalid plot structure", "Exiting ...");
+        return 1;
+    }
 
-    // std::print("{}\n", outExp.value());
+    std::print("{}\n", outExp.value());
 
 
     std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green),

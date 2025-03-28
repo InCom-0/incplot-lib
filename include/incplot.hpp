@@ -1,5 +1,7 @@
 #pragma once
 
+#include "incplot/config.hpp"
+#include "incplot/detail/color.hpp"
 #include <expected>
 #include <functional>
 #include <ranges>
@@ -645,6 +647,7 @@ class BarV : public Base {
         auto const &labelsRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
         self.labels_verLeft.push_back(
             std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
+
         for (auto const &rawLabel : labelsRef) {
             self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
             for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
@@ -653,6 +656,7 @@ class BarV : public Base {
         }
         self.labels_verLeft.push_back(
             std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
+
         return (self);
     }
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -809,6 +813,8 @@ class BarV : public Base {
             auto   stepSize         = (maxV - minV) / (self.areaWidth + 1);
             size_t placedChars      = 0;
 
+            self.label_horBottom.append(Config::color_Axes);
+
             // Construct the [0:0] point label
             std::string tempStr = detail::format_toMax5length(minV);
             self.label_horBottom.append(tempStr);
@@ -831,6 +837,7 @@ class BarV : public Base {
                 self.label_horBottom.push_back(Config::space);
             }
             self.label_horBottom.append(tempStr);
+            self.label_horBottom.append(Config::term_setDefault);
         };
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
@@ -915,7 +922,7 @@ class Scatter : public BarV {
             auto        stepSize = (maxVal - minVal) / (areaLength + 1);
 
             // Construct with 'left padding' in place
-            std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space));
+            std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
 
             // Value label of 'zero point'
             res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
@@ -981,6 +988,8 @@ class Scatter : public BarV {
             auto   stepSize         = ((maxV - minV) / ((2 * self.areaWidth) + 1)) * 2;
             size_t placedChars      = 0;
 
+            self.label_horBottom.append(Config::color_Axes);
+
             // Construct the [0:0] point label
             std::string tempStr = detail::format_toMax5length(minV - stepSize);
             self.label_horBottom.append(tempStr);
@@ -1004,6 +1013,7 @@ class Scatter : public BarV {
                 self.label_horBottom.push_back(Config::space);
             }
             self.label_horBottom.append(tempStr);
+            self.label_horBottom.append(Config::term_setDefault);
         };
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
