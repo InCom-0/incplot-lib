@@ -1,3 +1,5 @@
+#pragma once
+
 namespace incom {
 namespace terminal_plot {
 

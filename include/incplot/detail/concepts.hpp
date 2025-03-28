@@ -1,3 +1,5 @@
+#pragma once
+
 #include <algorithm>
 #include <source_location>
 #include <string>
