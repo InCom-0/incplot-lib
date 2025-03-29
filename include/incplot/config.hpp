@@ -39,6 +39,7 @@ public:
                                                                                  31u, 0u,   55u, 218u};
 
     static constexpr std::array<unsigned int, 3> colors_blackRaw{12, 12, 12};
+    static constexpr double                      colors_scaleDistanceFromBlack = 0.85;
 
     static constexpr size_t max_numOfValCols = 4uz;
 

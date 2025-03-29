@@ -26,6 +26,7 @@ public:
     std::vector<size_t> const m_maxSteps_perColor;
 
     C       m_maxRGBVals;
+    C       m_fakeZeroColor;
     C const m_blackColor;
 
     ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect = 3uz,
@@ -47,14 +48,21 @@ public:
         m_maxRGBVals.g = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.g < r.g; })->g;
         m_maxRGBVals.b = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.b < r.b; })->b;
 
+        m_fakeZeroColor.r = m_blackColor.r + static_cast<unsigned int>((m_maxRGBVals.r - m_blackColor.r) *
+                                                                       (1 - Config::colors_scaleDistanceFromBlack));
+        m_fakeZeroColor.g = m_blackColor.g + static_cast<unsigned int>((m_maxRGBVals.g - m_blackColor.g) *
+                                                                       (1 - Config::colors_scaleDistanceFromBlack));
+        m_fakeZeroColor.b = m_blackColor.b + static_cast<unsigned int>((m_maxRGBVals.b - m_blackColor.b) *
+                                                                       (1 - Config::colors_scaleDistanceFromBlack));
+
         // Compute stepsize per color
         for (auto const &zippedEle : std::ranges::views::zip(m_stepSize_perColor, m_maxSteps_perColor, m_selColors)) {
             std::get<0>(zippedEle).r =
-                (std::get<2>(zippedEle).r - static_cast<double>(m_blackColor.r)) / (std::get<1>(zippedEle));
+                (std::get<2>(zippedEle).r - static_cast<double>(m_fakeZeroColor.r)) / (std::get<1>(zippedEle));
             std::get<0>(zippedEle).g =
-                (std::get<2>(zippedEle).g - static_cast<double>(m_blackColor.g)) / (std::get<1>(zippedEle));
+                (std::get<2>(zippedEle).g - static_cast<double>(m_fakeZeroColor.g)) / (std::get<1>(zippedEle));
             std::get<0>(zippedEle).b =
-                (std::get<2>(zippedEle).b - static_cast<double>(m_blackColor.b)) / (std::get<1>(zippedEle));
+                (std::get<2>(zippedEle).b - static_cast<double>(m_fakeZeroColor.b)) / (std::get<1>(zippedEle));
         }
     }
 
@@ -85,7 +93,7 @@ public:
         return res;
     }
 
-    // 
+    //
     constexpr std::array<unsigned int, 3> compute_colorOfPosition(
         std::array<std::array<std::vector<size_t>, 2>, 4> const &colorPointCounts_onePos) {
 
@@ -100,7 +108,7 @@ public:
             }
         }
 
-        std::array<unsigned int, 3> res{m_blackColor.r, m_blackColor.g, m_blackColor.b};
+        std::array<unsigned int, 3> res{m_fakeZeroColor.r, m_fakeZeroColor.g, m_fakeZeroColor.b};
         for (auto const &[steps, stepSize] : std::views::zip(stepsForPos_perColor, m_stepSize_perColor)) {
             res[0] += static_cast<unsigned int>(steps * stepSize.r);
             res[1] += static_cast<unsigned int>(steps * stepSize.g);
