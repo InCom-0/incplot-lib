@@ -2,11 +2,13 @@
 
 #include <expected>
 
+#include <functional>
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
 #include <nlohmann/json.hpp>
+#include <optional>
 
 
 namespace incom {
@@ -26,6 +28,18 @@ class Bubble;
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
+
+class ValVect {
+    std::optional<std::reference_wrapper<std::vector<double>>> const    vect_dbl;
+    std::optional<std::reference_wrapper<std::vector<long long>>> const vect_ll;
+
+    ValVect(std::vector<double> &inp) : vect_dbl(inp), vect_ll(std::nullopt) {}
+    ValVect(std::vector<long long> &inp) : vect_dbl(std::nullopt), vect_ll(inp) {}
+
+
+};
+
+
 class DesiredPlot {
     using NLMjson = nlohmann::json;
 
@@ -172,9 +186,7 @@ private:
 
 
 public:
-// Column data assessment for the purpose of DesiredPlot decision making
-
-
+    // Column data assessment for the purpose of DesiredPlot decision making
 
 
 public:
