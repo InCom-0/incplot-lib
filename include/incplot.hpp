@@ -3,6 +3,7 @@
 #include "incplot/config.hpp"
 #include <expected>
 #include <functional>
+#include <limits>
 #include <ranges>
 #include <utility>
 
@@ -323,13 +324,12 @@ class BarV : public Base {
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        // Vertical left labels
+        // Vertical left labels size
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             auto const &labelColRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
             auto const  labelSizes =
                 std::views::transform(labelColRef, [](auto const &a) { return detail::strlen_utf8(a); });
 
-            // TODO: Convert the 'hard limit' into some sort of constexpr config thing
             self.labels_verLeftWidth = std::min(
                 Config::axisLabels_maxLength_vl,
                 std::min(std::ranges::max(labelSizes), (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
@@ -756,15 +756,14 @@ class Scatter : public BarV {
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        auto computeLabels = [&](auto const &valColRef) -> void {
-            size_t const fillerSize = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
-            auto const [minV, maxV] = std::ranges::minmax(valColRef);
-            auto   stepSize         = ((maxV - minV) / ((2 * self.areaWidth) + 1)) * 2;
-            size_t placedChars      = 0;
+        auto computeLabels = [&](double const &minV, double const &maxV) -> void {
+            size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
+            auto         stepSize    = ((maxV - minV) / ((2 * self.areaWidth) + 1)) * 2;
+            size_t       placedChars = 0;
 
             self.label_horBottom.append(Config::color_Axes);
 
-            // Construct the [0:0] point label
+            // Construct the [0:0] point label (minV - stepsize to make the first label one below the minV)
             std::string tempStr = detail::format_toMax5length(minV - stepSize);
             self.label_horBottom.append(tempStr);
             placedChars += detail::strlen_utf8(tempStr);
@@ -797,16 +796,26 @@ class Scatter : public BarV {
             // TODO: What to do with Line and Multiline axisLabel bottom
         }
         else {
-            // The SECOND value column is plotted on hb axis
+            // The SECOND and ABOVE value columns are used for the minV maxV basis
             auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.at(1));
-            if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
-                auto const &valColRef = ds.doubleCols.at(valColTypeRef.second);
-                computeLabels(valColRef);
+
+            double minV = std::numeric_limits<double>::max(), maxV = std::numeric_limits<double>::min();
+            for (size_t id = 1; id < dp.values_colIDs.size(); ++id) {
+                if (ds.colTypes.at(id).first == nlohmann::detail::value_t::number_float) {
+                    auto const [minV_tmp, maxV_tmp] =
+                        std::ranges::minmax(ds.doubleCols.at(ds.colTypes.at(dp.values_colIDs.at(id)).second));
+                    minV = std::min(minV, minV_tmp);
+                    maxV = std::max(maxV, maxV_tmp);
+                }
+                else {
+                    auto const [minV_tmp, maxV_tmp] =
+                        std::ranges::minmax(ds.llCols.at(ds.colTypes.at(dp.values_colIDs.at(id)).second));
+                    minV = std::min(minV, static_cast<double>(minV_tmp));
+                    maxV = std::max(maxV, static_cast<double>(maxV_tmp));
+                }
             }
-            else {
-                auto const &valColRef = ds.llCols.at(valColTypeRef.second);
-                computeLabels(valColRef);
-            }
+
+            computeLabels(minV, maxV);
         }
         return self;
     }

@@ -9,7 +9,6 @@
 #include <nlohmann/json.hpp>
 
 
-
 namespace incom {
 namespace terminal_plot {
 // FORWARD DELCARATIONS
@@ -170,6 +169,13 @@ private:
 
         return dp;
     }
+
+
+public:
+// Column data assessment for the purpose of DesiredPlot decision making
+
+
+
 
 public:
     std::optional<std::string> plot_type_name;
