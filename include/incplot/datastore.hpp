@@ -1,12 +1,13 @@
 #pragma once
 
 #include <nlohmann/json.hpp>
+#include <nlohmann/json_fwd.hpp>
 
 namespace incom {
 namespace terminal_plot {
 // Data storage for the actual data that are to be plotted
 struct DataStore {
-    using NLMjson = nlohmann::json;
+    using NLMjson = nlohmann::ordered_json;
     // The json this was constucted with/from ... possibly not strictly necessary to keep, but whatever
     std::vector<NLMjson> constructedWith;
 

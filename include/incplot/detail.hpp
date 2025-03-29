@@ -2,10 +2,12 @@
 
 #include "incplot/config.hpp"
 #include "incplot/detail/color.hpp"
+#include <algorithm>
 #include <cmath>
 #include <codecvt>
 #include <format>
 #include <functional>
+#include <limits>
 #include <locale>
 
 #include <incplot/color_mixer.hpp>
@@ -188,6 +190,24 @@ constexpr inline std::string format_toMax5length(T &&val) {
     return std::format("{:.{}f}{}", rbsed, (rbsed >= 10 || rbsed <= -10) ? 0 : 1, unit.value_or(""));
 }
 
+using variadicColumns = std::variant<std::pair<std::string, std::reference_wrapper<const std::vector<long long>>>,
+                                     std::pair<std::string, std::reference_wrapper<const std::vector<double>>>>;
+
+constexpr inline std::pair<double, double> compute_minMaxMulti(std::vector<detail::variadicColumns> const &vc_vec) {
+    std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
+
+    for (auto const &variantRef : vc_vec) {
+        auto ol_set = [&](auto const &var) -> void {
+            auto [minV_l, maxV_l] = std::ranges::minmax(var.second.get());
+            res.first             = std::min(res.first, static_cast<double>(minV_l));
+            res.second            = std::max(res.second, static_cast<double>(maxV_l));
+        };
+        std::visit(ol_set, variantRef);
+    }
+    return res;
+}
+
+
 class BrailleDrawer {
 private:
     std::vector<std::vector<std::u32string>> m_canvasColors;
@@ -234,9 +254,6 @@ private:
     }
 
 public:
-    using variadicColumns = std::variant<std::pair<std::string, std::reference_wrapper<const std::vector<long long>>>,
-                                         std::pair<std::string, std::reference_wrapper<const std::vector<double>>>>;
-
     template <typename Y, typename X>
     requires std::is_arithmetic_v<typename X::value_type> && std::is_arithmetic_v<typename Y::value_type>
     static constexpr std::vector<std::string> drawPoints(
@@ -349,38 +366,25 @@ public:
                                 std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
                                 std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0)})));
 
-
         BrailleDrawer bd(canvas_width, canvas_height);
 
         auto [yMin, yMax] = std::ranges::minmax(y_values);
+        auto [xMin, xMax] = compute_minMaxMulti(x_valCols);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
+        double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
 
-        std::vector<double> xMinCol;
-        std::vector<double> xMaxCol;
-        std::vector<double> xstepSizeCol;
-
-        auto compute_minMaxStepSize = [&](auto &&fv) -> void {
-            auto [xMin, xMax] = std::ranges::minmax(fv);
-            xstepSizeCol.push_back((xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1));
-            xMinCol.push_back(xMin);
-            xMaxCol.push_back(xMax);
-        };
 
         auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal, size_t const &groupID) {
             auto y       = static_cast<size_t>(((yVal - yMin) / yStepSize)) / 4;
             auto yChrPos = static_cast<size_t>(((yVal - yMin) / yStepSize)) % 4;
 
-            auto x       = static_cast<size_t>(((xVal - xMinCol[groupID]) / xstepSizeCol[groupID])) / 2;
-            auto xChrPos = static_cast<size_t>(((xVal - xMinCol[groupID]) / xstepSizeCol[groupID])) % 2;
+            auto x       = static_cast<size_t>(((xVal - xMin) / xStepSize)) / 2;
+            auto xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
 
             bd.m_canvasBraille[y][x] |= Config::braille_map[yChrPos][xChrPos];
             pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
-        // Category is specified by individual x_valCols themselves (their heading is the category name)
-        for (size_t i = 0; auto const &one_xValCol : x_valCols) {
-            std::visit([&](auto const &pair) -> void { compute_minMaxStepSize(pair.second.get()); }, one_xValCol);
-        }
         for (size_t i = 0; auto const &one_xValCol : x_valCols) {
             auto olSet = [&](auto const &pair) -> void {
                 auto const &xValCol_data = pair.second.get();
@@ -396,6 +400,7 @@ public:
         return bd.construct_outputPlotArea();
     }
 };
+
 
 } // namespace detail
 } // namespace terminal_plot

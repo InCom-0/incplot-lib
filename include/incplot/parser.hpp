@@ -1,6 +1,7 @@
 #pragma once
 
 #include <incplot/datastore.hpp>
+#include <nlohmann/json_fwd.hpp>
 #include <print>
 
 
@@ -10,7 +11,7 @@ namespace terminal_plot {
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
 struct Parser {
-    using NLMjson = nlohmann::json;
+    using NLMjson = nlohmann::ordered_json;
     static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
         // Validate that all the JSON objects parsed above have the same structure
         for (auto const &js : jsonVec) {

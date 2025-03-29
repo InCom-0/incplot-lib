@@ -797,9 +797,8 @@ class Scatter : public BarV {
         }
         else {
             // The SECOND and ABOVE value columns are used for the minV maxV basis
-            auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.at(1));
-
             double minV = std::numeric_limits<double>::max(), maxV = std::numeric_limits<double>::min();
+            
             for (size_t id = 1; id < dp.values_colIDs.size(); ++id) {
                 if (ds.colTypes.at(id).first == nlohmann::detail::value_t::number_float) {
                     auto const [minV_tmp, maxV_tmp] =
@@ -831,15 +830,15 @@ class Scatter : public BarV {
         }
 
         std::vector<double> fakeVectD;
-        auto                yCol = detail::BrailleDrawer::variadicColumns(std::make_pair("FV", std::ref(fakeVectD)));
-        std::vector<detail::BrailleDrawer::variadicColumns> xCols;
+        auto                yCol = detail::variadicColumns(std::make_pair("FV", std::ref(fakeVectD)));
+        std::vector<detail::variadicColumns> xCols;
 
         if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
-            yCol = detail::BrailleDrawer::variadicColumns(std::make_pair(
+            yCol = detail::variadicColumns(std::make_pair(
                 ds.colNames.at(dp.values_colIDs.front()), std::ref(ds.doubleCols.at(valColTypeRef_y.second))));
         }
         else {
-            yCol = detail::BrailleDrawer::variadicColumns(std::make_pair(
+            yCol = detail::variadicColumns(std::make_pair(
                 ds.colNames.at(dp.values_colIDs.front()), std::ref(ds.llCols.at(valColTypeRef_y.second))));
         }
 
