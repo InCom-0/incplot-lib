@@ -210,27 +210,36 @@ constexpr inline std::pair<double, double> compute_minMaxMulti(std::vector<detai
 
 class BrailleDrawer {
 private:
-    std::vector<std::vector<std::u32string>> m_canvasColors;
-    std::vector<std::vector<char32_t>>       m_canvasBraille;
-    std::vector<std::u32string>              m_colorPallete = std::vector<std::u32string>{
+    std::vector<std::vector<std::u32string>>                                    m_canvasColors;
+    std::vector<std::vector<char32_t>>                                          m_canvasBraille;
+    std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> m_pointsCountPerPos_perColor;
+
+    std::vector<std::u32string> m_colorPallete = std::vector<std::u32string>{
         detail::convert_u32u8(Config::color_Vals1), detail::convert_u32u8(Config::color_Vals2),
         detail::convert_u32u8(Config::color_Vals3)};
     std::u32string s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
 
 
     BrailleDrawer() {};
-    BrailleDrawer(size_t canvas_width, size_t canvas_height)
+    BrailleDrawer(size_t canvas_width, size_t canvas_height, size_t numOf_categories)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
-          m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))) {};
+          m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))),
+          m_pointsCountPerPos_perColor(std::vector(
+              canvas_height,
+              std::vector(canvas_width,
+                          std::array<std::array<std::vector<size_t>, 2>, 4>{
+                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
+                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
+                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
+                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0)}))) {};
 
-    constexpr void compute_canvasColors(
-        std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> const &points_perDotPerColor) {
-        ColorMixer cm(ColorMixer::compute_maxStepsPerColor(points_perDotPerColor));
-        for (size_t rowID = 0; rowID < points_perDotPerColor.size(); ++rowID) {
-            for (size_t colID = 0; colID < points_perDotPerColor[rowID].size(); ++colID) {
+    constexpr void compute_canvasColors() {
+        ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor));
+        for (size_t rowID = 0; rowID < m_pointsCountPerPos_perColor.size(); ++rowID) {
+            for (size_t colID = 0; colID < m_pointsCountPerPos_perColor[rowID].size(); ++colID) {
                 if (m_canvasBraille[rowID][colID] != Config::braille_blank) {
-                    m_canvasColors[rowID][colID] = detail::convert_u32u8(
-                        TermColors::get_fgColor(cm.compute_colorOfPosition(points_perDotPerColor[rowID][colID])));
+                    m_canvasColors[rowID][colID] = detail::convert_u32u8(TermColors::get_fgColor(
+                        cm.compute_colorOfPosition(m_pointsCountPerPos_perColor[rowID][colID])));
                 }
             }
         }
@@ -295,18 +304,7 @@ public:
             catCol_IDs       = std::vector<size_t>(x_values.size(), 0);
         }
 
-        std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> pointsCountPerPos_perColor =
-            (std::vector(
-                canvas_height,
-                std::vector(canvas_width,
-                            std::array<std::array<std::vector<size_t>, 2>, 4>{
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0)})));
-
-
-        BrailleDrawer bd(canvas_width, canvas_height);
+        BrailleDrawer bd(canvas_width, canvas_height, numOf_categories);
 
         auto [yMin, yMax] = std::ranges::minmax(y_values);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
@@ -330,7 +328,7 @@ public:
             auto xChrPos = static_cast<size_t>(((xVal - xMinCol[groupID]) / xstepSizeCol[groupID])) % 2;
 
             bd.m_canvasBraille[y][x] |= Config::braille_map[yChrPos][xChrPos];
-            pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
+            bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
 
@@ -343,9 +341,10 @@ public:
         }
 
         for (size_t i = 0; i < y_values.size(); ++i) { placePointOnCanvas(y_values[i], x_values[i], catCol_IDs[i]); }
-        bd.compute_canvasColors(pointsCountPerPos_perColor);
+        bd.compute_canvasColors();
         return bd.construct_outputPlotArea();
     }
+
     template <typename Y>
     requires std::is_arithmetic_v<typename Y::value_type>
     static constexpr std::vector<std::string> drawPoints(
@@ -354,19 +353,7 @@ public:
                                  std::pair<std::string, std::reference_wrapper<const std::vector<double>>>>> const
             &x_valCols) {
 
-
-        size_t                                                                      numOf_categories = x_valCols.size();
-        std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> pointsCountPerPos_perColor =
-            (std::vector(
-                canvas_height,
-                std::vector(canvas_width,
-                            std::array<std::array<std::vector<size_t>, 2>, 4>{
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                                std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0)})));
-
-        BrailleDrawer bd(canvas_width, canvas_height);
+        BrailleDrawer bd(canvas_width, canvas_height, x_valCols.size());
 
         auto [yMin, yMax] = std::ranges::minmax(y_values);
         auto [xMin, xMax] = compute_minMaxMulti(x_valCols);
@@ -382,7 +369,7 @@ public:
             auto xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
 
             bd.m_canvasBraille[y][x] |= Config::braille_map[yChrPos][xChrPos];
-            pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
+            bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
         for (size_t i = 0; auto const &one_xValCol : x_valCols) {
@@ -396,7 +383,7 @@ public:
             std::visit(olSet, one_xValCol);
         }
 
-        bd.compute_canvasColors(pointsCountPerPos_perColor);
+        bd.compute_canvasColors();
         return bd.construct_outputPlotArea();
     }
 };
