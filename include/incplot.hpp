@@ -1,8 +1,9 @@
 #pragma once
 
 #include "incplot/config.hpp"
+#include "incplot/detail.hpp"
+#include <algorithm>
 #include <expected>
-#include <functional>
 #include <limits>
 #include <ranges>
 #include <utility>
@@ -822,37 +823,23 @@ class Scatter : public BarV {
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        auto const &valColTypeRef_y = ds.colTypes.at(dp.values_colIDs.front());
+        auto const &valColTypeRef_x = ds.colTypes.at(dp.values_colIDs.front());
 
-        std::vector<std::vector<double>> xVal_columns;
-        for (int i = 1; i < dp.values_colIDs.size(); ++i) {
-            if (ds.colTypes.at(dp.values_colIDs.at(i)).first == nlohmann::detail::value_t::number_float) {}
-        }
+        // Filter only the yValCols, also filter out the first selected column
+        auto view_yValCols = std::views::enumerate(ds.vec_colVariants) | std::views::filter([&](auto const &a) {
+                                 return (std::ranges::find(dp.values_colIDs.begin() + 1, dp.values_colIDs.end(),
+                                                           std::get<0>(a)) != dp.values_colIDs.end());
+                             }) |
+                             std::views::transform([](auto const &b) { return std::get<1>(b); });
 
-        std::vector<double>                  fakeVectD;
-        auto                                 yCol = detail::variadicColumns(std::make_pair("FV", std::ref(fakeVectD)));
-        std::vector<detail::variadicColumns> xCols;
-
-        if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
-            yCol = detail::variadicColumns(std::make_pair(ds.colNames.at(dp.values_colIDs.front()),
-                                                          std::ref(ds.doubleCols.at(valColTypeRef_y.second))));
-        }
-        else {
-            yCol = detail::variadicColumns(std::make_pair(ds.colNames.at(dp.values_colIDs.front()),
-                                                          std::ref(ds.llCols.at(valColTypeRef_y.second))));
-        }
-
-        PlotDataWrapper pdw(dp, ds, 1);
-
-        if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
+        if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
             self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                              ds.doubleCols.at(valColTypeRef_y.second), pdw);
+                                                              ds.doubleCols.at(valColTypeRef_x.second), view_yValCols);
         }
         else {
             self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                              ds.llCols.at(valColTypeRef_y.second), pdw);
+                                                              ds.llCols.at(valColTypeRef_x.second), view_yValCols);
         }
-
 
         return self;
     }

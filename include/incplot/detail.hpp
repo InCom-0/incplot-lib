@@ -194,17 +194,19 @@ constexpr inline std::string format_toMax5length(T &&val) {
 using variadicColumns = std::variant<std::pair<std::string, std::reference_wrapper<const std::vector<long long>>>,
                                      std::pair<std::string, std::reference_wrapper<const std::vector<double>>>>;
 
-constexpr inline std::pair<double, double> compute_minMaxMulti(std::vector<detail::variadicColumns> const &vc_vec) {
+constexpr inline std::pair<double, double> compute_minMaxMulti(auto &&vectorOfVariantRefWrpVectors) {
     std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
 
-    for (auto const &variantRef : vc_vec) {
-        auto ol_set = [&](auto const &var) -> void {
-            auto [minV_l, maxV_l] = std::ranges::minmax(var.second.get());
+    auto ol_set = [&](auto &var) -> void {
+        auto const &vect = var.get();
+        if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vect)>::value_type>) {
+            auto [minV_l, maxV_l] = std::ranges::minmax(vect);
             res.first             = std::min(res.first, static_cast<double>(minV_l));
             res.second            = std::max(res.second, static_cast<double>(maxV_l));
-        };
-        std::visit(ol_set, variantRef);
-    }
+        }
+    };
+
+    for (auto const &variantRef : vectorOfVariantRefWrpVectors) { std::visit(ol_set, variantRef); }
     return res;
 }
 
@@ -348,15 +350,18 @@ public:
 
     template <typename Y>
     requires std::is_arithmetic_v<typename Y::value_type>
-    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, Y const &y_values,
-                                                         PlotDataWrapper const &pdw_xValCols) {
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, Y const &x_values,
+                                                         auto viewOfValVariants) {
+        auto vOVV2 = viewOfValVariants;
+        auto vOVV3 = viewOfValVariants;
 
-        BrailleDrawer bd(canvas_width, canvas_height, pdw_xValCols.m_varVect.size());
+        BrailleDrawer bd(canvas_width, canvas_height,
+                         std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }));
 
-        auto [yMin, yMax] = std::ranges::minmax(y_values);
-        auto [xMin, xMax] = pdw_xValCols.compute_minMax();
-        double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
+        auto [xMin, xMax] = std::ranges::minmax(x_values);
+        auto [yMin, yMax] = compute_minMaxMulti(vOVV2);
         double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
+        double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
 
 
         auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal, size_t const &groupID) {
@@ -370,15 +375,18 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
-        for (size_t i = 0; auto const &one_xValCol : pdw_xValCols.m_varVect) {
-            auto olSet = [&](auto const &pair) -> void {
-                auto const &xValCol_data = pair.get();
-                for (size_t rowID = 0; rowID < y_values.size(); ++rowID) {
-                    placePointOnCanvas(y_values[rowID], xValCol_data[rowID], i);
+        for (size_t i = 0; auto const &one_yValCol : vOVV3) {
+            auto olSet = [&](auto const &oneCol) -> void {
+                auto const &yValCol_data = oneCol.get();
+                if constexpr (std::is_arithmetic_v<
+                                  typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
+                    for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
+                        placePointOnCanvas(yValCol_data[rowID], x_values[rowID], i);
+                    }
+                    i++;
                 }
-                i++;
             };
-            std::visit(olSet, one_xValCol);
+            std::visit(olSet, one_yValCol);
         }
 
         bd.compute_canvasColors();

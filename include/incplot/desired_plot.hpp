@@ -1,9 +1,7 @@
 #pragma once
 
-#include <concepts>
 #include <expected>
 
-#include <functional>
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/detail/concepts.hpp>
@@ -26,6 +24,7 @@ class Scatter;
 class Bubble;
 } // namespace plot_structures
 
+
 // FORWARD DELCARATIONS --- END
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
@@ -34,6 +33,9 @@ class Bubble;
 
 class DesiredPlot {
     using NLMjson = nlohmann::json;
+
+public:
+    // Column data assessment for the purpose of DesiredPlot decision making
 
 private:
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
@@ -178,14 +180,19 @@ private:
 
 
 public:
-    // Column data assessment for the purpose of DesiredPlot decision making
-
-
-public:
     std::optional<std::string> plot_type_name;
 
     std::optional<size_t>      label_colID; // ID in colTypes
     std::optional<std::string> label_colName;
+
+    // Category column ID
+    std::optional<size_t>      cat_colID; // ID in colTypes
+    std::optional<std::string> cat_colName;
+
+    // Label for use in timeseries
+    std::optional<size_t>      labelTS_colID; // ID in colTypes
+    std::optional<std::string> labelTS_colName;
+
 
     // TODO: Make both 'values_' into std::optional as well to keep the logic the same for all here
     std::vector<size_t>      values_colIDs; // IDs in colTypes
@@ -248,42 +255,6 @@ public:
     }
 };
 
-struct PlotDataWrapper {
-public:
-    std::vector<std::variant<std::reference_wrapper<const std::vector<long long>>,
-                             std::reference_wrapper<const std::vector<double>>>>
-        m_varVect;
-
-    void push_back(auto &oneVect) { m_varVect.push_back(std::ref(oneVect)); }
-
-    PlotDataWrapper(DesiredPlot const &dp, DataStore const &ds, size_t startWith_valColID)
-        : PlotDataWrapper(dp, ds,
-                          std::views::iota(startWith_valColID, dp.values_colIDs.size()) |
-                              std::ranges::to<std::vector>()) {}
-
-    PlotDataWrapper(DesiredPlot const &dp, DataStore const &ds, std::vector<size_t> const &&valColIDs) {
-        for (auto const &vcID : valColIDs) {
-
-            if (ds.colTypes.at(dp.values_colIDs.at(vcID)).first == nlohmann::detail::value_t::number_float) {
-                m_varVect.push_back(std::ref(ds.doubleCols.at(ds.colTypes.at(dp.values_colIDs.at(vcID)).second)));
-            }
-            else { m_varVect.push_back(std::ref(ds.llCols.at(ds.colTypes.at(dp.values_colIDs.at(vcID)).second))); }
-        }
-    }
-
-    std::pair<double, double> compute_minMax() const {
-        std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
-        for (auto const &variantRef : m_varVect) {
-            auto ol_set = [&](auto const &var) -> void {
-                auto [minV_l, maxV_l] = std::ranges::minmax(var.get());
-                res.first             = std::min(res.first, static_cast<double>(minV_l));
-                res.second            = std::max(res.second, static_cast<double>(maxV_l));
-            };
-            std::visit(ol_set, variantRef);
-        }
-        return res;
-    }
-};
 
 } // namespace terminal_plot
 } // namespace incom

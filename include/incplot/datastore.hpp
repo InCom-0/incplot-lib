@@ -21,6 +21,13 @@ struct DataStore {
     std::vector<std::vector<long long>>   llCols; // Don't care about signed unsigned, etc. ... all will be long long
     std::vector<std::vector<double>>      doubleCols;
 
+    // DataStore can be accessed using dynamic polymorphism with this vector of varints reference to each collumn in the
+    // data storage
+    std::vector<
+        std::variant<std::reference_wrapper<std::vector<std::string>>, std::reference_wrapper<std::vector<long long>>,
+                     std::reference_wrapper<std::vector<double>>>>
+        vec_colVariants;
+
 
     // CONSTRUCTION
     DataStore(std::vector<NLMjson> &&jsonVec) : constructedWith(std::move(jsonVec)) {
@@ -44,12 +51,15 @@ struct DataStore {
             }
         }
         append_data(constructedWith);
+        build_vecOfColVariants();
     }
 
     // APPENDING
     void append_data(std::vector<NLMjson> const &toAppend) {
+        // For each json line ...
         for (auto const &oneJson : toAppend) {
             auto oneJsonIT = oneJson.items().begin();
+            // ... go across the colTypes and add data to the right vector
             for (auto const &colTypesPair : colTypes) {
                 if (colTypesPair.first == NLMjson::value_t::string) {
                     stringCols[colTypesPair.second].push_back(oneJsonIT.value());
@@ -68,6 +78,21 @@ struct DataStore {
     void append_jsonAndData(std::vector<NLMjson> const &toAppend) {
         constructedWith.insert(constructedWith.end(), toAppend.begin(), toAppend.end());
         append_data(toAppend);
+    }
+
+    void build_vecOfColVariants() {
+        for (auto const &colTypesPair : colTypes) {
+            if (colTypesPair.first == NLMjson::value_t::string) {
+                vec_colVariants.push_back(stringCols[colTypesPair.second]);
+            }
+            else if (colTypesPair.first == NLMjson::value_t::number_integer ||
+                     colTypesPair.first == NLMjson::value_t::number_unsigned) {
+                vec_colVariants.push_back(llCols[colTypesPair.second]);
+            }
+            else if (colTypesPair.first == NLMjson::value_t::number_float) {
+                vec_colVariants.push_back(doubleCols[colTypesPair.second]);
+            }
+        }
     }
 };
 
