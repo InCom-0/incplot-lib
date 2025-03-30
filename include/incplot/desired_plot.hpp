@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <expected>
 
 #include <functional>
@@ -9,6 +10,7 @@
 #include <incplot/detail/misc.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
+#include <ranges>
 
 
 namespace incom {
@@ -28,16 +30,6 @@ class Bubble;
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
-
-class ValVect {
-    std::optional<std::reference_wrapper<std::vector<double>>> const    vect_dbl;
-    std::optional<std::reference_wrapper<std::vector<long long>>> const vect_ll;
-
-    ValVect(std::vector<double> &inp) : vect_dbl(inp), vect_ll(std::nullopt) {}
-    ValVect(std::vector<long long> &inp) : vect_dbl(std::nullopt), vect_ll(inp) {}
-
-
-};
 
 
 class DesiredPlot {
@@ -256,6 +248,42 @@ public:
     }
 };
 
+struct PlotDataWrapper {
+public:
+    std::vector<std::variant<std::reference_wrapper<const std::vector<long long>>,
+                             std::reference_wrapper<const std::vector<double>>>>
+        m_varVect;
+
+    void push_back(auto &oneVect) { m_varVect.push_back(std::ref(oneVect)); }
+
+    PlotDataWrapper(DesiredPlot const &dp, DataStore const &ds, size_t startWith_valColID)
+        : PlotDataWrapper(dp, ds,
+                          std::views::iota(startWith_valColID, dp.values_colIDs.size()) |
+                              std::ranges::to<std::vector>()) {}
+
+    PlotDataWrapper(DesiredPlot const &dp, DataStore const &ds, std::vector<size_t> const &&valColIDs) {
+        for (auto const &vcID : valColIDs) {
+
+            if (ds.colTypes.at(dp.values_colIDs.at(vcID)).first == nlohmann::detail::value_t::number_float) {
+                m_varVect.push_back(std::ref(ds.doubleCols.at(ds.colTypes.at(dp.values_colIDs.at(vcID)).second)));
+            }
+            else { m_varVect.push_back(std::ref(ds.llCols.at(ds.colTypes.at(dp.values_colIDs.at(vcID)).second))); }
+        }
+    }
+
+    std::pair<double, double> compute_minMax() const {
+        std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
+        for (auto const &variantRef : m_varVect) {
+            auto ol_set = [&](auto const &var) -> void {
+                auto [minV_l, maxV_l] = std::ranges::minmax(var.get());
+                res.first             = std::min(res.first, static_cast<double>(minV_l));
+                res.second            = std::max(res.second, static_cast<double>(maxV_l));
+            };
+            std::visit(ol_set, variantRef);
+        }
+        return res;
+    }
+};
 
 } // namespace terminal_plot
 } // namespace incom

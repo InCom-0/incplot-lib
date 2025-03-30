@@ -798,7 +798,7 @@ class Scatter : public BarV {
         else {
             // The SECOND and ABOVE value columns are used for the minV maxV basis
             double minV = std::numeric_limits<double>::max(), maxV = std::numeric_limits<double>::min();
-            
+
             for (size_t id = 1; id < dp.values_colIDs.size(); ++id) {
                 if (ds.colTypes.at(id).first == nlohmann::detail::value_t::number_float) {
                     auto const [minV_tmp, maxV_tmp] =
@@ -829,38 +829,28 @@ class Scatter : public BarV {
             if (ds.colTypes.at(dp.values_colIDs.at(i)).first == nlohmann::detail::value_t::number_float) {}
         }
 
-        std::vector<double> fakeVectD;
-        auto                yCol = detail::variadicColumns(std::make_pair("FV", std::ref(fakeVectD)));
+        std::vector<double>                  fakeVectD;
+        auto                                 yCol = detail::variadicColumns(std::make_pair("FV", std::ref(fakeVectD)));
         std::vector<detail::variadicColumns> xCols;
 
         if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
-            yCol = detail::variadicColumns(std::make_pair(
-                ds.colNames.at(dp.values_colIDs.front()), std::ref(ds.doubleCols.at(valColTypeRef_y.second))));
+            yCol = detail::variadicColumns(std::make_pair(ds.colNames.at(dp.values_colIDs.front()),
+                                                          std::ref(ds.doubleCols.at(valColTypeRef_y.second))));
         }
         else {
-            yCol = detail::variadicColumns(std::make_pair(
-                ds.colNames.at(dp.values_colIDs.front()), std::ref(ds.llCols.at(valColTypeRef_y.second))));
+            yCol = detail::variadicColumns(std::make_pair(ds.colNames.at(dp.values_colIDs.front()),
+                                                          std::ref(ds.llCols.at(valColTypeRef_y.second))));
         }
 
-        for (int i = 1; i < dp.values_colIDs.size(); ++i) {
-            if (ds.colTypes.at(dp.values_colIDs.at(i)).first == nlohmann::detail::value_t::number_float) {
-                xCols.push_back(
-                    std::make_pair(ds.colNames.at(dp.values_colIDs.at(i)),
-                                   std::ref(ds.doubleCols.at(ds.colTypes.at(dp.values_colIDs.at(i)).second))));
-            }
-            else {
-                xCols.push_back(std::make_pair(ds.colNames.at(dp.values_colIDs.at(i)),
-                                               std::ref(ds.llCols.at(ds.colTypes.at(dp.values_colIDs.at(i)).second))));
-            }
-        }
+        PlotDataWrapper pdw(dp, ds, 1);
 
         if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
             self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                              ds.doubleCols.at(valColTypeRef_y.second), xCols);
+                                                              ds.doubleCols.at(valColTypeRef_y.second), pdw);
         }
         else {
             self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                              ds.llCols.at(valColTypeRef_y.second), xCols);
+                                                              ds.llCols.at(valColTypeRef_y.second), pdw);
         }
 
 

@@ -11,6 +11,7 @@
 #include <locale>
 
 #include <incplot/color_mixer.hpp>
+#include <incplot/desired_plot.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
 #include <optional>
@@ -347,16 +348,13 @@ public:
 
     template <typename Y>
     requires std::is_arithmetic_v<typename Y::value_type>
-    static constexpr std::vector<std::string> drawPoints(
-        size_t canvas_width, size_t canvas_height, Y const &y_values,
-        std::vector<std::variant<std::pair<std::string, std::reference_wrapper<const std::vector<long long>>>,
-                                 std::pair<std::string, std::reference_wrapper<const std::vector<double>>>>> const
-            &x_valCols) {
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, Y const &y_values,
+                                                         PlotDataWrapper const &pdw_xValCols) {
 
-        BrailleDrawer bd(canvas_width, canvas_height, x_valCols.size());
+        BrailleDrawer bd(canvas_width, canvas_height, pdw_xValCols.m_varVect.size());
 
         auto [yMin, yMax] = std::ranges::minmax(y_values);
-        auto [xMin, xMax] = compute_minMaxMulti(x_valCols);
+        auto [xMin, xMax] = pdw_xValCols.compute_minMax();
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
         double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
 
@@ -372,9 +370,9 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
-        for (size_t i = 0; auto const &one_xValCol : x_valCols) {
+        for (size_t i = 0; auto const &one_xValCol : pdw_xValCols.m_varVect) {
             auto olSet = [&](auto const &pair) -> void {
-                auto const &xValCol_data = pair.second.get();
+                auto const &xValCol_data = pair.get();
                 for (size_t rowID = 0; rowID < y_values.size(); ++rowID) {
                     placePointOnCanvas(y_values[rowID], xValCol_data[rowID], i);
                 }
