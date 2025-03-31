@@ -60,8 +60,9 @@ private:
             auto vecCpy = vecRef.get();
 
             std::ranges::sort(vecCpy);
-            auto   view_chunked = std::views::chunk_by(vecCpy, [](auto const &l, auto const &r) { return l != r; });
-            size_t numOfChunks  = std::ranges::count_if(view_chunked, [](auto const &a) { return true; });
+            auto   view_chunked = std::views::chunk_by(vecCpy, [](auto const &l, auto const &r) { return l == r; });
+            size_t numOfChunks  = std::ranges::count_if(view_chunked, [](auto const &a) {
+                 return true; });
 
             // Save category count immediatelly (that is even if the column is not category like later)
             dp.m_colAssessments.back().categoryCount = numOfChunks;
