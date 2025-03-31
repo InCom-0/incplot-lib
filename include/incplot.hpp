@@ -358,9 +358,8 @@ class BarV : public Base {
 
         // Labels and axis name bottom
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>() ||
-            (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) &&
-                true) {} // TODO: Proper assessment for Line and ML
+            (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) && true) {
+        } // TODO: Proper assessment for Multiline
         else {
             self.labels_horBottom_bool   = true;
             self.axisName_horBottom_bool = true;
@@ -616,9 +615,8 @@ class BarV : public Base {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
         }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
-                 dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            // TODO: What to do with Line and Multiline axisLabel bottom
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+            // TODO: What to do with Multiline axisLabel bottom
         }
         else {
             auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
@@ -671,14 +669,6 @@ class BarV : public Base {
 };
 
 class BarH : public BarV {
-    friend class Base;
-};
-
-class Line : public BarV {
-    friend class Base;
-};
-
-class Multiline : public Line {
     friend class Base;
 };
 
@@ -792,9 +782,8 @@ class Scatter : public BarV {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
         }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>() ||
-                 dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            // TODO: What to do with Line and Multiline axisLabel bottom
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+            // TODO: What to do with Multiline axisLabel bottom
         }
         else {
             // The SECOND and ABOVE value columns are used for the minV maxV basis
@@ -845,7 +834,7 @@ class Scatter : public BarV {
     }
 };
 
-class Bubble : public Scatter {
+class Multiline : public Scatter {
     friend class Base;
 };
 
@@ -894,8 +883,7 @@ public:
 // This is the only place where one 'selects' these template types
 static inline const auto mp_names2Types =
     detail::generate_variantTypeMap<plot_structures::Base, plot_structures::BarV, plot_structures::BarH,
-                                    plot_structures::Line, plot_structures::Multiline, plot_structures::Scatter,
-                                    plot_structures::Bubble>();
+                                    plot_structures::Multiline, plot_structures::Scatter>();
 
 inline auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
     auto ref          = mp_names2Types.at(dp.plot_type_name.value());

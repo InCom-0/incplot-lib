@@ -61,8 +61,7 @@ private:
 
             std::ranges::sort(vecCpy);
             auto   view_chunked = std::views::chunk_by(vecCpy, [](auto const &l, auto const &r) { return l == r; });
-            size_t numOfChunks  = std::ranges::count_if(view_chunked, [](auto const &a) {
-                 return true; });
+            size_t numOfChunks  = std::ranges::count_if(view_chunked, [](auto const &a) { return true; });
 
             // Save category count immediatelly (that is even if the column is not category like later)
             dp.m_colAssessments.back().categoryCount = numOfChunks;
@@ -77,30 +76,12 @@ private:
             if ((numOfChunks > (vecCpy.size() / 2)) || numOfChunks == 1) {
                 dp.m_colAssessments.back().is_categoryLike = false;
             }
-            // If any chunk has just one element, then it is not category (or you should clean the data first)
+            // If any chunk has just one element, then it is not category (or the user should clean the data first)
             else if (std::ranges::any_of(view_chunked, [](auto const &oneChunk) { return oneChunk.size() < 2; })) {
                 dp.m_colAssessments.back().is_categoryLike = false;
             }
             // If passed the above tests, then this could be a category column
             else { dp.m_colAssessments.back().is_categoryLike = true; }
-        };
-
-        auto is_tsli = [&](auto const &vecRef) -> bool {
-            auto const &vec = vecRef.get();
-            if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
-
-                auto vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
-                                        return (std::get<1>(pr) - std::get<0>(pr));
-                                    });
-                auto avg       = std::ranges::fold_left_first(vecOfChanges, std::plus()).value() / vecOfChanges.size();
-                auto allowHigh = avg + static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceUP));
-                auto allowLow  = avg - static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceDOWN));
-
-                return std::ranges::all_of(vecOfChanges,
-                                           [&](auto const &chng) { return (allowLow < chng && chng < allowHigh); });
-            }
-
-            else { return false; }
         };
 
         auto is_srss = [&](auto const &vecRef) -> bool {
@@ -134,6 +115,24 @@ private:
             if (i_hlpr == sequenceLength) { dp.m_colAssessments.back().is_sameRepeatingSubsequences_whole = true; }
 
             return (firstValOccurence != 1);
+        };
+
+        auto is_tsli = [&](auto const &vecRef) -> bool {
+            auto const &vec = vecRef.get();
+            if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
+
+                auto vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
+                                        return (std::get<1>(pr) - std::get<0>(pr));
+                                    });
+                auto avg       = std::ranges::fold_left_first(vecOfChanges, std::plus()).value() / vecOfChanges.size();
+                auto allowHigh = avg + static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceUP));
+                auto allowLow  = avg - static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceDOWN));
+
+                return std::ranges::all_of(vecOfChanges,
+                                           [&](auto const &chng) { return (allowLow < chng && chng < allowHigh); });
+            }
+
+            else { return false; }
         };
 
         for (auto const &oneCol : ds.vec_colVariants) {
@@ -171,37 +170,63 @@ private:
         if (dp.plot_type_name.has_value()) { return dp; }
 
         // Helpers
-        auto   valColTypeRng = std::views::filter(ds.colTypes, [](auto &&a) {
-            return (a.first == NLMjson::value_t::number_float || a.first == NLMjson::value_t::number_integer ||
-                    a.first == NLMjson::value_t::number_unsigned);
-        });
-        size_t valCols_sz    = std::ranges::count_if(valColTypeRng, [](auto &&a) { return true; });
+        size_t useableValCols_count =
+            std::ranges::count_if(std::views::zip(ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
+                bool arithmeticCol = std::get<0>(colType).first == NLMjson::value_t::number_integer ||
+                                     std::get<0>(colType).first == NLMjson::value_t::number_unsigned ||
+                                     std::get<0>(colType).first == NLMjson::value_t::number_float;
 
-        auto labelColTypeRng =
-            std::views::filter(ds.colTypes, [](auto &&a) { return (a.first == NLMjson::value_t::string); });
-        size_t labelCols_sz = std::ranges::count_if(labelColTypeRng, [](auto &&a) { return true; });
+                // Not timeSeriesLike and Not categoryLike
+                bool notExcluded =
+                    not std::get<1>(colType).is_timeSeriesLikeIndex && not std::get<1>(colType).is_categoryLike;
 
-        // Actual decision making
-        if (valCols_sz > Config::max_numOfValCols) { return std::unexpected(Unexp_plotSpecs::valCols); }
-        // BarV
-        else if (valCols_sz == 1 && labelCols_sz > 0) {
+                return (arithmeticCol && notExcluded);
+            });
+
+        size_t tsLikeIndexCols_count = std::ranges::count_if(
+            dp.m_colAssessments, [](auto const &colPars) { return colPars.is_timeSeriesLikeIndex; });
+
+        size_t labelCols_sz =
+            std::ranges::count_if(std::views::zip(ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
+                // Must be string AND not categoryLike
+                return (std::get<0>(colType).first == NLMjson::value_t::string &&
+                        not std::get<1>(colType).is_categoryLike);
+            });
+
+        // ACTUAL DEICISIOM MAKING
+        // Can't plot anything without at least 1 value column
+        if (useableValCols_count == 0) { return std::unexpected(Unexp_plotSpecs::valCols); }
+        // LabelCol was specified and there are some valueCols to plot
+        else if (dp.label_colID.has_value() && useableValCols_count > 0) {
             dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
         }
-        // Bubble ? Maybe later ... correction: probably never because it sucks visually :-)
-        // else if (valCols_sz == 3) { dp.plot_type_name = detail::TypeToString<plot_structures::Bubble>(); }
+
+        // BarV
+        else if (useableValCols_count == 1 && labelCols_sz > 0 && tsLikeIndexCols_count == 0) {
+            dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
+        }
+        else if (useableValCols_count == 1 && labelCols_sz == 0 && tsLikeIndexCols_count == 0) {
+            dp.plot_type_name = detail::TypeToString<plot_structures::BarH>();
+        }
 
         // Scatter
-        else if (valCols_sz > 1 && labelCols_sz == 0) {
+        else if (useableValCols_count > 1 && (not dp.labelTS_colID.has_value() && tsLikeIndexCols_count == 0)) {
             dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>();
         }
-        // Single line
-        else if (valCols_sz == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::Line>(); }
-        else { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
+        // Multiline
+        else if (tsLikeIndexCols_count > 0) { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
+
+        // None of the above options, therefore Unexp unable to guess plotType
+        // Generally, this shouldn't happen
+        else { return std::unexpected(Unexp_plotSpecs::plotType); }
 
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_labelCol(DesiredPlot &&dp, DataStore const &ds) {
-        if (dp.label_colID.has_value()) { return dp; }
+        if (dp.label_colID.has_value()) {
+            if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return dp; }
+            else { return std::unexpected(Unexp_plotSpecs::labelCol); }
+        }
         else if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return dp; }
         else {
             auto it = std::ranges::find_if(ds.colTypes, [](auto &&a) { return a.first == NLMjson::value_t::string; });
@@ -240,26 +265,19 @@ private:
             if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
             else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
-        // LINE PLOTS
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Line>()) {
-            if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
-        }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
-        }
 
         // SCATTER PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
             if (dp.values_colIDs.size() > 4) { return std::unexpected(Unexp_plotSpecs::valCols); }
             else if (not addValColsUntil(4).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
-        // BUBBLE PLOT
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Bubble>()) {
+
+        // MULTILINE PLOT
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
             if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
+
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
