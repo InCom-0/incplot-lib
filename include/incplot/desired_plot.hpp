@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <ranges>
+#include <vector>
 
 
 namespace incom {
@@ -34,10 +35,24 @@ class Bubble;
 class DesiredPlot {
     using NLMjson = nlohmann::json;
 
+    struct ColumnParams {
+        size_t categoryCount;
+
+        bool is_categoryLike;
+        bool is_sameRepeatingSequences;
+        bool is_timeSeriesLikeIndex;
+    };
+
+    std::vector<ColumnParams> m_colAssessments;
+
 public:
     // Column data assessment for the purpose of DesiredPlot decision making
 
 private:
+    static std::expected<DesiredPlot, Unexp_plotSpecs> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds) {
+        return dp;
+    }
+
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
                                                                                   DataStore const &ds) {
         if (dp.label_colName.has_value()) {
@@ -230,6 +245,9 @@ public:
         // TODO: Could use std::bind for these ... had some trouble with that ... maybe return to it later.
         // Still can't quite figure it out ...  std::bind_back doesn't seem to cooperate with and_then ...
 
+        auto tnciids = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::transform_namedColsIntoIDs(std::forward<decltype(dp)>(dp), ds);
+        };
         auto gpt = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
             return DesiredPlot::guess_plotType(std::forward<decltype(dp)>(dp), ds);
         };
@@ -246,7 +264,8 @@ public:
             return DesiredPlot::guess_TFfeatures(std::forward<decltype(dp)>(dp), ds);
         };
 
-        return DesiredPlot::transform_namedColsIntoIDs(std::forward<decltype(self)>(self), ds)
+        return DesiredPlot::compute_colAssessments(std::forward<decltype(self)>(self), ds)
+            .and_then(tnciids)
             .and_then(gpt)
             .and_then(glc)
             .and_then(gvc)
