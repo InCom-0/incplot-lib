@@ -1,7 +1,10 @@
 #pragma once
 
+#include <algorithm>
+#include <cstdint>
 #include <expected>
 
+#include <functional>
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/detail/concepts.hpp>
@@ -38,8 +41,10 @@ class DesiredPlot {
     struct ColumnParams {
         size_t categoryCount;
 
+        bool is_categoriesSameSize;
         bool is_categoryLike;
-        bool is_sameRepeatingSequences;
+        bool is_sameRepeatingSubsequences;
+        bool is_sameRepeatingSubsequences_whole;
         bool is_timeSeriesLikeIndex;
     };
 
@@ -50,9 +55,96 @@ public:
 
 private:
     static std::expected<DesiredPlot, Unexp_plotSpecs> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds) {
+
+        auto c_catParams = [&](auto const &vecRef) -> void {
+            auto vecCpy = vecRef.get();
+
+            std::ranges::sort(vecCpy);
+            auto   view_chunked = std::views::chunk_by(vecCpy, [](auto const &l, auto const &r) { return l != r; });
+            size_t numOfChunks  = std::ranges::count_if(view_chunked, [](auto const &a) { return true; });
+
+            // Save category count immediatelly (that is even if the column is not category like later)
+            dp.m_colAssessments.back().categoryCount = numOfChunks;
+
+            // Are all categories the same size?
+            dp.m_colAssessments.back().is_categoriesSameSize = std::ranges::all_of(
+                view_chunked, [&](auto const &chunk) { return (chunk.size() == view_chunked.front().size()); });
+
+            // It is not categoryLike if there are more chunks than half the total num of elements
+            // This is kind of arbitrary, but will work to filter out most
+            // Also not a category when we have one chunk (that is column of identical values)
+            if ((numOfChunks > (vecCpy.size() / 2)) || numOfChunks == 1) {
+                dp.m_colAssessments.back().is_categoryLike = false;
+            }
+            // If any chunk has just one element, then it is not category (or you should clean the data first)
+            else if (std::ranges::any_of(view_chunked, [](auto const &oneChunk) { return oneChunk.size() < 2; })) {
+                dp.m_colAssessments.back().is_categoryLike = false;
+            }
+            // If passed the above tests, then this could be a category column
+            else { dp.m_colAssessments.back().is_categoryLike = true; }
+        };
+
+        auto is_tsli = [&](auto const &vecRef) -> bool {
+            auto const &vec = vecRef.get();
+            if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
+
+                auto vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
+                                        return (std::get<1>(pr) - std::get<0>(pr));
+                                    });
+                auto avg       = std::ranges::fold_left_first(vecOfChanges, std::plus()).value() / vecOfChanges.size();
+                auto allowHigh = avg + static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceUP));
+                auto allowLow  = avg - static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceDOWN));
+
+                return std::ranges::all_of(vecOfChanges,
+                                           [&](auto const &chng) { return (allowLow < chng && chng < allowHigh); });
+            }
+
+            else { return false; }
+        };
+
+        auto is_srss = [&](auto const &vecRef) -> bool {
+            auto const &vec = vecRef.get();
+            if (vec.empty()) { return false; }
+
+            auto const firstVal          = vec.at(0);
+            size_t     firstValOccurence = 1;
+            size_t     sequenceLength    = SIZE_MAX;
+
+            dp.m_colAssessments.back().is_sameRepeatingSubsequences_whole = false;
+            size_t i_hlpr                                                 = 1;
+            for (auto const &vecItem : std::views::drop(vec, 1)) {
+                if (firstValOccurence == 1) {
+                    if (vecItem == firstVal) {
+                        firstValOccurence++;
+                        sequenceLength = i_hlpr;
+                        i_hlpr         = 1;
+                    }
+                    else { i_hlpr++; }
+                }
+                else {
+                    if (vecItem == firstVal) {
+                        if (i_hlpr != sequenceLength) { return false; }
+                        firstValOccurence++;
+                        i_hlpr = 1;
+                    }
+                    else if (vecItem != vec.at(i_hlpr++)) { return false; }
+                }
+            }
+            if (i_hlpr == sequenceLength) { dp.m_colAssessments.back().is_sameRepeatingSubsequences_whole = true; }
+
+            return (firstValOccurence != 1);
+        };
+
+        for (auto const &oneCol : ds.vec_colVariants) {
+            dp.m_colAssessments.push_back({0, false, false, false, false, false});
+
+            std::visit(c_catParams, oneCol);
+            dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol);
+            dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol);
+        }
+
         return dp;
     }
-
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
                                                                                   DataStore const &ds) {
         if (dp.label_colName.has_value()) {

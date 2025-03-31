@@ -10,6 +10,7 @@ namespace terminal_plot {
 
 class Config {
 public:
+    // UNICODE SYMBOLS IN PLOT
     static constexpr std::string axisTick_l = "┤";
     static constexpr std::string axisTick_b = "┬";
     static constexpr std::string axisTick_r = "├";
@@ -25,6 +26,17 @@ public:
     static constexpr std::string areaCorner_br = "┘";
     static constexpr std::string areaCorner_tr = "┐";
 
+    // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
+    static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⡀', U'⢀', U'⠄', U'⠠', U'⠂', U'⠐', U'⠁', U'⠈'};
+    static constexpr char32_t                               braille_blank = U'⠀';
+    static constexpr char                                   space         = ' ';
+
+    static constexpr std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
+    static constexpr std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
+    static constexpr std::array<char32_t, 4> blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
+
+
+    // COLORS
     static constexpr Color_CVTS color_Axes_enum  = Color_CVTS::Bright_Foreground_Black;
     static constexpr Color_CVTS color_Vals1_enum = Color_CVTS::Foreground_Green;
     static constexpr Color_CVTS color_Vals2_enum = Color_CVTS::Foreground_Red;
@@ -41,6 +53,7 @@ public:
     static constexpr std::array<unsigned int, 3> colors_blackRaw{12, 12, 12};
     static constexpr double                      colors_scaleDistanceFromBlack = 0.55;
 
+    // OTHER PLOT SETTINGS
     static constexpr size_t max_numOfValCols = 4uz;
 
     static constexpr size_t axisLabels_maxLength_vl = 30uz;
@@ -59,14 +72,10 @@ public:
     static constexpr std::array<std::string, 21> const si_prefixes{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
                                                                    "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
 
-    // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
-    static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⡀', U'⢀', U'⠄', U'⠠', U'⠂', U'⠐', U'⠁', U'⠈'};
-    static constexpr char32_t                               braille_blank = U'⠀';
-    static constexpr char                                   space         = ' ';
+    // COLUMN PARAMETERS ANALYSIS SETTINGS
+    static constexpr double timeSeriesIDX_allowanceUP   = 0.1;
+    static constexpr double timeSeriesIDX_allowanceDOWN = 0.1;
 
-    static constexpr std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
-    static constexpr std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
-    static constexpr std::array<char32_t, 4> blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
 
     // TODO: Fix this so that valLabelSize is calculated from the actual possible label strings of values ... this will
     // be tremendously easier with c++26 so for the time being this is assuming maxLabelSize of 5
