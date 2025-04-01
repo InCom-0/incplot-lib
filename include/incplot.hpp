@@ -4,8 +4,10 @@
 #include "incplot/detail.hpp"
 #include "incplot/detail/misc.hpp"
 #include <algorithm>
+#include <concepts>
 #include <expected>
 #include <ranges>
+#include <string>
 #include <utility>
 
 #include <incplot/datastore.hpp>
@@ -325,7 +327,7 @@ class BarV : public Base {
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        // Vertical left labels size
+        // VERTICAL LEFT LABELS SIZE
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             auto const &labelColRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
             auto const  labelSizes =
@@ -337,11 +339,50 @@ class BarV : public Base {
         }
         else { self.labels_verLeftWidth = Config::max_valLabelSize; }
 
-        // TODO: Vertical right labels ... probably nothing so keeping 0 size
-        // ...
+        // VERTICAL RIGHT LABELS SIZE
+        // Will be used as 'legend' for some types of Plots
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>() ||
+            dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+            if (dp.cat_colID.has_value()) {
+                typename decltype(ds.vec_colVariants)::value_type cat_values =
+                    std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.vec_colVariants), [&](auto const &a) {
+                        return std::get<0>(a) == dp.cat_colID.value();
+                    }));
 
-        // Vertical axes names ... LEFT always, RIGHT never
+                auto create_catIDs_vec = [&](auto const &vec) -> std::vector<std::string> {
+                    auto sortedUniqued = detail::get_sortedAndUniqued(vec.get());
+                    if constexpr (std::same_as<typename decltype(sortedUniqued)::value_type, std::string>) {
+                        return sortedUniqued;
+                    }
+                    else {
+                        std::vector<std::string> res;
+                        for (auto const &suItem : sortedUniqued) { res.push_back(std::to_string(suItem)); }
+                        return res;
+                    }
+                };
+                auto catIDs_vec = std::visit(create_catIDs_vec, cat_values);
+
+                size_t maxSize =
+                    std::ranges::max(std::views::transform(catIDs_vec, [](auto const &a) { return a.size(); }));
+                self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
+            }
+            else if (dp.values_colIDs.size() > 2) {
+                size_t maxSize = 0;
+                for (size_t id_indirect = 1; dp.values_colIDs.size(); ++id_indirect) {
+                    maxSize = std::max(maxSize, ds.colNames.at(dp.values_colIDs.at(id_indirect)).size());
+                }
+                self.labels_verRightWidth = std::max(maxSize, Config::axisLabels_maxLength_vr);
+            }
+            else { self.labels_verRightWidth = 0; }
+        }
+        else { self.labels_verRightWidth = 0; }
+
+        // VERTICAL AXES NAMES ... LEFT always, RIGHT never
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            self.axisName_verLeft_bool  = false;
+            self.axisName_verRight_bool = false;
+        }
+        else if (dp.values_colIDs.size() > 2) {
             self.axisName_verLeft_bool  = false;
             self.axisName_verRight_bool = false;
         }
@@ -371,6 +412,9 @@ class BarV : public Base {
         // Plot area height (-2 is for the 2 horizontal axes positions)
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             self.areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
+        }
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+            self.areaHeight = self.areaWidth / 3;
         }
         else {
             self.areaHeight = dp.targetHeight.value() - self.pad_top - self.axisName_horTop_bool -
@@ -404,7 +448,7 @@ class BarV : public Base {
             }
             else {
                 self.axisName_verLeft =
-                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.front()), self.areaHeight);
+                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(1)), self.areaHeight);
             }
         }
 
@@ -573,7 +617,7 @@ class BarV : public Base {
         else {
             // Name of the SECOND value column
             self.axisName_horBottom =
-                detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(1)), self.areaWidth);
+                detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(0)), self.areaWidth);
         }
         return self;
     }
@@ -678,7 +722,6 @@ class Scatter : public BarV {
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-
         auto getValLabels = [&](double const &minVal, double const &maxVal, size_t areaLength,
                                 size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
             auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
@@ -729,6 +772,11 @@ class Scatter : public BarV {
             getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
 
         return (self);
+    }
+    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
+        return self;
     }
 
     auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)

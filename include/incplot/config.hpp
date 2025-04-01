@@ -57,8 +57,8 @@ public:
     static constexpr size_t max_numOfValCols       = 4uz;
     static constexpr size_t max_maxNumOfCategories = 3uz;
 
-    static constexpr size_t axisLabels_maxLength_vl = 30uz;
-    static constexpr size_t axisLabels_maxLength_vr = 30uz;
+    static constexpr size_t axisLabels_maxLength_vl = 16uz;
+    static constexpr size_t axisLabels_maxLength_vr = 16uz;
     static constexpr size_t axisLabels_padRight_vl  = 1uz;
     static constexpr size_t axisLabels_padLeft_vr   = 1uz;
 
