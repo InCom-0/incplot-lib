@@ -368,7 +368,7 @@ class BarV : public Base {
             }
             else if (dp.values_colIDs.size() > 2) {
                 size_t maxSize = 0;
-                for (size_t id_indirect = 1; dp.values_colIDs.size(); ++id_indirect) {
+                for (size_t id_indirect = 1; id_indirect < dp.values_colIDs.size(); ++id_indirect) {
                     maxSize = std::max(maxSize, ds.colNames.at(dp.values_colIDs.at(id_indirect)).size());
                 }
                 self.labels_verRightWidth = std::max(maxSize, Config::axisLabels_maxLength_vr);
