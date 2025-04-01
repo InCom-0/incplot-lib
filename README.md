@@ -10,8 +10,8 @@ This tool is intended for 'as quick and easy as possible' visualization of small
 
 * Good looking plots 'out of the box'
 * Super simple to use, no command line arguments necessary most of the time
-* Pipe the data in and incplot automatically infers what to display and how
 * User can optionally specify some or all parameters
+* Very fast
 * Can utilize colors to display data groupping
 * Can mix colors where appropriate (eg. Scatter plots)
 * Uses full true color
@@ -21,9 +21,11 @@ This tool is intended for 'as quick and easy as possible' visualization of small
 
 ## Anti-Features ##
 
-* No data wrangling of any kind
+* No data wrangling or analysis of any kind
 * Not intended for plotting huge datasets
+* Doesn't offer the more obscure plot types
 * No export
+* 
 
 ## Disclaimer ##
 
