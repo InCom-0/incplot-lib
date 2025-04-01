@@ -360,12 +360,20 @@ private:
             if (dp.values_colIDs.size() > Config::max_numOfValCols) {
                 return std::unexpected(Unexp_plotSpecs::valCols);
             }
-            else if (dp.values_colIDs.size() < 2) {
-                if (not addValColsUntil(2, Config::max_numOfValCols).has_value()) {
-                    return std::unexpected(Unexp_plotSpecs::guessValCols);
+            else if (dp.cat_colID.has_value()) {
+                if (dp.values_colIDs.size() <= 2) {
+                    if (not addValColsUntil(2, 2).has_value()) {
+                        return std::unexpected(Unexp_plotSpecs::guessValCols);
+                    }
                 }
             }
-            else { return dp; }
+            else {
+                if (dp.values_colIDs.size() < 2) {
+                    if (not addValColsUntil(2, Config::max_numOfValCols).has_value()) {
+                        return std::unexpected(Unexp_plotSpecs::guessValCols);
+                    }
+                }
+            }
         }
 
         // MULTILINE PLOT

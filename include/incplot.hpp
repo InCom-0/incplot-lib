@@ -4,7 +4,6 @@
 #include "incplot/detail.hpp"
 #include <algorithm>
 #include <expected>
-#include <limits>
 #include <ranges>
 #include <utility>
 
