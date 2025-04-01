@@ -2,6 +2,7 @@
 
 #include "incplot/config.hpp"
 #include "incplot/detail.hpp"
+#include "incplot/detail/misc.hpp"
 #include <algorithm>
 #include <expected>
 #include <ranges>
@@ -797,14 +798,50 @@ class Scatter : public BarV {
                              }) |
                              std::views::transform([](auto const &b) { return std::get<1>(b); });
 
-        if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
-            self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                              ds.doubleCols.at(valColTypeRef_x.second), view_yValCols);
+        if (dp.cat_colID.has_value()) {
+            typename decltype(ds.vec_colVariants)::value_type cat_values =
+                std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.vec_colVariants), [&](auto const &a) {
+                    return std::get<0>(a) == dp.cat_colID.value();
+                }));
+
+            auto create_catIDs_vec = [&](auto const &vec) -> std::vector<size_t> {
+                auto                catVals_uniqued = detail::get_sortedAndUniqued(vec.get());
+                std::vector<size_t> catIDs_vec;
+
+                for (auto const &catVal : vec.get()) {
+                    // Push_back catValue's designated ID into a dedicated vector
+                    catIDs_vec.push_back(
+                        std::ranges::find_if(catVals_uniqued, [&](auto const &a) { return a == catVal; }) -
+                        catVals_uniqued.begin());
+                }
+                return catIDs_vec;
+            };
+
+            auto catIDs_vec = std::visit(create_catIDs_vec, cat_values);
+
+
+            if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
+                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                                  ds.doubleCols.at(valColTypeRef_x.second),
+                                                                  view_yValCols, catIDs_vec);
+            }
+            else {
+                self.plotArea = detail::BrailleDrawer::drawPoints(
+                    self.areaWidth, self.areaHeight, ds.llCols.at(valColTypeRef_x.second), view_yValCols, catIDs_vec);
+            }
         }
+
         else {
-            self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
-                                                              ds.llCols.at(valColTypeRef_x.second), view_yValCols);
+            if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
+                self.plotArea = detail::BrailleDrawer::drawPoints(
+                    self.areaWidth, self.areaHeight, ds.doubleCols.at(valColTypeRef_x.second), view_yValCols);
+            }
+            else {
+                self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                                  ds.llCols.at(valColTypeRef_x.second), view_yValCols);
+            }
         }
+
 
         return self;
     }

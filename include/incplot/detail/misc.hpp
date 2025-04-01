@@ -20,6 +20,7 @@ enum class Unexp_plotSpecs {
 enum class Unexp_plotDrawer {
     plotStructureInvalid,
     barVplot_tooWide,
+    catColAndMultipleYValCols,
     unknownEerror
 };
 // UNEXPECTED AND OTHER SIMILAR ENUMS --- END

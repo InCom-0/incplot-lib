@@ -266,100 +266,57 @@ private:
     }
 
 public:
-    template <typename Y, typename X>
-    requires std::is_arithmetic_v<typename X::value_type> && std::is_arithmetic_v<typename Y::value_type>
-    static constexpr std::vector<std::string> drawPoints(
-        size_t canvas_width, size_t canvas_height, Y const &y_values, X const &x_values,
-        std::optional<std::variant<std::reference_wrapper<std::vector<std::string>>,
-                                   std::reference_wrapper<std::vector<long long>>,
-                                   std::reference_wrapper<std::vector<double>>>> const catCol = std::nullopt) {
+    template <typename X>
+    requires std::is_arithmetic_v<typename X::value_type>
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
+                                                         auto                       viewOfValVariants,
+                                                         std::vector<size_t> const &catIDs_vec) {
 
+        BrailleDrawer bd(canvas_width, canvas_height, get_sortedAndUniqued(catIDs_vec).size());
 
-        size_t                   numOf_categories;
-        std::vector<std::string> catNames;
-        std::vector<size_t>      catCol_IDs = {};
-        if (catCol.has_value()) {
-            // Computes: 1) Vector of category names, 2) Vector of category IDs same size as data, same num of unique
-            // IDs as in vector of category names
-            auto olSet2 = [&](auto &&rng) -> void {
-                auto sortedUniqued = get_sortedAndUniqued(rng.get());
-                for (auto const &oneItem : sortedUniqued) {
-                    if constexpr (std::is_same_v<std::string,
-                                                 std::decay_t<typename decltype(sortedUniqued)::value_type>>) {
-                        catNames.push_back(oneItem);
-                    }
-                    else { catNames.push_back(std::to_string(oneItem)); }
-                }
-
-                for (auto const &oneOrigItem : rng.get()) {
-                    auto it = std::ranges::find(sortedUniqued, oneOrigItem);
-                    catCol_IDs.push_back(it - sortedUniqued.begin());
-                };
-            };
-
-            std::visit(olSet2, catCol.value());
-            numOf_categories = catNames.size();
-        }
-        else {
-            // No category column means we only have one category in this drawPoint overload
-            // catCol_IDs in that case is just a vector filled with value 0 which is the ID of the only category
-            numOf_categories = 1;
-            catCol_IDs       = std::vector<size_t>(x_values.size(), 0);
-        }
-
-        BrailleDrawer bd(canvas_width, canvas_height, numOf_categories);
-
-        auto [yMin, yMax] = std::ranges::minmax(y_values);
+        auto [xMin, xMax] = std::ranges::minmax(x_values);
+        auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
+        double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
-
-        std::vector<double> xMinCol;
-        std::vector<double> xMaxCol;
-        std::vector<double> xstepSizeCol;
-
-        auto compute_minMaxStepSize = [&](auto &&fv) -> void {
-            auto [xMin, xMax] = std::ranges::minmax(fv);
-            xstepSizeCol.push_back((xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1));
-            xMinCol.push_back(xMin);
-            xMaxCol.push_back(xMax);
-        };
 
         auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal, size_t const &groupID) {
             auto y       = static_cast<size_t>(((yVal - yMin) / yStepSize)) / 4;
             auto yChrPos = static_cast<size_t>(((yVal - yMin) / yStepSize)) % 4;
 
-            auto x       = static_cast<size_t>(((xVal - xMinCol[groupID]) / xstepSizeCol[groupID])) / 2;
-            auto xChrPos = static_cast<size_t>(((xVal - xMinCol[groupID]) / xstepSizeCol[groupID])) % 2;
+            auto x       = static_cast<size_t>(((xVal - xMin) / xStepSize)) / 2;
+            auto xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
 
             bd.m_canvasBraille[y][x] |= Config::braille_map[yChrPos][xChrPos];
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
 
-        // Compute min, max, stepSize for every xVal column there is. If only one (ie. without 'catCol') that's fine
-        for (size_t i = 0; i < numOf_categories; ++i) {
-            auto ff = std::views::zip(x_values, catCol_IDs) |
-                      std::views::filter([&](auto &&tup) { return (std::get<1>(tup) == i); }) |
-                      std::views::transform([&](auto &&a) { return std::get<0>(a); });
-            compute_minMaxStepSize(ff);
-        }
+        auto olSet = [&](auto const &oneCol) -> void {
+            auto const &yValCol_data = oneCol.get();
+            if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
+                for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
+                    placePointOnCanvas(yValCol_data[rowID], x_values[rowID], catIDs_vec[rowID]);
+                }
+            }
+        };
+        std::visit(olSet, viewOfValVariants.front());
 
-        for (size_t i = 0; i < y_values.size(); ++i) { placePointOnCanvas(y_values[i], x_values[i], catCol_IDs[i]); }
+
         bd.compute_canvasColors();
         return bd.construct_outputPlotArea();
     }
 
-    template <typename Y>
-    requires std::is_arithmetic_v<typename Y::value_type>
-    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, Y const &x_values,
+
+    template <typename X>
+    requires std::is_arithmetic_v<typename X::value_type>
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
                                                          auto viewOfValVariants) {
-        auto vOVV2 = viewOfValVariants;
-        auto vOVV3 = viewOfValVariants;
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }));
 
         auto [xMin, xMax] = std::ranges::minmax(x_values);
-        auto [yMin, yMax] = compute_minMaxMulti(vOVV2);
+        auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
         double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
 
@@ -375,7 +332,7 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
-        for (size_t i = 0; auto const &one_yValCol : vOVV3) {
+        for (size_t i = 0; auto const &one_yValCol : viewOfValVariants) {
             auto olSet = [&](auto const &oneCol) -> void {
                 auto const &yValCol_data = oneCol.get();
                 if constexpr (std::is_arithmetic_v<
