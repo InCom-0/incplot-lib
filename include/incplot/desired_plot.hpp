@@ -28,11 +28,10 @@ class Scatter;
 
 
 // FORWARD DELCARATIONS --- END
+
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
-
-
 class DesiredPlot {
     using NLMjson = nlohmann::json;
 

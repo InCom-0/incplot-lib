@@ -205,10 +205,10 @@ public:
         result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
         result.append(labels_verLeft.front());
         result.append(Config::color_Axes);
-        result.append("┌");
+        result.append(Config::areaCorner_tl);
         for (auto const &toAppend : axis_horTop) { result.append(toAppend); }
         result.append(Config::color_Axes);
-        result.append("┐");
+        result.append(Config::areaCorner_tr);
         result.append(Config::term_setDefault);
         result.append(labels_verRight.front());
         result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), Config::space));
@@ -234,10 +234,10 @@ public:
         result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
         result.append(labels_verLeft.back());
         result.append(Config::color_Axes);
-        result.append("└");
+        result.append(Config::areaCorner_bl);
         for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
         result.append(Config::color_Axes);
-        result.append("┘");
+        result.append(Config::areaCorner_br);
         result.append(Config::term_setDefault);
         result.append(labels_verRight.back());
         result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), Config::space));

@@ -21,9 +21,9 @@ public:
     static constexpr std::string axisFiller_r = "│";
     static constexpr std::string axisFiller_t = "─";
 
-    static constexpr std::string areaCorner_tl = "┌";
-    static constexpr std::string areaCorner_bl = "└";
-    static constexpr std::string areaCorner_br = "┘";
+    static constexpr std::string areaCorner_tl = "┬";
+    static constexpr std::string areaCorner_bl = "┼";
+    static constexpr std::string areaCorner_br = "┤";
     static constexpr std::string areaCorner_tr = "┐";
 
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
