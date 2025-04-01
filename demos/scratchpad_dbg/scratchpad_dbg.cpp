@@ -214,7 +214,7 @@ int main() {
 
     auto ds2 = incplot::Parser::parse_NDJSON_intoDS(testInput_petal);
 
-    auto dp2_autoGuessed = incplot::DesiredPlot(36, 16, "Scatter").guess_missingParams(ds2);
+    auto dp2_autoGuessed = incplot::DesiredPlot(36, std::nullopt, "Scatter").guess_missingParams(ds2);
 
     if (not dp2_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot_2' parameters failed \n", "Exiting ...");

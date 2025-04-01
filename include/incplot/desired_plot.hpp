@@ -22,10 +22,8 @@ namespace plot_structures {
 class Base;
 class BarV;
 class BarH;
-class Line;
 class Multiline;
 class Scatter;
-class Bubble;
 } // namespace plot_structures
 
 
@@ -222,6 +220,74 @@ private:
 
         return dp;
     }
+    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_catCol(DesiredPlot &&dp, DataStore const &ds) {
+        auto useableCatCols_tpl = std::views::filter(
+            std::views::zip(std::views::iota(0), ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
+                return (std::get<2>(colType).is_categoryLike &&
+                        std::get<2>(colType).categoryCount <= Config::max_maxNumOfCategories);
+            });
+        size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
+        // BAR PLOTS
+        if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarV>()) {
+            if (dp.cat_colID.has_value()) { return std::unexpected(Unexp_plotSpecs::catCol); }
+            else { return dp; }
+        }
+        else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarH>()) {
+            if (useableCatCols_tpl_sz == 0) { return std::unexpected(Unexp_plotSpecs::catCol); }
+            else if (dp.cat_colID.has_value()) {
+                // If the existing catColID can be found in useable CatCols then all OK.
+                if (std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
+                        return std::get<0>(tpl) == dp.cat_colID.value();
+                    }) != useableCatCols_tpl.end()) {
+                    return dp;
+                }
+                else { return std::unexpected(Unexp_plotSpecs::catCol); }
+            }
+            else {
+                // The first catCol available is taken to be the category
+                dp.cat_colID = std::get<0>(useableCatCols_tpl.front());
+                return dp;
+            }
+        }
+        // SCATTER PLOT
+        else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Scatter>()) {
+            if (dp.cat_colID.has_value()) {
+                if (useableCatCols_tpl_sz == 0) { return std::unexpected(Unexp_plotSpecs::catCol); }
+                bool calColID_found = std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
+                                          return std::get<0>(tpl) == dp.cat_colID.value();
+                                      }) != useableCatCols_tpl.end();
+                // If the existing catColID can be found in useable CatCols then all OK.
+                if (calColID_found && dp.values_colIDs.size() <= Config::max_numOfValCols) { return dp; }
+                else { return std::unexpected(Unexp_plotSpecs::catCol); }
+            }
+            else {
+                if (dp.values_colIDs.size() <= Config::max_numOfValCols && useableCatCols_tpl_sz > 0) {
+                    dp.cat_colID = std::get<0>(useableCatCols_tpl.front());
+                }
+                return dp;
+            }
+        }
+        // MULTILINE PLOT
+        else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Multiline>()) {
+            if (dp.cat_colID.has_value()) {
+                if (useableCatCols_tpl_sz == 0) { return std::unexpected(Unexp_plotSpecs::catCol); }
+                bool calColID_found = std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
+                                          return std::get<0>(tpl) == dp.cat_colID.value();
+                                      }) != useableCatCols_tpl.end();
+                // If the existing catColID can be found in useable CatCols then all OK.
+                if (calColID_found && dp.values_colIDs.size() <= (Config::max_numOfValCols - 1)) { return dp; }
+                else { return std::unexpected(Unexp_plotSpecs::catCol); }
+            }
+            else {
+                if (dp.values_colIDs.size() <= (Config::max_numOfValCols - 1) && useableCatCols_tpl_sz > 0) {
+                    dp.cat_colID = std::get<0>(useableCatCols_tpl.front());
+                }
+                return dp;
+            }
+        }
+
+        return dp;
+    }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_labelCol(DesiredPlot &&dp, DataStore const &ds) {
         if (dp.label_colID.has_value()) {
             if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return dp; }
@@ -236,22 +302,46 @@ private:
         }
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
-        auto addValColsUntil = [&](size_t count) -> std::expected<size_t, Unexp_plotSpecs> {
+        auto useableValCols_tpl = std::views::filter(
+            std::views::zip(std::views::iota(0), ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
+                bool arithmeticCol = std::get<1>(colType).first == NLMjson::value_t::number_integer ||
+                                     std::get<1>(colType).first == NLMjson::value_t::number_unsigned ||
+                                     std::get<1>(colType).first == NLMjson::value_t::number_float;
+
+                // Not timeSeriesLike and Not categoryLike
+                bool notExcluded =
+                    not std::get<2>(colType).is_timeSeriesLikeIndex && not std::get<2>(colType).is_categoryLike;
+
+                return (arithmeticCol && notExcluded);
+            });
+
+        // Check if selected cols are actually useable
+        for (auto const &selColID : dp.values_colIDs) {
+            if (std::ranges::find_if(useableValCols_tpl, [&](auto const &tpl) { return true; }) ==
+                useableValCols_tpl.end()) {
+                return std::unexpected(Unexp_plotSpecs::selectedUnuseableCols);
+            }
+        }
+
+        auto addValColsUntil = [&](size_t minAllowed, size_t maxAllowed = 1) -> std::expected<size_t, Unexp_plotSpecs> {
             auto getAnotherValColID = [&]() -> std::expected<size_t, Unexp_plotSpecs> {
-                for (size_t i = 0; i < ds.colTypes.size(); ++i) {
-                    if (ds.colTypes[i].first == NLMjson::value_t::number_float ||
-                        ds.colTypes[i].first == NLMjson::value_t::number_integer ||
-                        ds.colTypes[i].first == NLMjson::value_t::number_unsigned) {
-                        if (std::ranges::find(dp.values_colIDs, i) == dp.values_colIDs.end()) { return i; }
+                for (auto const &tpl : useableValCols_tpl) {
+                    if (std::ranges::find(dp.values_colIDs, std::get<0>(tpl)) == dp.values_colIDs.end()) {
+                        return std::get<0>(tpl);
                     }
                 }
                 // Cannot find another one
                 return std::unexpected(Unexp_plotSpecs::guessValCols);
             };
-            while (dp.values_colIDs.size() < count) {
+            while (dp.values_colIDs.size() < minAllowed) {
                 auto expID = getAnotherValColID();
                 if (expID.has_value()) { dp.values_colIDs.push_back(expID.value()); }
                 else { return std::unexpected(expID.error()); }
+            }
+            while (dp.values_colIDs.size() < maxAllowed) {
+                auto expID = getAnotherValColID();
+                if (expID.has_value()) { dp.values_colIDs.push_back(expID.value()); }
+                else { break; }
             }
             return 0uz;
         };
@@ -261,21 +351,28 @@ private:
             if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
             else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
             else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
 
         // SCATTER PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-            if (dp.values_colIDs.size() > 4) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(4).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            if (dp.values_colIDs.size() > Config::max_numOfValCols) {
+                return std::unexpected(Unexp_plotSpecs::valCols);
+            }
+            else if (dp.values_colIDs.size() < 2) {
+                if (not addValColsUntil(2, Config::max_numOfValCols).has_value()) {
+                    return std::unexpected(Unexp_plotSpecs::guessValCols);
+                }
+            }
+            else { return dp; }
         }
 
         // MULTILINE PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
             if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(2).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            else if (not addValColsUntil(2, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
 
         return dp;
@@ -362,6 +459,9 @@ public:
         auto gpt = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
             return DesiredPlot::guess_plotType(std::forward<decltype(dp)>(dp), ds);
         };
+        auto gcc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::guess_catCol(std::forward<decltype(dp)>(dp), ds);
+        };
         auto glc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
             return DesiredPlot::guess_labelCol(std::forward<decltype(dp)>(dp), ds);
         };
@@ -378,6 +478,7 @@ public:
         return DesiredPlot::compute_colAssessments(std::forward<decltype(self)>(self), ds)
             .and_then(tnciids)
             .and_then(gpt)
+            .and_then(gcc)
             .and_then(glc)
             .and_then(gvc)
             .and_then(gsz)

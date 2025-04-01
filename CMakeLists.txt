@@ -15,6 +15,7 @@ target_include_directories(incplot INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
 set_target_properties(incplot PROPERTIES LINKER_LANGUAGE CXX)
 
 target_link_libraries(incplot INTERFACE
-    nlohmann_json::nlohmann_json)
+    nlohmann_json::nlohmann_json
+    glaze::glaze)
 
 add_subdirectory(demos)

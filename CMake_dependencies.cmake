@@ -8,3 +8,13 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 find_package(nlohmann_json REQUIRED)
+
+
+FetchContent_Declare(
+    glaze
+    GIT_REPOSITORY https://github.com/stephenberry/glaze.git
+    GIT_TAG main
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(glaze)

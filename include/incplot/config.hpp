@@ -54,7 +54,8 @@ public:
     static constexpr double                      colors_scaleDistanceFromBlack = 0.55;
 
     // OTHER PLOT SETTINGS
-    static constexpr size_t max_numOfValCols = 4uz;
+    static constexpr size_t max_numOfValCols       = 4uz;
+    static constexpr size_t max_maxNumOfCategories = 3uz;
 
     static constexpr size_t axisLabels_maxLength_vl = 30uz;
     static constexpr size_t axisLabels_maxLength_vr = 30uz;

@@ -716,17 +716,17 @@ class Scatter : public BarV {
             return res;
         };
 
-        auto const &valColTypeRef_y = ds.colTypes.at(dp.values_colIDs.front());
-        if (valColTypeRef_y.first == nlohmann::detail::value_t::number_float) {
-            auto [minV, maxV] = std::ranges::minmax(ds.doubleCols.at(valColTypeRef_y.second));
-            self.labels_verLeft =
-                getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
-        }
-        else {
-            auto [minV, maxV] = std::ranges::minmax(ds.llCols.at(valColTypeRef_y.second));
-            self.labels_verLeft =
-                getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
-        }
+        auto yValCols_fv =
+            std::views::filter(std::views::enumerate(ds.vec_colVariants),
+                               [&](auto const &pr) {
+                                   return (std::ranges::find(dp.values_colIDs.begin() + 1, dp.values_colIDs.end(),
+                                                             std::get<0>(pr)) != dp.values_colIDs.end());
+                               }) |
+            std::views::transform([](auto const &pr2) { return std::get<1>(pr2); });
+
+        auto [minV, maxV] = detail::compute_minMaxMulti(yValCols_fv);
+        self.labels_verLeft =
+            getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
 
         return (self);
     }
@@ -779,33 +779,10 @@ class Scatter : public BarV {
             self.label_horBottom.append(tempStr);
             self.label_horBottom.append(Config::term_setDefault);
         };
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
-        }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            // TODO: What to do with Multiline axisLabel bottom
-        }
-        else {
-            // The SECOND and ABOVE value columns are used for the minV maxV basis
-            double minV = std::numeric_limits<double>::max(), maxV = std::numeric_limits<double>::min();
 
-            for (size_t id = 1; id < dp.values_colIDs.size(); ++id) {
-                if (ds.colTypes.at(id).first == nlohmann::detail::value_t::number_float) {
-                    auto const [minV_tmp, maxV_tmp] =
-                        std::ranges::minmax(ds.doubleCols.at(ds.colTypes.at(dp.values_colIDs.at(id)).second));
-                    minV = std::min(minV, minV_tmp);
-                    maxV = std::max(maxV, maxV_tmp);
-                }
-                else {
-                    auto const [minV_tmp, maxV_tmp] =
-                        std::ranges::minmax(ds.llCols.at(ds.colTypes.at(dp.values_colIDs.at(id)).second));
-                    minV = std::min(minV, static_cast<double>(minV_tmp));
-                    maxV = std::max(maxV, static_cast<double>(maxV_tmp));
-                }
-            }
+        auto [minV, maxV] = detail::compute_minMaxMulti(std::vector{ds.vec_colVariants.at(dp.values_colIDs.front())});
+        computeLabels(minV, maxV);
 
-            computeLabels(minV, maxV);
-        }
         return self;
     }
 
