@@ -268,52 +268,14 @@ private:
 public:
     template <typename X>
     requires std::is_arithmetic_v<typename X::value_type>
-    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
-                                                         auto                       viewOfValVariants,
-                                                         std::vector<size_t> const &catIDs_vec) {
-
-        BrailleDrawer bd(canvas_width, canvas_height, get_sortedAndUniqued(catIDs_vec).size());
-
-        auto [xMin, xMax] = std::ranges::minmax(x_values);
-        auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
-        double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
-        double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
-
-        auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal, size_t const &groupID) {
-            auto y       = static_cast<size_t>(((yVal - yMin) / yStepSize)) / 4;
-            auto yChrPos = static_cast<size_t>(((yVal - yMin) / yStepSize)) % 4;
-
-            auto x       = static_cast<size_t>(((xVal - xMin) / xStepSize)) / 2;
-            auto xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
-
-            bd.m_canvasBraille[y][x] |= Config::braille_map[yChrPos][xChrPos];
-            bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
-        };
-
-
-        auto olSet = [&](auto const &oneCol) -> void {
-            auto const &yValCol_data = oneCol.get();
-            if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
-                for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
-                    placePointOnCanvas(yValCol_data[rowID], x_values[rowID], catIDs_vec[rowID]);
-                }
-            }
-        };
-        std::visit(olSet, viewOfValVariants.front());
-
-
-        bd.compute_canvasColors();
-        return bd.construct_outputPlotArea();
-    }
-
-
-    template <typename X>
-    requires std::is_arithmetic_v<typename X::value_type>
-    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
-                                                         auto viewOfValVariants) {
+    static constexpr std::vector<std::string> drawPoints(
+        size_t canvas_width, size_t canvas_height, X const &x_values, auto viewOfValVariants,
+        std::optional<std::vector<size_t>> const &catIDs_vec) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
-                         std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }));
+                         catIDs_vec.has_value()
+                             ? get_sortedAndUniqued(catIDs_vec.value()).size()
+                             : std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }));
 
         auto [xMin, xMax] = std::ranges::minmax(x_values);
         auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
@@ -338,7 +300,8 @@ public:
                 if constexpr (std::is_arithmetic_v<
                                   typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
                     for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
-                        placePointOnCanvas(yValCol_data[rowID], x_values[rowID], i);
+                        placePointOnCanvas(yValCol_data[rowID], x_values[rowID],
+                                           catIDs_vec.has_value() ? catIDs_vec.value()[rowID] : i);
                     }
                     i++;
                 }

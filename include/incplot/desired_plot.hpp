@@ -35,6 +35,7 @@ class Scatter;
 class DesiredPlot {
     using NLMjson = nlohmann::json;
 
+private:
     struct ColumnParams {
         size_t categoryCount;
 
@@ -47,10 +48,9 @@ class DesiredPlot {
 
     std::vector<ColumnParams> m_colAssessments;
 
-public:
-    // Column data assessment for the purpose of DesiredPlot decision making
+    std::vector<int> colsUsed;
 
-private:
+    // BUILDING METHODS
     static std::expected<DesiredPlot, Unexp_plotSpecs> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds) {
 
         auto c_catParams = [&](auto const &vecRef) -> void {
@@ -139,7 +139,7 @@ private:
             dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol);
             dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol);
         }
-
+        dp.colsUsed = std::vector(dp.m_colAssessments.size(), 0);
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
@@ -289,7 +289,7 @@ private:
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_labelCol(DesiredPlot &&dp, DataStore const &ds) {
         if (dp.label_colID.has_value()) {
-            if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return dp; }
+            if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) { return dp; }
             else { return std::unexpected(Unexp_plotSpecs::labelCol); }
         }
         else if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return dp; }
@@ -422,7 +422,6 @@ public:
     // Label for use in timeseries
     std::optional<size_t>      labelTS_colID; // ID in colTypes
     std::optional<std::string> labelTS_colName;
-
 
     // TODO: Make both 'values_' into std::optional as well to keep the logic the same for all here
     std::vector<size_t>      values_colIDs; // IDs in colTypes

@@ -1,8 +1,8 @@
 # incplot .... #
-Incplot is a command like tool for drawing plots in the terminal using unicode characters.
+Incplot is a command like tool for drawing great looking plots in the terminal using unicode characters.
 Automatically infers what to display and how based on the data piped in.
 
-This tool is intended for 'as quick and easy as possible' visualization of small to moderate sized data and information one may encounter within more or less generic worflow.
+Intended for 'as quick and as easy as possible' visualization of small to moderate sized data and information one may encounter within more or less generic worflow.
 
 
 
@@ -15,9 +15,11 @@ This tool is intended for 'as quick and easy as possible' visualization of small
 * Can utilize colors to display data groupping
 * Can mix colors where appropriate (eg. Scatter plots)
 * Uses full true color
+* Automatic sizing
 * Automatic value labels and scaling with metric prefixes
 * Automatic tickmarks
 * Automatic legend
+* Reasonable error message (especially if the user asks for something that is impossible/unsupported)
 
 ## Anti-Features ##
 
@@ -25,7 +27,8 @@ This tool is intended for 'as quick and easy as possible' visualization of small
 * Not intended for plotting huge datasets
 * Doesn't offer the more obscure plot types
 * No export
-* 
+* Cannot create good looking plots if the data provided is fundamentally not well suited for plotting (eg. data with no numeric columns)
+* Generally not intended for 'data professionals'
 
 ## Disclaimer ##
 
