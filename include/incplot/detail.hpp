@@ -5,21 +5,13 @@
 #include <algorithm>
 #include <cmath>
 #include <codecvt>
-#include <format>
-#include <functional>
-#include <limits>
 #include <locale>
 
 #include <incplot/color_mixer.hpp>
 #include <incplot/desired_plot.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
-#include <optional>
-#include <ranges>
 #include <string>
-#include <type_traits>
-#include <variant>
-#include <vector>
 
 
 namespace incom {
@@ -58,7 +50,7 @@ constexpr inline std::size_t strlen_utf8(const std::string &str) {
     return length;
 }
 
-constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) {
+constexpr inline std::string trim2Size_leading(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
     if (str.size() > maxSize) {
         size_t cutPoint = maxSize / 2;
@@ -68,10 +60,10 @@ constexpr std::string trim2Size_leading(std::string const &str, size_t maxSize) 
     }
     else { return std::string(maxSize - strlen_utf8(str), Config::space).append(str); }
 }
-constexpr std::string trim2Size_leading(std::string const &&str, size_t maxSize) {
+constexpr inline std::string trim2Size_leading(std::string const &&str, size_t maxSize) {
     return trim2Size_leading(str, maxSize);
 }
-constexpr std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
+constexpr inline std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
     if (str.size() > maxSize) {
         size_t cutPoint = maxSize / 2;
@@ -86,7 +78,7 @@ constexpr std::string trim2Size_leadingEnding(std::string const &str, size_t max
                 std::string(((maxSize - strlen_utf8(str)) / 2) + ((maxSize - strlen_utf8(str)) % 2), Config::space));
     }
 }
-constexpr std::string trim2Size_leadingEnding(std::string const &&str, size_t maxSize) {
+constexpr inline std::string trim2Size_leadingEnding(std::string const &&str, size_t maxSize) {
     return trim2Size_leadingEnding(str, maxSize);
 }
 
@@ -268,9 +260,9 @@ private:
 public:
     template <typename X>
     requires std::is_arithmetic_v<typename X::value_type>
-    static constexpr std::vector<std::string> drawPoints(
-        size_t canvas_width, size_t canvas_height, X const &x_values, auto viewOfValVariants,
-        std::optional<std::vector<size_t>> const &catIDs_vec) {
+    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
+                                                         auto                                      viewOfValVariants,
+                                                         std::optional<std::vector<size_t>> const &catIDs_vec) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          catIDs_vec.has_value()
@@ -299,9 +291,15 @@ public:
                 auto const &yValCol_data = oneCol.get();
                 if constexpr (std::is_arithmetic_v<
                                   typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
-                    for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
-                        placePointOnCanvas(yValCol_data[rowID], x_values[rowID],
-                                           catIDs_vec.has_value() ? catIDs_vec.value()[rowID] : i);
+                    if (catIDs_vec.has_value()) {
+                        for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
+                            placePointOnCanvas(yValCol_data[rowID], x_values[rowID], catIDs_vec.value()[rowID]);
+                        }
+                    }
+                    else {
+                        for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
+                            placePointOnCanvas(yValCol_data[rowID], x_values[rowID], i);
+                        }
                     }
                     i++;
                 }

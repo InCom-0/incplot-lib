@@ -1,13 +1,9 @@
 #pragma once
 
 #include "incplot/config.hpp"
-#include "incplot/detail.hpp"
 #include "incplot/detail/misc.hpp"
 #include <algorithm>
-#include <concepts>
 #include <expected>
-#include <optional>
-#include <ranges>
 #include <string>
 #include <utility>
 
@@ -933,11 +929,11 @@ public:
 // This is a map of default constructed 'plot_structures' inside an std::variant
 // Pass the 'plot_structure' template types that should be used by the library
 // This is the only place where one 'selects' these template types
-static inline const auto mp_names2Types =
+inline static const auto mp_names2Types =
     detail::generate_variantTypeMap<plot_structures::Base, plot_structures::BarV, plot_structures::BarH,
                                     plot_structures::Multiline, plot_structures::Scatter>();
 
-inline auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
+inline constexpr auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
     auto ref          = mp_names2Types.at(dp.plot_type_name.value());
     using varType     = decltype(ref);
     auto overload_set = [&](auto const &variantItem) -> PlotDrawer<varType> {

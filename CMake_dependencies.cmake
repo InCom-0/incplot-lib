@@ -16,5 +16,12 @@ FetchContent_Declare(
     GIT_TAG main
     GIT_SHALLOW TRUE
 )
-
 FetchContent_MakeAvailable(glaze)
+
+
+include(FetchContent)
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(argparse)

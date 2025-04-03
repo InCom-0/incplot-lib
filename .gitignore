@@ -6,3 +6,4 @@
 /cmake-build-debug_clang/
 /cmake-build-gcc_debug/
 /build/
+CMakeUserPresets.json

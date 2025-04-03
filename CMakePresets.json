@@ -1,0 +1,96 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "InCom's x64-mingw_gcc_dynamic",
+            "displayName": "InCom's x64-mingw_dynamic, Debug",
+            "hidden": false,
+            "inherits": [
+                "x64-mingw_gcc_dynamic",
+                "debug"
+            ],
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "environment": {
+                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
+            }
+        },
+        {
+            "name": "x64-mingw_gcc_dynamic",
+            "displayName": "GCC x64-mingw_dynamic, Debug",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_gcc",
+                "debug"
+            ],
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic",
+                "VCPKG_HOST_TRIPLET": "x64-mingw-dynamic"
+            }
+        },
+        {
+            "name": "x64-mingw_gcc_static",
+            "displayName": "GCC x64-mingw_static, Release",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_gcc",
+                "release"
+            ],
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-mingw-static",
+                "VCPKG_HOST_TRIPLET": "x64-mingw-static"
+            }
+        },
+        {
+            "name": "x64-clang",
+            "displayName": "Clang, Release",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_clang",
+                "release"
+            ],
+            "description": "Using: C = clang.exe, CXX = clang++.exe"
+        },
+        {
+            "name": "_common",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/",
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+            "generator": "Ninja"
+        },
+        {
+            "name": "_gcc",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "gcc",
+                "CMAKE_CXX_COMPILER": "g++"
+            }
+        },
+        {
+            "name": "_clang",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "debug",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ]
+}

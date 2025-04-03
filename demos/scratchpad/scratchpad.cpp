@@ -1,9 +1,10 @@
+#include <cstdio>
+#include <io.h>
 #include <iostream>
 #include <optional>
 #include <print>
+#include <stdio.h>
 #include <string>
-#include <windows.h>
-
 
 
 #include <incplot.hpp>
@@ -12,14 +13,18 @@
 int main() {
     using json = nlohmann::json;
 
-    HANDLE hIn  = GetStdHandle(STD_INPUT_HANDLE);
-    DWORD  type = GetFileType(hIn);
-    switch (type) {
-        case FILE_TYPE_PIPE: break;
-        default:
-            std::print("{}", "STD INPUT is not 'pipe' ... exiting");
-            return 1;
-            break;
+    // HANDLE hIn  = GetStdHandle(STD_INPUT_HANDLE);
+    // DWORD  type = GetFileType(hIn);
+    // switch (type) {
+    //     case FILE_TYPE_PIPE: break;
+    //     default:
+    //         std::print("{}", "STD INPUT is not 'pipe' ... exiting");
+    //         return 1;
+    //         break;
+    // }
+    if (isatty(fileno(stdin))) {
+        std::print("{}", "STD INPUT is not 'pipe' ... exiting");
+        return 1;
     }
 
     std::string input((std::istreambuf_iterator(std::cin)), std::istreambuf_iterator<char>());
@@ -44,7 +49,7 @@ int main() {
     }
 
     std::print("{}\n", outExp.value());
-    
+
 
     return 0;
 }
