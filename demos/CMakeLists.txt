@@ -11,7 +11,6 @@ target_link_libraries(incplot_scratchpad_dbg PUBLIC incplot)
 
 target_link_libraries(incplot_scratchpad_dbg PRIVATE "-lstdc++exp")
 
-
 set_target_properties(incplot_scratchpad incplot_scratchpad_dbg PROPERTIES
     LINKER_LANGUAGE CXX
     CXX_STANDARD 23)

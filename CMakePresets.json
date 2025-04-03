@@ -2,7 +2,7 @@
     "version": 8,
     "configurePresets": [
         {
-            "name": "InCom's x64-mingw_gcc_dynamic",
+            "name": "InCom's x64-mingw_gcc_dynamic DBG",
             "displayName": "InCom's x64-mingw_dynamic, Debug",
             "hidden": false,
             "inherits": [
@@ -59,8 +59,11 @@
             "name": "_common",
             "hidden": true,
             "binaryDir": "${sourceDir}/build/",
-            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-            "generator": "Ninja"
+            "generator": "Ninja",
+            "cacheVariables": {
+                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                 "CMAKE_EXPORT_COMPILE_COMMANDS":true
+            }
         },
         {
             "name": "_gcc",
