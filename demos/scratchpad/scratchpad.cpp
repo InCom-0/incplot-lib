@@ -5,6 +5,7 @@
 #include <print>
 #include <stdio.h>
 #include <string>
+#include <windows.h>
 
 
 #include <incplot.hpp>
@@ -49,6 +50,15 @@ int main() {
     }
 
     std::print("{}\n", outExp.value());
+
+
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    auto width  = (int)(csbi.srWindow.Right - csbi.srWindow.Left + 1);
+    auto height = (int)(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
+
+    std::print("{}\n", width);
+    std::print("{}\n", height);
 
 
     return 0;

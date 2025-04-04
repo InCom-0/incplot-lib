@@ -15,6 +15,19 @@
             }
         },
         {
+            "name": "InCom's x64-mingw_gcc_dynamic RLS",
+            "displayName": "InCom's x64-mingw_dynamic, Release",
+            "hidden": false,
+            "inherits": [
+                "release",
+                "x64-mingw_gcc_dynamic"
+            ],
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "environment": {
+                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
+            }
+        },
+        {
             "name": "x64-mingw_gcc_dynamic",
             "displayName": "GCC x64-mingw_dynamic, Debug",
             "hidden": false,
@@ -53,16 +66,23 @@
                 "_clang",
                 "release"
             ],
-            "description": "Using: C = clang.exe, CXX = clang++.exe"
+            "description": "Using: C = clang.exe, CXX = clang++.exe",
+            "environment": {
+                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic",
+                "VCPKG_HOST_TRIPLET": "x64-mingw-dynamic"
+            }
         },
         {
             "name": "_common",
             "hidden": true,
             "binaryDir": "${sourceDir}/build/",
             "generator": "Ninja",
+            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
-                 "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
-                 "CMAKE_EXPORT_COMPILE_COMMANDS":true
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true
             }
         },
         {

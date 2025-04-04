@@ -13,7 +13,6 @@
 #include <incplot/parser.hpp>
 #include <vector>
 
-
 namespace incom {
 namespace terminal_plot {
 
