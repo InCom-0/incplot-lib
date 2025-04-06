@@ -65,6 +65,11 @@ protected:
     std::vector<std::string> corner_bottomRight;
     std::vector<std::string> corner_topRight;
 
+    std::string areaCorner_tl;
+    std::string areaCorner_bl;
+    std::string areaCorner_br;
+    std::string areaCorner_tr;
+
     std::vector<std::string> plotArea;
 
     // Compute size in bytes (for reserving the output str size), not size in 'displayed characters'
@@ -137,6 +142,7 @@ public:
         auto c_cbl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_bl(dp, ds); };
         auto c_cbr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_br(dp, ds); };
         auto c_ctr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_tr(dp, ds); };
+        auto c_ac  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_areaCorners(dp, ds); };
 
         auto c_aht  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_ht(dp, ds); };
         auto c_anht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_ht(dp, ds); };
@@ -160,6 +166,7 @@ public:
                        .and_then(c_cbl)
                        .and_then(c_cbr)
                        .and_then(c_ctr)
+                       .and_then(c_ac)
                        .and_then(c_aht)
                        .and_then(c_anht)
                        .and_then(c_alht)
@@ -204,10 +211,10 @@ public:
         result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
         result.append(labels_verLeft.front());
         result.append(Config::color_Axes);
-        result.append(Config::areaCorner_tl);
+        result.append(areaCorner_tl);
         for (auto const &toAppend : axis_horTop) { result.append(toAppend); }
         result.append(Config::color_Axes);
-        result.append(Config::areaCorner_tr);
+        result.append(areaCorner_tr);
         result.append(Config::term_setDefault);
         result.append(labels_verRight.front());
         result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), Config::space));
@@ -233,10 +240,10 @@ public:
         result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
         result.append(labels_verLeft.back());
         result.append(Config::color_Axes);
-        result.append(Config::areaCorner_bl);
+        result.append(areaCorner_bl);
         for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
         result.append(Config::color_Axes);
-        result.append(Config::areaCorner_br);
+        result.append(areaCorner_br);
         result.append(Config::term_setDefault);
         result.append(labels_verRight.back());
         result.append(std::string(pad_right + (Config::axis_verName_width_vr * axisName_verRight_bool), Config::space));
@@ -298,6 +305,8 @@ private:
     auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
     auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
+    auto compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
     auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -569,6 +578,22 @@ class BarV : public Base {
                             Config::space));
         }
 
+        return self;
+    }
+    auto compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+            self.areaCorner_tl = Config::areaCorner_tl_barV;
+            self.areaCorner_bl = Config::areaCorner_bl_barV;
+            self.areaCorner_tr = Config::areaCorner_tr;
+            self.areaCorner_br = Config::areaCorner_br;
+        }
+        else {
+            self.areaCorner_tl = Config::areaCorner_tl;
+            self.areaCorner_bl = Config::areaCorner_bl;
+            self.areaCorner_tr = Config::areaCorner_tr;
+            self.areaCorner_br = Config::areaCorner_br;
+        }
         return self;
     }
 

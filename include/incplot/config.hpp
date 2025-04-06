@@ -26,6 +26,9 @@ public:
     static constexpr std::string areaCorner_br = "┤";
     static constexpr std::string areaCorner_tr = "┐";
 
+    static constexpr std::string areaCorner_tl_barV = "┌";
+    static constexpr std::string areaCorner_bl_barV = "└";
+
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
     static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⡀', U'⢀', U'⠄', U'⠠', U'⠂', U'⠐', U'⠁', U'⠈'};
     static constexpr char32_t                               braille_blank = U'⠀';
