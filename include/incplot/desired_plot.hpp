@@ -1,6 +1,5 @@
 #pragma once
 
-#include "incplot/detail/color.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdint>

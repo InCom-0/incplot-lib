@@ -1,14 +1,10 @@
 #pragma once
 
-#include "incplot/config.hpp"
-#include "incplot/detail/color.hpp"
-#include "incplot/detail/misc.hpp"
 #include <algorithm>
 #include <expected>
 #include <string>
 #include <utility>
 
-#include <incplot/datastore.hpp>
 #include <incplot/desired_plot.hpp>
 #include <incplot/detail.hpp>
 #include <incplot/parser.hpp>

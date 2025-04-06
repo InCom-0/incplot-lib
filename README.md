@@ -10,26 +10,25 @@ Intended for 'as quick and as easy as possible' visualization of small to modera
 ## Features ##
 
 * Good looking plots 'out of the box'
-* Super simple to use, no command line arguments necessary most of the time
+* Simple to use, no command line arguments necessary most of the time
 * User can optionally specify some or all parameters
 * Accepts piped in data in 'JSON Lines' or 'NDJSON' flat format
 * Very fast
-* Can utilize colors to display data groupping
-* Can mix full true color where appropriate (eg. Scatter plots)
+* Utilizes full true colors to display data groupping where appropriate (eg. Scatter plots)
 * Automatic sizing
 * Automatic value labels and scaling with metric suffixes
 * Automatic tickmarks
 * Automatic legend
-* Reasonable error message (especially if the user asks for something that is impossible/unsupported)
+* Reasonable error message (especially when the user asks for something that is impossible/unsupported)
 
 ## Non-Features ##
 
 * No data wrangling or analysis of any kind
 * Not intended for plotting huge datasets
 * Doesn't offer the more obscure plot types
-* No export
-* Doesn't create good looking plots if the data provided is fundamentally not well suited for plotting (eg. data with no numeric columns)
-* Doesn't and cannot show 100% visual accuracy due to limitations of the terminal interface
+* No export of the rendered plot into other formats (such as pictures)
+* If the data provided is fundamentally not well suited for plotting (eg. data with no numeric columns) then it doesn't guarantee good looking plots
+* Doesn't show and cannot show 100% visual accuracy due to limitations of the terminal interface
 
 ## Disclaimer ##
 
