@@ -1,4 +1,4 @@
-#include <optional>
+#include "incplot/desired_plot.hpp"
 #include <print>
 #include <string>
 #include <windows.h>
@@ -334,7 +334,8 @@ int main() {
     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
 
-    auto dp_autoGuessed = incplot::DesiredPlot(96).guess_missingParams(ds);
+    auto dp_autoGuessed =
+        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 96}).guess_missingParams(ds);
 
     if (not dp_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
@@ -366,7 +367,10 @@ int main() {
 
     auto ds2 = incplot::Parser::parse_NDJSON_intoDS(testInput_petal);
 
-    auto dp2_autoGuessed = incplot::DesiredPlot(48, std::nullopt, "Scatter").guess_missingParams(ds2);
+    auto dp2_autoGuessed =
+        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 48, .plot_type_name = "Scatter"})
+            .guess_missingParams(ds2);
+
 
     if (not dp2_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot_2' parameters failed \n", "Exiting ...");

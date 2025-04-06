@@ -1,7 +1,7 @@
+#include "incplot/desired_plot.hpp"
 #include <cstdio>
 #include <io.h>
 #include <iostream>
-#include <optional>
 #include <print>
 #include <stdio.h>
 #include <string>
@@ -32,8 +32,8 @@ int main() {
 
     auto ds = incplot::Parser::parse_NDJSON_intoDS(input);
 
-
-    auto dp_autoGuessed = incplot::DesiredPlot(48).guess_missingParams(ds);
+    auto dp_autoGuessed =
+        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 48}).guess_missingParams(ds);
 
     if (not dp_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");

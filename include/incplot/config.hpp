@@ -39,13 +39,19 @@ public:
     // COLORS
     static constexpr Color_CVTS color_Axes_enum  = Color_CVTS::Bright_Foreground_Black;
     static constexpr Color_CVTS color_Vals1_enum = Color_CVTS::Foreground_Green;
-    static constexpr Color_CVTS color_Vals2_enum = Color_CVTS::Foreground_Red;
-    static constexpr Color_CVTS color_Vals3_enum = Color_CVTS::Foreground_Blue;
+    static constexpr Color_CVTS color_Vals2_enum = Color_CVTS::Foreground_Blue;
+    static constexpr Color_CVTS color_Vals3_enum = Color_CVTS::Foreground_Red;
+    static constexpr Color_CVTS color_Vals4_enum = Color_CVTS::Foreground_Cyan;
+    static constexpr Color_CVTS color_Vals5_enum = Color_CVTS::Foreground_Yellow;
+    static constexpr Color_CVTS color_Vals6_enum = Color_CVTS::Foreground_Magenta;
 
     static constexpr std::string color_Axes  = TermColors::get_basicColor(color_Axes_enum);
     static constexpr std::string color_Vals1 = TermColors::get_basicColor(color_Vals1_enum);
     static constexpr std::string color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
     static constexpr std::string color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
+    static constexpr std::string color_Vals4 = TermColors::get_basicColor(color_Vals4_enum);
+    static constexpr std::string color_Vals5 = TermColors::get_basicColor(color_Vals5_enum);
+    static constexpr std::string color_Vals6 = TermColors::get_basicColor(color_Vals6_enum);
 
     static constexpr std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{19u, 161u, 14u, 197u, 15u,
                                                                                  31u, 0u,   55u, 218u};

@@ -3,6 +3,7 @@
 #include "incplot/config.hpp"
 #include "incplot/detail/color.hpp"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <codecvt>
 #include <locale>
@@ -209,16 +210,20 @@ private:
     std::vector<std::vector<char32_t>>                                          m_canvasBraille;
     std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> m_pointsCountPerPos_perColor;
 
-    std::vector<std::u32string> m_colorPallete = std::vector<std::u32string>{
-        detail::convert_u32u8(Config::color_Vals1), detail::convert_u32u8(Config::color_Vals2),
-        detail::convert_u32u8(Config::color_Vals3)};
-    std::u32string s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
-
+    std::array<std::u32string, 6> m_colorPallete;
+    std::u32string                s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
 
     BrailleDrawer() {};
-    BrailleDrawer(size_t canvas_width, size_t canvas_height, size_t numOf_categories)
+    BrailleDrawer(size_t canvas_width, size_t canvas_height, size_t numOf_categories,
+                  std::array<Color_CVTS, 6> const &colorPalette)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))),
+          m_colorPallete{detail::convert_u32u8(TermColors::get_basicColor(colorPalette[0])),
+                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[1])),
+                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[2])),
+                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[3])),
+                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[4])),
+                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[5]))},
           m_pointsCountPerPos_perColor(std::vector(
               canvas_height,
               std::vector(canvas_width,
@@ -262,12 +267,14 @@ public:
     requires std::is_arithmetic_v<typename X::value_type>
     static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
                                                          auto                                      viewOfValVariants,
-                                                         std::optional<std::vector<size_t>> const &catIDs_vec) {
+                                                         std::optional<std::vector<size_t>> const &catIDs_vec,
+                                                         std::array<Color_CVTS, 6>                 colorPalette) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          catIDs_vec.has_value()
                              ? get_sortedAndUniqued(catIDs_vec.value()).size()
-                             : std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }));
+                             : std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }),
+                         colorPalette);
 
         auto [xMin, xMax] = std::ranges::minmax(x_values);
         auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);

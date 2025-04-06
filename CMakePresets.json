@@ -6,8 +6,8 @@
             "displayName": "InCom's x64-mingw_dynamic, Debug",
             "hidden": false,
             "inherits": [
-                "x64-mingw_gcc_dynamic",
-                "debug"
+                "debug",
+                "x64-mingw_gcc_dynamic"
             ],
             "description": "Using: C = gcc.exe, CXX = g++.exe",
             "environment": {
@@ -66,14 +66,7 @@
                 "_clang",
                 "release"
             ],
-            "description": "Using: C = clang.exe, CXX = clang++.exe",
-            "environment": {
-                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
-            },
-            "cacheVariables": {
-                "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic",
-                "VCPKG_HOST_TRIPLET": "x64-mingw-dynamic"
-            }
+            "description": "Using: C = clang.exe, CXX = clang++.exe"
         },
         {
             "name": "_common",

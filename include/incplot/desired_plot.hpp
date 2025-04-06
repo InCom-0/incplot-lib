@@ -1,6 +1,8 @@
 #pragma once
 
+#include "incplot/detail/color.hpp"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <expected>
 
@@ -430,20 +432,41 @@ public:
     std::optional<size_t> targetHeight;
     std::optional<size_t> targetWidth;
 
+    std::array<Color_CVTS, 6> color_basePalette;
+
     std::optional<bool> valAxesNames_bool;
     std::optional<bool> valAxesLabels_bool;
     std::optional<bool> valAutoFormat_bool;
     std::optional<bool> legend_bool;
 
-
     // TODO: Provide some compile time programmatic way to set the default sizes here
-    DesiredPlot(std::optional<size_t> tar_width = std::nullopt, std::optional<size_t> tar_height = std::nullopt,
-                std::optional<std::string> plot_type_name = std::nullopt, std::optional<size_t> l_colID = std::nullopt,
-                std::optional<std::string> l_colName = std::nullopt, std::vector<size_t> v_colIDs = {},
-                std::vector<std::string> v_colNames = {})
-        : targetWidth(tar_width), targetHeight(tar_height), plot_type_name(std::move(plot_type_name)),
-          label_colID(std::move(l_colID)), label_colName(std::move(l_colName)), values_colIDs(std::move(v_colIDs)),
-          values_colNames(std::move(v_colNames)) {}
+    struct DP_CtorStruct {
+        std::optional<size_t>      tar_width      = std::nullopt;
+        std::optional<size_t>      tar_height     = std::nullopt;
+        std::optional<std::string> plot_type_name = std::nullopt;
+        std::optional<size_t>      l_colID        = std::nullopt;
+        std::vector<size_t>        v_colIDs       = {};
+        std::optional<size_t>      c_colID        = std::nullopt;
+        std::array<Color_CVTS, 6>  colors         = {
+            Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
+            Config::color_Vals3_enum, Config::color_Vals4_enum, Config::color_Vals5_enum,
+        };
+        std::optional<std::string> l_colName  = std::nullopt;
+        std::vector<std::string>   v_colNames = {};
+        std::optional<std::string> c_colName  = std::nullopt;
+    };
+
+    DesiredPlot(DP_CtorStruct &&dp_struct)
+        : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
+          plot_type_name(std::move(dp_struct.plot_type_name)), label_colID(std::move(dp_struct.l_colID)),
+          values_colIDs(std::move(dp_struct.v_colIDs)), cat_colID(std::move(dp_struct.c_colID)),
+          color_basePalette(std::move(dp_struct.colors)), label_colName(std::move(dp_struct.l_colName)),
+          values_colNames(std::move(dp_struct.v_colNames)), cat_colName(std::move(dp_struct.c_colName)) {}
+    DesiredPlot(DP_CtorStruct const &dp_struct)
+        : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
+          plot_type_name(dp_struct.plot_type_name), label_colID(dp_struct.l_colID), values_colIDs(dp_struct.v_colIDs),
+          cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors), label_colName(dp_struct.l_colName),
+          values_colNames(dp_struct.v_colNames), cat_colName(dp_struct.c_colName) {}
 
     // Create a new copy and guess_missingParams on it.
     std::expected<DesiredPlot, Unexp_plotSpecs> build_guessedParamsCPY(this DesiredPlot &self, DataStore const &ds) {
@@ -455,7 +478,6 @@ public:
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
     std::expected<DesiredPlot, Unexp_plotSpecs> guess_missingParams(this DesiredPlot &&self, DataStore const &ds) {
-
         // TODO: Could use std::bind for these ... had some trouble with that ... maybe return to it later.
         // Still can't quite figure it out ...  std::bind_back doesn't seem to cooperate with and_then ...
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "incplot/config.hpp"
+#include "incplot/detail/color.hpp"
 #include "incplot/detail/misc.hpp"
 #include <algorithm>
 #include <expected>
@@ -690,7 +691,7 @@ class BarV : public Base {
 
             for (auto const &val : valColRef) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.push_back(Config::color_Vals1);
+                self.plotArea.push_back(TermColors::get_basicColor(dp.color_basePalette.front()));
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
                 self.plotArea.back().append(Config::color_Axes);
 
@@ -869,11 +870,12 @@ class Scatter : public BarV {
         if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
             self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
                                                               ds.doubleCols.at(valColTypeRef_x.second), view_yValCols,
-                                                              opt_catIDs_vec);
+                                                              opt_catIDs_vec, dp.color_basePalette);
         }
         else {
-            self.plotArea = detail::BrailleDrawer::drawPoints(
-                self.areaWidth, self.areaHeight, ds.llCols.at(valColTypeRef_x.second), view_yValCols, opt_catIDs_vec);
+            self.plotArea =
+                detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, ds.llCols.at(valColTypeRef_x.second),
+                                                  view_yValCols, opt_catIDs_vec, dp.color_basePalette);
         }
 
 
