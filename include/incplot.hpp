@@ -377,7 +377,7 @@ class BarV : public Base {
                 for (size_t id_indirect = 1; id_indirect < dp.values_colIDs.size(); ++id_indirect) {
                     maxSize = std::max(maxSize, ds.colNames.at(dp.values_colIDs.at(id_indirect)).size());
                 }
-                self.labels_verRightWidth = std::max(maxSize, Config::axisLabels_maxLength_vr);
+                self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
             }
             else { self.labels_verRightWidth = 0; }
         }
@@ -797,7 +797,79 @@ class Scatter : public BarV {
     }
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
+
+        // Categories are specified by catColID
+        if (dp.cat_colID.has_value()) {
+            typename decltype(ds.vec_colVariants)::value_type cat_values =
+                std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.vec_colVariants), [&](auto const &a) {
+                    return std::get<0>(a) == dp.cat_colID.value();
+                }));
+
+            auto create_catIDs_vec = [&](auto const &vec) -> std::vector<std::string> {
+                auto sortedUniqued = detail::get_sortedAndUniqued(vec.get());
+                if constexpr (std::same_as<typename decltype(sortedUniqued)::value_type, std::string>) {
+                    return sortedUniqued;
+                }
+                else {
+                    std::vector<std::string> res;
+                    for (auto const &suItem : sortedUniqued) { res.push_back(std::to_string(suItem)); }
+                    return res;
+                }
+            };
+            auto uniquedCats_vec = std::visit(create_catIDs_vec, cat_values);
+            // horTop axis line
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+
+            for (size_t lineID = 0; lineID < self.areaHeight; ++lineID) {
+                if (lineID < uniquedCats_vec.size()) {
+                    self.labels_verRight.push_back(
+                        std::string(Config::axisLabels_padLeft_vr, Config::space)
+                            .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
+                            .append(detail::trim2Size_ending(uniquedCats_vec.at(lineID), self.labels_verRightWidth))
+                            .append(Config::term_setDefault));
+                }
+                else {
+                    self.labels_verRight.push_back(
+                        std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+                }
+            }
+            // horBottom axis line
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+        }
+
+        // Categories are specified by column names
+        else if (dp.values_colIDs.size() > 2) {
+            // horTop axis line
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+
+            for (size_t lineID = 0; lineID < self.areaHeight; ++lineID) {
+                if (lineID < (dp.values_colIDs.size() - 1)) {
+                    self.labels_verRight.push_back(
+                        std::string(Config::axisLabels_padLeft_vr, Config::space)
+                            .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
+                            .append(detail::trim2Size_ending(ds.colNames.at(dp.values_colIDs.at(lineID + 1)),
+                                                             self.labels_verRightWidth))
+                            .append(Config::term_setDefault));
+                }
+                else {
+                    self.labels_verRight.push_back(
+                        std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+                }
+            }
+            // horBottom axis line
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+        }
+
+        // If no categories then all VR labels are empty strings
+        else {
+            for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
+        }
+
+
         return self;
     }
 

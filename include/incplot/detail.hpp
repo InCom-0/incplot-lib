@@ -64,6 +64,19 @@ constexpr inline std::string trim2Size_leading(std::string const &str, size_t ma
 constexpr inline std::string trim2Size_leading(std::string const &&str, size_t maxSize) {
     return trim2Size_leading(str, maxSize);
 }
+constexpr inline std::string trim2Size_ending(std::string const &str, size_t maxSize) {
+    // TODO: Need to somehow handle unicode in labels in this function
+    if (str.size() > maxSize) {
+        size_t cutPoint = maxSize / 2;
+        return std::string(str.begin(), str.begin() + cutPoint)
+            .append("...")
+            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
+    }
+    else { return std::string(str).append(std::string(maxSize - strlen_utf8(str), Config::space)); }
+}
+constexpr inline std::string trim2Size_ending(std::string const &&str, size_t maxSize) {
+    return trim2Size_ending(str, maxSize);
+}
 constexpr inline std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
     if (str.size() > maxSize) {
