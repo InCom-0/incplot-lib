@@ -1,13 +1,16 @@
 #pragma once
 
+#include "incplot.hpp"
 #include <algorithm>
 #include <expected>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include <incplot/desired_plot.hpp>
 #include <incplot/detail.hpp>
 #include <incplot/parser.hpp>
+#include <variant>
 #include <vector>
 
 namespace incom {
@@ -622,21 +625,9 @@ class BarV : public Base {
     }
     auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-            // Name of the LABEL column
-            self.axisName_horBottom =
-                detail::trim2Size_leadingEnding(ds.colNames.at(dp.label_colID.value()), self.areaWidth);
-        }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            // Name of the FIRST value column
-            self.axisName_horBottom =
-                detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.front()), self.areaWidth);
-        }
-        else {
-            // Name of the SECOND value column
-            self.axisName_horBottom =
-                detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(0)), self.areaWidth);
-        }
+        // Name of the FIRST value column
+        self.axisName_horBottom =
+            detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(0)), self.areaWidth);
         return self;
     }
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -978,6 +969,125 @@ class Scatter : public BarV {
 
 class Multiline : public Scatter {
     friend class Base;
+
+    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
+        return self;
+    }
+
+    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
+        return self;
+    }
+
+    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        // Name of the TS column
+        self.axisName_horBottom =
+            detail::trim2Size_leadingEnding(ds.colNames.at(dp.labelTS_colID.value()), self.areaWidth);
+        return self;
+    }
+    auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
+        auto computeLabels = [&](auto const &valColVar) -> void {
+            auto const  &valColRef   = valColVar.get();
+            size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
+            size_t       placedChars = 0;
+
+            self.label_horBottom.append(Config::color_Axes);
+
+            // Construct the [0:0] point label
+            std::string tempStr;
+            if constexpr (std::is_arithmetic_v<typename std::remove_cvref_t<decltype(valColRef)>::value_type>) {
+                tempStr = detail::format_toMax5length(valColRef.at(0));
+            }
+            else { tempStr = detail::trim2Size_ending(valColRef.at(0), 5); }
+
+            self.label_horBottom.append(tempStr);
+            placedChars += detail::strlen_utf8(tempStr);
+
+            // Construct the tick labels
+            for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
+                while (placedChars < (i * (fillerSize + 1) + fillerSize)) {
+                    self.label_horBottom.push_back(Config::space);
+                    placedChars++;
+                }
+                if constexpr (std::is_arithmetic_v<typename std::remove_cvref_t<decltype(valColRef)>::value_type>) {
+                    tempStr = detail::format_toMax5length(valColRef.at(i * (fillerSize + 1) + fillerSize));
+                }
+                else { tempStr = detail::trim2Size_leadingEnding(valColRef.at(i * (fillerSize + 1) + fillerSize), 5); }
+                self.label_horBottom.append(tempStr);
+                placedChars += detail::strlen_utf8(tempStr);
+            }
+
+            // Construct the [0:end] point label
+            if constexpr (std::is_arithmetic_v<typename std::remove_cvref_t<decltype(valColRef)>::value_type>) {
+                tempStr = detail::format_toMax5length(valColRef.back());
+            }
+            else { tempStr = detail::trim2Size_leading(valColRef.back(), 5); }
+            for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
+                self.label_horBottom.push_back(Config::space);
+            }
+            self.label_horBottom.append(tempStr);
+            self.label_horBottom.append(Config::term_setDefault);
+        };
+
+        std::visit(computeLabels, ds.vec_colVariants.at(dp.labelTS_colID.value()));
+        return self;
+    }
+
+    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
+        auto const &valColTypeRef_x = ds.colTypes.at(dp.values_colIDs.front());
+
+        // Filter only the yValCols, all the valueCols are on Y axis (X axis is the TS col)
+        auto view_yValCols = std::views::enumerate(ds.vec_colVariants) | std::views::filter([&](auto const &a) {
+                                 return (std::ranges::find(dp.values_colIDs, std::get<0>(a)) != dp.values_colIDs.end());
+                             }) |
+                             std::views::transform([](auto const &b) { return std::get<1>(b); });
+
+        std::optional<std::vector<size_t>> opt_catIDs_vec = std::nullopt;
+
+        if (dp.cat_colID.has_value()) {
+            typename decltype(ds.vec_colVariants)::value_type cat_values =
+                std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.vec_colVariants), [&](auto const &a) {
+                    return std::get<0>(a) == dp.cat_colID.value();
+                }));
+
+            auto create_catIDs_vec = [&](auto const &vec) -> std::vector<size_t> {
+                auto                catVals_uniqued = detail::get_sortedAndUniqued(vec.get());
+                std::vector<size_t> catIDs_vec;
+
+                for (auto const &catVal : vec.get()) {
+                    // Push_back catValue's designated ID into a dedicated vector
+                    catIDs_vec.push_back(
+                        std::ranges::find_if(catVals_uniqued, [&](auto const &a) { return a == catVal; }) -
+                        catVals_uniqued.begin());
+                }
+                return catIDs_vec;
+            };
+
+            opt_catIDs_vec = std::visit(create_catIDs_vec, cat_values);
+        }
+
+        if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
+            self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
+                                                              ds.doubleCols.at(valColTypeRef_x.second), view_yValCols,
+                                                              opt_catIDs_vec, dp.color_basePalette);
+        }
+        else {
+            self.plotArea =
+                detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, ds.llCols.at(valColTypeRef_x.second),
+                                                  view_yValCols, opt_catIDs_vec, dp.color_basePalette);
+        }
+
+
+        return self;
+    }
 };
 
 } // namespace plot_structures

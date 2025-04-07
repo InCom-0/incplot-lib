@@ -72,8 +72,8 @@ public:
                                                                             Config::colors_defaulRaw.at(2)})
         : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), num_colorsToSelect, selectColorsFrom) {}
 
-    // Compute how many dots of the same category/color are placed in the same dot position
-    // Returns vector representing the maxim per color across the whole plot
+    // Computes how many dots of the same category/color are placed in the same dot position
+    // Returns vector representing the maximum per color across the whole plot
     static constexpr std::vector<size_t> compute_maxStepsPerColor(
         std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> const &colorPointCounts) {
         std::vector res = std::vector<size_t>(colorPointCounts.at(0).at(0).at(0).at(0).size(), 0uz);

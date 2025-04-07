@@ -330,6 +330,59 @@ public:
         bd.compute_canvasColors();
         return bd.construct_outputPlotArea();
     }
+    template <typename X>
+    static constexpr std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, X const &ts_values,
+                                                        auto                                      viewOfValVariants,
+                                                        std::optional<std::vector<size_t>> const &catIDs_vec,
+                                                        std::array<Color_CVTS, 6>                 colorPalette) {
+
+        BrailleDrawer bd(canvas_width, canvas_height,
+                         catIDs_vec.has_value()
+                             ? get_sortedAndUniqued(catIDs_vec.value()).size()
+                             : std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }),
+                         colorPalette);
+
+        auto [xMin, xMax] = std::ranges::minmax(ts_values);
+        auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
+        double xStepSize  = 1;
+        double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
+
+
+        auto placePointOnCanvas = [&](auto const &yVal, size_t const &xVal, size_t const &groupID) {
+            auto y       = static_cast<size_t>(((yVal - yMin) / yStepSize)) / 4;
+            auto yChrPos = static_cast<size_t>(((yVal - yMin) / yStepSize)) % 4;
+
+            auto x       = xVal / 2;
+            auto xChrPos = xVal % 2;
+
+            bd.m_canvasBraille[y][x]                                         |= Config::braille_map[yChrPos][xChrPos];
+            bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
+        };
+
+        for (size_t i = 0; auto const &one_yValCol : viewOfValVariants) {
+            auto olSet = [&](auto const &oneCol) -> void {
+                auto const &yValCol_data = oneCol.get();
+                if constexpr (std::is_arithmetic_v<
+                                  typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
+                    if (catIDs_vec.has_value()) {
+                        for (size_t rowID = 0; rowID < ts_values.size(); ++rowID) {
+                            placePointOnCanvas(yValCol_data[rowID], ts_values[rowID], catIDs_vec.value()[rowID]);
+                        }
+                    }
+                    else {
+                        for (size_t rowID = 0; rowID < ts_values.size(); ++rowID) {
+                            placePointOnCanvas(yValCol_data[rowID], ts_values[rowID], i);
+                        }
+                    }
+                    i++;
+                }
+            };
+            std::visit(olSet, one_yValCol);
+        }
+
+        bd.compute_canvasColors();
+        return bd.construct_outputPlotArea();
+    }
 };
 
 
