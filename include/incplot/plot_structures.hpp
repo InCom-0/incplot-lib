@@ -1,7 +1,6 @@
 #pragma once
 
-#include <incplot/desired_plot.hpp>
-#include <incplot/detail.hpp>
+#include <incplot/braille_drawer.hpp>
 #include <incplot/parser.hpp>
 
 namespace incom {
