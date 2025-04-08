@@ -336,8 +336,7 @@ class BarV : public Base {
 
         // VERTICAL RIGHT LABELS SIZE
         // Will be used as 'legend' for some types of Plots
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>() ||
-            dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
             if (dp.cat_colID.has_value()) {
                 typename decltype(ds.vec_colVariants)::value_type cat_values =
                     std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.vec_colVariants), [&](auto const &a) {
@@ -369,6 +368,15 @@ class BarV : public Base {
                 self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
             }
             else { self.labels_verRightWidth = 0; }
+        }
+        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+            if (dp.values_colIDs.size() > 1) {
+                size_t maxSize = 0;
+                for (size_t id_indirect = 0; id_indirect < dp.values_colIDs.size(); ++id_indirect) {
+                    maxSize = std::max(maxSize, ds.colNames.at(dp.values_colIDs.at(id_indirect)).size());
+                }
+                self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
+            }
         }
         else { self.labels_verRightWidth = 0; }
 
@@ -1025,6 +1033,42 @@ class Multiline : public Scatter {
             getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
 
         return (self);
+    }
+    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
+        // Categories are specified by column names
+        if (dp.values_colIDs.size() > 1) {
+            // horTop axis line
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+
+            for (size_t lineID = 0; lineID < self.areaHeight; ++lineID) {
+                if (lineID < dp.values_colIDs.size()) {
+                    self.labels_verRight.push_back(
+                        std::string(Config::axisLabels_padLeft_vr, Config::space)
+                            .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
+                            .append(detail::trim2Size_ending(ds.colNames.at(dp.values_colIDs.at(lineID)),
+                                                             self.labels_verRightWidth))
+                            .append(Config::term_setDefault));
+                }
+                else {
+                    self.labels_verRight.push_back(
+                        std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+                }
+            }
+            // horBottom axis line
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+        }
+
+        // If no categories then all VR labels are empty strings
+        else {
+            for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
+        }
+
+
+        return self;
     }
 
     auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)

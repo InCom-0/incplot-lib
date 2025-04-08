@@ -474,7 +474,7 @@ public:
         std::optional<size_t>      c_colID        = std::nullopt;
         std::array<Color_CVTS, 6>  colors         = {
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
-            Config::color_Vals3_enum, Config::color_Vals4_enum, Config::color_Vals5_enum,
+            Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
         std::optional<std::string> l_colName  = std::nullopt;
         std::vector<std::string>   v_colNames = {};

@@ -176,10 +176,10 @@ public:
                     for (size_t rowID = 0; rowID < ts_values.size(); ++rowID) {
                         placePointOnCanvas(yValCol_data[rowID], xValues[rowID], i);
                     }
-                    i++;
                 }
             };
             std::visit(olSet, one_yValCol);
+            i++;
         }
 
         // Interpolate 'in between' every 2 points to actually get a line in the plot visually
