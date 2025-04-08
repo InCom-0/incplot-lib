@@ -279,14 +279,19 @@ private:
         return res;
     }
 
-    static constexpr auto construct_interpolatedLine(auto const &pointA, auto const &pointB, size_t ySteps,
-                                                     size_t xSteps) {
-        size_t const totalSteps = std::max(0uz, (ySteps * 2) - 1) + std::max(0uz, (xSteps * 2) - 1);
-        double const yStepSize  = (std::get<0>(pointB) - std::get<0>(pointA)) / totalSteps;
-        double const xStepSize  = (std::get<1>(pointB) - std::get<1>(pointA)) / totalSteps;
+    static constexpr std::pair<std::vector<double>, std::vector<double>> construct_interpolatedLine(auto const &pointA,
+                                                                                                    auto const &pointB,
+                                                                                                    double      ySteps,
+                                                                                                    double xSteps) {
+        // Weird calculation of total steps on the interpolated line ... probably reinventing the wheel here
+        // TODO: Poosibly refactor according to some best practice on this
+        int const totalSteps = std::max(0.0, ((ySteps)*Config::y_interpolationMultiplier) - 1.0) +
+                               std::max(0.0, ((xSteps)*Config::x_interpolationMultiplier) - 1.0);
+        double const yStepSize = (std::get<0>(pointB) - std::get<0>(pointA)) / static_cast<double>(totalSteps);
+        double const xStepSize = (std::get<1>(pointB) - std::get<1>(pointA)) / static_cast<double>(totalSteps);
 
         std::pair<std::vector<double>, std::vector<double>> res;
-        for (size_t i = 0; i < totalSteps; ++i) {
+        for (int i = 1; i < totalSteps; ++i) {
             res.first.push_back(std::get<0>(pointA) + (yStepSize * i));
             res.second.push_back(std::get<1>(pointA) + (xStepSize * i));
         }
@@ -356,7 +361,7 @@ public:
         BrailleDrawer bd(canvas_width, canvas_height,
                          std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }), colorPalette);
 
-        auto [xMin, xMax] = std::ranges::minmax(ts_values);
+
         auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
         double xStepSize  = 1;
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
@@ -373,9 +378,9 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
         };
 
-        std::vector<size_t> xValues;
-        double              xScaler = (canvas_width * 2) / ts_values.size();
-        for (size_t i = 0; i < ts_values.size(); ++i) { xValues.push_back(static_cast<size_t>(i * xScaler)); }
+        std::vector<double> xValues;
+        double              xScaler = ((canvas_width * 2) - 1) / (ts_values.size() - 1);
+        for (size_t i = 0; i < ts_values.size(); ++i) { xValues.push_back(i * xScaler); }
 
         // Plot actual points on the bd canvas
         for (size_t i = 0; auto const &one_yValCol : viewOfValVariants) {
@@ -393,9 +398,9 @@ public:
             std::visit(olSet, one_yValCol);
         }
 
-        // Interpolate 'in between' points of every line to actually get a line in the plot visually
+        // Interpolate 'in between' every 2 points to actually get a line in the plot visually
         std::vector<size_t> interpolatedValues;
-        for (size_t i = 0; auto const &one_yValCol : viewOfValVariants) {
+        for (size_t catID = 0; auto const &one_yValCol : viewOfValVariants) {
             auto olSet = [&](auto const &oneCol) -> void {
                 auto const &yValCol_data = oneCol.get();
 
@@ -405,18 +410,17 @@ public:
                     for (auto const &[pointA, pointB] :
                          (std::views::zip(yValCol_data, xValues) | std::views::pairwise)) {
                         auto intpLine = construct_interpolatedLine(
-                            pointA, pointB,
-                            static_cast<size_t>(((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
+                            pointA, pointB, (((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
                             std::get<1>(pointB) - std::get<1>(pointA));
 
                         for (size_t rowID = 0; rowID < intpLine.first.size(); ++rowID) {
-                            placePointOnCanvas(intpLine.first.at(rowID), intpLine.second.at(rowID), i);
+                            placePointOnCanvas(intpLine.first.at(rowID), intpLine.second.at(rowID), catID);
                         }
                     }
                 }
             };
             std::visit(olSet, one_yValCol);
-            i++;
+            catID++;
         }
 
         bd.compute_canvasColors();

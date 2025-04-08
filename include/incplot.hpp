@@ -970,6 +970,71 @@ class Scatter : public BarV {
 class Multiline : public Scatter {
     friend class Base;
 
+    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_verLeft_bool) {
+            if (dp.values_colIDs.size() == 1) {
+                self.axisName_verLeft =
+                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(0)), self.areaHeight);
+            }
+        }
+        return self;
+    }
+    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+
+        auto getValLabels = [&](double const &minVal, double const &maxVal, size_t areaLength,
+                                size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
+            auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
+            std::string filler(labelsWidth, Config::space);
+            auto        stepSize = (maxVal - minVal) / (areaLength + 1);
+
+            // Construct with 'left padding' in place
+            std::vector<std::string> res(areaLength + 2,
+                                         std::string(padLeft, Config::space).append(Config::color_Axes));
+
+            // Value label of 'zero point'
+            res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
+
+            for (int id = 0; id < self.axis_verLeftSteps; ++id) {
+                for (int fillID = 0; fillID < fillerLength; ++fillID) {
+                    res.at(id * (fillerLength + 1) + fillID + 1).append(filler);
+                }
+                // Value label at the current position
+                res.at(id * (fillerLength + 1) + fillerLength + 1)
+                    .append(detail::trim2Size_leading(
+                        detail::format_toMax5length(minVal + (stepSize * (id + 1) * (fillerLength + 1))), labelsWidth));
+            }
+
+            // Filler up to 'max point'
+            for (int i = self.axis_verLeftSteps * (fillerLength + 1) + 1; i < res.size() - 1; ++i) {
+                res.at(i).append(filler);
+            }
+
+            // Value label of 'max point'
+            res.back().append(detail::trim2Size_leading(detail::format_toMax5length(maxVal), labelsWidth));
+            for (auto &line : res) {
+                for (int i = 0; i < padRight; ++i) { line.push_back(Config::space); }
+            }
+            std::ranges::reverse(res);
+            return res;
+        };
+
+        auto yValCols_fv =
+            std::views::filter(std::views::enumerate(ds.vec_colVariants),
+                               [&](auto const &pr) {
+                                   return (std::ranges::find(dp.values_colIDs.begin(), dp.values_colIDs.end(),
+                                                             std::get<0>(pr)) != dp.values_colIDs.end());
+                               }) |
+            std::views::transform([](auto const &pr2) { return std::get<1>(pr2); });
+
+        auto [minV, maxV] = detail::compute_minMaxMulti(yValCols_fv);
+        self.labels_verLeft =
+            getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
+
+        return (self);
+    }
+
     auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
@@ -1042,7 +1107,7 @@ class Multiline : public Scatter {
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        auto const &valColTypeRef_x = ds.colTypes.at(dp.values_colIDs.front());
+        auto const &valColTypeRef_x = ds.colTypes.at(dp.labelTS_colID.value());
 
         // Filter only the yValCols, all the valueCols are on Y axis (X axis is the TS col)
         auto view_yValCols = std::views::enumerate(ds.vec_colVariants) | std::views::filter([&](auto const &a) {

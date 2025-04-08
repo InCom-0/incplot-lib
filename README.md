@@ -20,7 +20,7 @@ Intended for 'as quick and as easy as possible' visualization of small to modera
 * Automatic value labels and scaling with metric suffixes
 * Automatic tickmarks
 * Automatic legend
-* Reasonable error message (especially when the user asks for something that is impossible/unsupported)
+* Reasonable error messages (especially when the user asks for something that is impossible/unsupported)
 
 ## Non-Features ##
 

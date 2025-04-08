@@ -62,6 +62,10 @@ public:
     static constexpr std::array<unsigned int, 3> colors_blackRaw{12, 12, 12};
     static constexpr double                      colors_scaleDistanceFromBlack = 0.55;
 
+    // MULTILINE
+    static constexpr size_t y_interpolationMultiplier = 4;
+    static constexpr size_t x_interpolationMultiplier = 4;
+
     // OTHER PLOT SETTINGS
     static constexpr size_t max_numOfValCols       = 4uz;
     static constexpr size_t max_maxNumOfCategories = 3uz;

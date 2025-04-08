@@ -15,7 +15,8 @@ enum class Unexp_plotSpecs {
     tarHeight,
     axisTicks,
     catCol,
-    selectedUnuseableCols
+    selectedUnuseableCols,
+    TScol,
 };
 enum class Unexp_plotDrawer {
     plotStructureInvalid,

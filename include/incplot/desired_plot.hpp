@@ -119,10 +119,11 @@ private:
             auto const &vec = vecRef.get();
             if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
 
-                auto vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
+                auto   vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
                                         return (std::get<1>(pr) - std::get<0>(pr));
                                     });
-                auto avg       = std::ranges::fold_left_first(vecOfChanges, std::plus()).value() / vecOfChanges.size();
+                double avg          = std::ranges::fold_left_first(vecOfChanges, std::plus()).value() /
+                             static_cast<double>(vecOfChanges.size());
                 auto allowHigh = avg + static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceUP));
                 auto allowLow  = avg - static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceDOWN));
 
@@ -220,6 +221,25 @@ private:
 
         return dp;
     }
+    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
+        if (dp.labelTS_colID.has_value()) {
+            if (dp.plot_type_name != detail::TypeToString<plot_structures::Multiline>()) {
+                return std::unexpected(Unexp_plotSpecs::TScol);
+            }
+        }
+        else {
+            if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+                for (size_t i = 0; auto const &fvItem : std::views::filter(
+                                       dp.m_colAssessments, [](auto const &ca) { return ca.is_timeSeriesLikeIndex; })) {
+                    dp.labelTS_colID = i;
+                    return dp;
+                }
+                // If there are none (therefore the loop doesn't execute at all) then return unexpected
+                return std::unexpected(Unexp_plotSpecs::TScol);
+            }
+        }
+        return dp;
+    }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_catCol(DesiredPlot &&dp, DataStore const &ds) {
         auto useableCatCols_tpl = std::views::filter(
             std::views::zip(std::views::iota(0), ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
@@ -310,7 +330,8 @@ private:
 
                 // Not timeSeriesLike and Not categoryLike
                 bool notExcluded =
-                    not std::get<2>(colType).is_timeSeriesLikeIndex && not std::get<2>(colType).is_categoryLike;
+                    (dp.cat_colID.has_value() ? (std::get<0>(colType) != dp.cat_colID.value()) : true) &&
+                    (dp.labelTS_colID.has_value() ? (std::get<0>(colType) != dp.labelTS_colID.value()) : true);
 
                 return (arithmeticCol && notExcluded);
             });
@@ -380,7 +401,7 @@ private:
         // MULTILINE PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
             if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(2, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            else if (not addValColsUntil(1, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
         }
 
         return dp;
@@ -486,6 +507,9 @@ public:
         auto gpt = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
             return DesiredPlot::guess_plotType(std::forward<decltype(dp)>(dp), ds);
         };
+        auto gtsc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
+            return DesiredPlot::guess_TSCol(std::forward<decltype(dp)>(dp), ds);
+        };
         auto gcc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
             return DesiredPlot::guess_catCol(std::forward<decltype(dp)>(dp), ds);
         };
@@ -505,6 +529,7 @@ public:
         return DesiredPlot::compute_colAssessments(std::forward<decltype(self)>(self), ds)
             .and_then(tnciids)
             .and_then(gpt)
+            .and_then(gtsc)
             .and_then(gcc)
             .and_then(glc)
             .and_then(gvc)
