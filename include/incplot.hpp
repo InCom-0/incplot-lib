@@ -1,6 +1,7 @@
 #pragma once
 
 #include <incplot/plot_structures.hpp>
+#include <type_traits>
 
 namespace incom {
 namespace terminal_plot {
@@ -50,8 +51,8 @@ inline static const auto mp_names2Types =
                                     plot_structures::Multiline, plot_structures::Scatter>();
 
 inline constexpr auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
-    auto ref          = mp_names2Types.at(dp.plot_type_name.value());
-    using varType     = decltype(ref);
+    auto const &ref   = mp_names2Types.at(dp.plot_type_name.value());
+    using varType     = std::decay_t<decltype(ref)>;
     auto overload_set = [&](auto const &variantItem) -> PlotDrawer<varType> {
         return PlotDrawer<varType>(variantItem, dp, ds);
     };
