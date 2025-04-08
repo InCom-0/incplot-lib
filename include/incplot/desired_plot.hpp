@@ -413,7 +413,12 @@ private:
         }
 
         // Height can be inferred
-        if (not dp.targetHeight.has_value()) { dp.targetHeight = dp.targetWidth.value() / 2; }
+        if (not dp.targetHeight.has_value()) {
+            if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+                dp.targetHeight = dp.targetWidth.value() / 6;
+            }
+            else { dp.targetHeight = dp.targetWidth.value() / 2; }
+        }
 
         // Impossible to print with height <3 under all circumstances
         if (dp.targetHeight.value() < 3) { return std::unexpected(Unexp_plotSpecs::tarWidth); }

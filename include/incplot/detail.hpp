@@ -379,7 +379,7 @@ public:
         };
 
         std::vector<double> xValues;
-        double              xScaler = ((canvas_width * 2) - 1) / (ts_values.size() - 1);
+        double              xScaler = ((canvas_width * 2) - 1) / static_cast<double>(ts_values.size() - 1);
         for (size_t i = 0; i < ts_values.size(); ++i) { xValues.push_back(i * xScaler); }
 
         // Plot actual points on the bd canvas
@@ -410,8 +410,8 @@ public:
                     for (auto const &[pointA, pointB] :
                          (std::views::zip(yValCol_data, xValues) | std::views::pairwise)) {
                         auto intpLine = construct_interpolatedLine(
-                            pointA, pointB, (((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
-                            std::get<1>(pointB) - std::get<1>(pointA));
+                            pointA, pointB, (std::abs((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
+                            std::abs(std::get<1>(pointB) - std::get<1>(pointA)));
 
                         for (size_t rowID = 0; rowID < intpLine.first.size(); ++rowID) {
                             placePointOnCanvas(intpLine.first.at(rowID), intpLine.second.at(rowID), catID);

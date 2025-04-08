@@ -387,7 +387,9 @@ class BarV : public Base {
             self.axisName_verLeft_bool  = false;
             self.axisName_verRight_bool = false;
         }
-        else if (dp.values_colIDs.size() > 2) {
+        else if (dp.values_colIDs.size() > 2 ||
+                 (dp.values_colIDs.size() > 1 &&
+                  dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>())) {
             self.axisName_verLeft_bool  = false;
             self.axisName_verRight_bool = false;
         }
