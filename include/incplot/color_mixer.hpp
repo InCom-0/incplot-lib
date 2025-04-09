@@ -26,6 +26,7 @@ public:
     std::vector<size_t> const m_maxSteps_perColor;
 
     C       m_maxRGBVals;
+    C       m_minRGBVals;
     C       m_fakeZeroColor;
     C const m_blackColor;
 
@@ -47,6 +48,10 @@ public:
         m_maxRGBVals.r = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.r < r.r; })->r;
         m_maxRGBVals.g = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.g < r.g; })->g;
         m_maxRGBVals.b = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.b < r.b; })->b;
+
+        m_minRGBVals.r = std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.r < r.r; })->r;
+        m_minRGBVals.g = std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.g < r.g; })->g;
+        m_minRGBVals.b = std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.b < r.b; })->b;
 
         m_fakeZeroColor.r = m_blackColor.r + static_cast<unsigned int>((m_maxRGBVals.r - m_blackColor.r) *
                                                                        (1 - Config::colors_scaleDistanceFromBlack));
@@ -107,12 +112,16 @@ public:
                 }
             }
         }
+        auto valOrMinMax = [&](int &val) -> int { return 0; };
 
         std::array<unsigned int, 3> res{m_fakeZeroColor.r, m_fakeZeroColor.g, m_fakeZeroColor.b};
         for (auto const &[steps, stepSize] : std::views::zip(stepsForPos_perColor, m_stepSize_perColor)) {
-            res[0] += static_cast<unsigned int>(steps * stepSize.r);
-            res[1] += static_cast<unsigned int>(steps * stepSize.g);
-            res[2] += static_cast<unsigned int>(steps * stepSize.b);
+            res[0] = std::max(static_cast<int>(m_minRGBVals.r),
+                              static_cast<int>(res[0]) + static_cast<int>(steps * stepSize.r));
+            res[1] = std::max(static_cast<int>(m_minRGBVals.g),
+                              static_cast<int>(res[1]) + static_cast<int>(steps * stepSize.g));
+            res[2] = std::max(static_cast<int>(m_minRGBVals.b),
+                              static_cast<int>(res[2]) + static_cast<int>(steps * stepSize.b));
         }
         res[0] = std::min(m_maxRGBVals.r, res[0]);
         res[1] = std::min(m_maxRGBVals.g, res[1]);

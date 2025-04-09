@@ -56,8 +56,8 @@ public:
     static constexpr std::string color_Vals5 = TermColors::get_basicColor(color_Vals5_enum);
     static constexpr std::string color_Vals6 = TermColors::get_basicColor(color_Vals6_enum);
 
-    static constexpr std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{19u, 161u, 14u, 197u, 15u,
-                                                                                 31u, 0u,   55u, 218u};
+    static constexpr std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{19u,  161u, 14u, 0u, 55u,
+                                                                                 218u, 197u, 15u, 31u};
 
     static constexpr std::array<unsigned int, 3> colors_blackRaw{12, 12, 12};
     static constexpr double                      colors_scaleDistanceFromBlack = 0.55;
