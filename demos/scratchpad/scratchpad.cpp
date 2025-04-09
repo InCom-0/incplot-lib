@@ -32,7 +32,7 @@ int main() {
     auto ds = incplot::Parser::parse_NDJSON_intoDS(input);
 
     auto dp_autoGuessed =
-        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 48}).guess_missingParams(ds);
+        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 96}).guess_missingParams(ds);
 
     if (not dp_autoGuessed.has_value()) {
         std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");

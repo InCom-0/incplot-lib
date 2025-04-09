@@ -126,7 +126,7 @@ constexpr inline size_t guess_stepsOnHorAxis(size_t width, size_t maxLabelSize =
 }
 constexpr inline size_t guess_stepsOnVerAxis(size_t height, size_t verticalStepSize = Config::axis_stepSize_vl) {
     // Substract the beginning and the end label sizes and -2 for spacing
-    height += -(verticalStepSize - 1);
+    height = ((height < (verticalStepSize - 1)) ? 0 : height - (verticalStepSize - 1));
     return (height / verticalStepSize);
 }
 
