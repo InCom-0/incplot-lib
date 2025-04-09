@@ -403,8 +403,7 @@ class BarV : public Base {
                          self.pad_right;
 
         // Labels and axis name bottom
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>() ||
-            (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) && true) {
+        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
         } // TODO: Proper assessment for Multiline
         else {
             self.labels_horBottom_bool   = true;
@@ -782,6 +781,7 @@ class Scatter : public BarV {
 
         return (self);
     }
+    // labels_vr are actually the legend here
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -987,23 +987,24 @@ class Multiline : public Scatter {
                                 size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
             auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
             std::string filler(labelsWidth, Config::space);
-            auto        stepSize = (maxVal - minVal) / (areaLength + 1);
+            auto        stepSize = ((maxVal - minVal) / ((4 * areaLength) - 1)) * 4;
 
             // Construct with 'left padding' in place
             std::vector<std::string> res(areaLength + 2,
                                          std::string(padLeft, Config::space).append(Config::color_Axes));
 
             // Value label of 'zero point'
-            res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
+            res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal - stepSize), labelsWidth));
 
             for (int id = 0; id < self.axis_verLeftSteps; ++id) {
                 for (int fillID = 0; fillID < fillerLength; ++fillID) {
                     res.at(id * (fillerLength + 1) + fillID + 1).append(filler);
                 }
                 // Value label at the current position
-                res.at(id * (fillerLength + 1) + fillerLength + 1)
+                res.at((id + 1) * (fillerLength + 1))
                     .append(detail::trim2Size_leading(
-                        detail::format_toMax5length(minVal + (stepSize * (id + 1) * (fillerLength + 1))), labelsWidth));
+                        detail::format_toMax5length((minVal - stepSize) + (stepSize * (id + 1) * (fillerLength + 1))),
+                        labelsWidth));
             }
 
             // Filler up to 'max point'
@@ -1012,7 +1013,8 @@ class Multiline : public Scatter {
             }
 
             // Value label of 'max point'
-            res.back().append(detail::trim2Size_leading(detail::format_toMax5length(maxVal), labelsWidth));
+            res.back().append(
+                detail::trim2Size_leading(detail::format_toMax5length(maxVal + (stepSize / 4)), labelsWidth));
             for (auto &line : res) {
                 for (int i = 0; i < padRight; ++i) { line.push_back(Config::space); }
             }
@@ -1034,6 +1036,7 @@ class Multiline : public Scatter {
 
         return (self);
     }
+    // labels_vr are actually the legend here
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -1093,20 +1096,15 @@ class Multiline : public Scatter {
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        auto computeLabels = [&](auto const &valColVar) -> void {
-            auto const  &valColRef   = valColVar.get();
+        auto computeLabels = [&](double const &minV, double const &maxV) -> void {
             size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
+            auto         stepSize    = ((maxV - minV) / ((2 * self.areaWidth) - 1)) * 2;
             size_t       placedChars = 0;
 
             self.label_horBottom.append(Config::color_Axes);
 
-            // Construct the [0:0] point label
-            std::string tempStr;
-            if constexpr (std::is_arithmetic_v<typename std::remove_cvref_t<decltype(valColRef)>::value_type>) {
-                tempStr = detail::format_toMax5length(valColRef.at(0));
-            }
-            else { tempStr = detail::trim2Size_ending(valColRef.at(0), 5); }
-
+            // Construct the [0:0] point label (minV - stepsize to make the first label one below the minV)
+            std::string tempStr = detail::format_toMax5length(minV - stepSize);
             self.label_horBottom.append(tempStr);
             placedChars += detail::strlen_utf8(tempStr);
 
@@ -1116,19 +1114,13 @@ class Multiline : public Scatter {
                     self.label_horBottom.push_back(Config::space);
                     placedChars++;
                 }
-                if constexpr (std::is_arithmetic_v<typename std::remove_cvref_t<decltype(valColRef)>::value_type>) {
-                    tempStr = detail::format_toMax5length(valColRef.at(i * (fillerSize + 1) + fillerSize));
-                }
-                else { tempStr = detail::trim2Size_leadingEnding(valColRef.at(i * (fillerSize + 1) + fillerSize), 5); }
+                tempStr = detail::format_toMax5length((minV - stepSize) + ((i + 1) * (fillerSize + 1) * stepSize));
                 self.label_horBottom.append(tempStr);
                 placedChars += detail::strlen_utf8(tempStr);
             }
 
             // Construct the [0:end] point label
-            if constexpr (std::is_arithmetic_v<typename std::remove_cvref_t<decltype(valColRef)>::value_type>) {
-                tempStr = detail::format_toMax5length(valColRef.back());
-            }
-            else { tempStr = detail::trim2Size_leading(valColRef.back(), 5); }
+            tempStr = detail::format_toMax5length(maxV + (stepSize / 2));
             for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
                 self.label_horBottom.push_back(Config::space);
             }
@@ -1136,7 +1128,9 @@ class Multiline : public Scatter {
             self.label_horBottom.append(Config::term_setDefault);
         };
 
-        std::visit(computeLabels, ds.vec_colVariants.at(dp.labelTS_colID.value()));
+        auto [minV, maxV] = detail::compute_minMaxMulti(std::vector{ds.vec_colVariants.at(dp.labelTS_colID.value())});
+        computeLabels(minV, maxV);
+
         return self;
     }
 
