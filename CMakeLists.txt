@@ -19,6 +19,7 @@ target_link_libraries(incplot INTERFACE
     glaze::glaze
     argparse::argparse)
 
-target_link_options(incplot INTERFACE -static-libgcc -static-libstdc++ "LINKER:-Bstatic,--whole-archive" -lwinpthread "LINKER:-Bdynamic,--no-whole-archive")
+# The line below is commented out for debugging purposes (getting linking error otherwise)
+# target_link_options(incplot INTERFACE -static-libgcc -static-libstdc++ -fno-rtti "LINKER:-Bstatic,--whole-archive" -lwinpthread "LINKER:-Bdynamic,--no-whole-archive")
 
 add_subdirectory(demos)

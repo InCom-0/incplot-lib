@@ -20,9 +20,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glaze)
 
 
-include(FetchContent)
 FetchContent_Declare(
     argparse
     GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+    GIT_TAG master
 )
 FetchContent_MakeAvailable(argparse)

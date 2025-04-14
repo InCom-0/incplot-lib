@@ -90,6 +90,10 @@ public:
     static constexpr double timeSeriesIDX_allowanceUP   = 0.1;
     static constexpr double timeSeriesIDX_allowanceDOWN = 0.1;
 
+    // TERMINAL PARAMETERS INFERENCE SETTINGS
+    static constexpr int delta_toInferredWidth  = -2;
+    static constexpr int delta_toInferredHeight = -4;
+
 
     // TODO: Fix this so that valLabelSize is calculated from the actual possible label strings of values ... this will
     // be tremendously easier with c++26 so for the time being this is assuming maxLabelSize of 5

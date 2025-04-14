@@ -28,8 +28,8 @@ Intended for 'as quick and as easy as possible' visualization of small to modera
 * Not intended for plotting huge datasets
 * Doesn't offer the more obscure plot types
 * No export of the rendered plot into other formats (such as pictures)
-* If the data provided is fundamentally not well suited for plotting (eg. data with no numeric columns, etc.) then it doesn't guarantee good looking plots
-* Doesn't show and cannot show 100% visual accuracy due to inherent limitations of terminal interfaces
+* Doesn't (and cannot) make data 'look good' if the data is fundamentally unsuitable for plotting
+* Doesn't (and cannot) show 100% visual accuracy due to inherent limitations of terminal interfaces
 
 ## Features under consideration ##
 

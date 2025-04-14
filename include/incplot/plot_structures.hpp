@@ -667,9 +667,6 @@ class BarV : public Base {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
             self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
         }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            // TODO: What to do with Multiline axisLabel bottom
-        }
         else {
             auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
             if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
