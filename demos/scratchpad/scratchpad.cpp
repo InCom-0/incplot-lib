@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     argparse::ArgumentParser ap("incplot", "1.0", argparse::default_arguments::help);
     // auto                    &ap_plotTypes = ap.add_mutually_exclusive_group();
 
-    ap.add_description("Draw coloured plots with unicode inside terminal.\n\nAutomatically infers what to display and "
+    ap.add_description("Draw coloured plots using unicode symbols inside terminal.\n\nAutomatically infers what to display and "
                        "how.\nAll arguments are optional but can be used when one wants something 'unusual'");
 
 

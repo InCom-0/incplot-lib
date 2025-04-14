@@ -17,7 +17,7 @@ Intended for 'as quick and as easy as possible' visualization of small to modera
 * Very fast
 * Utilizes full true color to display data groupping where appropriate (eg. Scatter plots)
 * Automatic sizing
-* Automatic value labels and scaling with metric suffixes
+* Automatic value labels and scaling with metric [prefixes](https://en.wikipedia.org/wiki/Metric_prefix)
 * Automatic tickmarks
 * Automatic legend
 * Reasonable error messages (especially when the user asks for something that is impossible/unsupported)
@@ -26,7 +26,7 @@ Intended for 'as quick and as easy as possible' visualization of small to modera
 
 * No data wrangling or analysis of any kind
 * Not intended for plotting huge datasets
-* Doesn't offer the more obscure plot types
+* Doesn't offer 'all the plot types in existence', but rather just several of the most useful ones
 * No export of the rendered plot into other formats (such as pictures)
 * Doesn't (and cannot) make data 'look good' if the data is fundamentally unsuitable for plotting
 * Doesn't (and cannot) show 100% visual accuracy due to inherent limitations of terminal interfaces
