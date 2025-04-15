@@ -18,7 +18,6 @@ struct CL_Args {
 
     static constexpr std::vector<DesiredPlot::DP_CtorStruct> get_dpCtorStruct(argparse::ArgumentParser &out_ap,
                                                                               int argc, const char *const *argv) {
-
         try {
             out_ap.parse_args(argc, argv);
         }

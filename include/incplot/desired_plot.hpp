@@ -414,7 +414,7 @@ private:
             return std::unexpected(Unexp_plotSpecs::tarWidth);
         }
 
-        // Height can be inferred
+        // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
         if (not dp.targetHeight.has_value()) {
             if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {}
             else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {}
@@ -422,7 +422,7 @@ private:
             else { dp.targetHeight = dp.targetWidth.value() / 2; }
         }
 
-        // Impossible to print with height <3 under all circumstances
+        // Impossible to print with height <5 under all circumstances
         if (dp.targetHeight.has_value() && dp.targetHeight.value() < 5) {
             return std::unexpected(Unexp_plotSpecs::tarWidth);
         }
