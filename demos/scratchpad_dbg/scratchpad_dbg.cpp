@@ -4,9 +4,10 @@
 
 
 #include <incplot.hpp>
+#include <incplot/args.hpp>
 
 
-int main() {
+int main(int argc, char *argv[]) {
 
     std::string testInput(R"({"name":"BioWare","size":750}
 {"name":"CD Projekt Red","size":980}
@@ -534,10 +535,39 @@ int main() {
 
     std::print("{}\n", outExp2.value()); */
 
+    argparse::ArgumentParser ap("incplot", "1.0", argparse::default_arguments::help);
+    incplot::CL_Args::finishAp(ap, 120, 12);
+    auto dpCtor_Structs = incplot::CL_Args::get_dpCtorStruct(ap, argc, argv);
+
+
+    auto        ds = incplot::Parser::parse_NDJSON_intoDS(testInput_flights);
+
+
+    for (auto const &dpctr : dpCtor_Structs) {
+        auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds);
+
+        if (not dp_autoGuessed.has_value()) {
+            std::print("{0}{1}{2}", "Autoguessing of 'DesiresPlot' parameters for: ",
+                       dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
+                       " failed.\n");
+            continue;
+        }
+
+        auto plotDrawer = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
+        auto outExp     = plotDrawer.validateAndDrawPlot();
+
+        if (not outExp.has_value()) {
+            std::print("{0}{1}{2}", "Invalid plot structure for: ",
+                       dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
+                       ".");
+            continue;
+        }
+        std::print("{}\n", outExp.value());
+    }
 
 
 
-    auto ds3 = incplot::Parser::parse_NDJSON_intoDS(testInput_flights);
+/*     auto ds3 = incplot::Parser::parse_NDJSON_intoDS(testInput_flights);
 
     auto dp3_autoGuessed =
         incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 96, .plot_type_name = "Multiline"})
@@ -558,7 +588,7 @@ int main() {
         return 1;
     }
 
-    std::print("{}\n", outExp3.value());
+    std::print("{}\n", outExp3.value()); */
 
     return 0;
 }

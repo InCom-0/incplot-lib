@@ -407,10 +407,10 @@ private:
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
+
         // Width always need to be provided, otherwise the whole thing doesn't work
-        if (not dp.targetWidth.has_value() || dp.targetWidth.value() < 16) {
-            return std::unexpected(Unexp_plotSpecs::tarWidth);
-        }
+        if (not dp.targetWidth.has_value()) { dp.targetWidth = 64; }
+        else if (dp.targetWidth.value() < 24) { return std::unexpected(Unexp_plotSpecs::tarWidth); }
 
         // Height can be inferred
         if (not dp.targetHeight.has_value()) {
