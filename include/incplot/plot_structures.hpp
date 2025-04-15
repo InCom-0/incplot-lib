@@ -1,5 +1,8 @@
 #pragma once
 
+#include "detail/misc.hpp"
+#include "incplot/config.hpp"
+#include "incplot/plot_structures.hpp"
 #include <incplot/braille_drawer.hpp>
 #include <incplot/parser.hpp>
 
@@ -18,13 +21,13 @@ class Base {
 protected:
     // Descriptors - First thing to be computed.
     // BEWARE: The sizes here are 'as displayed' not the 'size in bytes' ... need to account for UTF8
-    size_t areaWidth = 0, areaHeight = 0;
-    size_t labels_verLeftWidth = 0, labels_verRightWidth = 0;
+    long long areaWidth = 0, areaHeight = 0;
+    size_t    labels_verLeftWidth = 0, labels_verRightWidth = 0;
 
 
     size_t axis_verLeftSteps = 0, axis_varRightSteps = 0, axis_horTopSteps = 0, axis_horBottomSteps = 0;
 
-    size_t pad_left = 2, pad_right = 0, pad_top = 1, pad_bottom = 0;
+    long long pad_left = 2, pad_right = 0, pad_top = 1, pad_bottom = 0;
 
     bool labels_horTop_bool = false, labels_horBottom_bool = false;
     bool axisName_horTop_bool = false, axisName_horBottom_bool = false;
@@ -109,7 +112,7 @@ protected:
 public:
     // This needs to get called after default construction
     auto build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::remove_cvref_t<decltype(self)> {
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         // Can only build it from rvalue ...
         if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
@@ -143,28 +146,26 @@ public:
 
         auto c_ap = [&](auto &&ps) -> expOfSelf_t { return ps.compute_plot_area(dp, ds); };
 
-        auto res = c_dsc(std::move(self))
-                       .and_then(v_dsc)
-                       .and_then(c_anvl)
-                       .and_then(c_anvr)
-                       .and_then(c_lvl)
-                       .and_then(c_lvr)
-                       .and_then(c_avl)
-                       .and_then(c_avr)
-                       .and_then(c_ctl)
-                       .and_then(c_cbl)
-                       .and_then(c_cbr)
-                       .and_then(c_ctr)
-                       .and_then(c_ac)
-                       .and_then(c_aht)
-                       .and_then(c_anht)
-                       .and_then(c_alht)
-                       .and_then(c_ahb)
-                       .and_then(c_anhb)
-                       .and_then(c_alhb)
-                       .and_then(c_ap);
-
-        return res.value();
+        return c_dsc(std::move(self))
+            .and_then(v_dsc)
+            .and_then(c_anvl)
+            .and_then(c_anvr)
+            .and_then(c_lvl)
+            .and_then(c_lvr)
+            .and_then(c_avl)
+            .and_then(c_avr)
+            .and_then(c_ctl)
+            .and_then(c_cbl)
+            .and_then(c_cbr)
+            .and_then(c_ctr)
+            .and_then(c_ac)
+            .and_then(c_aht)
+            .and_then(c_anht)
+            .and_then(c_alht)
+            .and_then(c_ahb)
+            .and_then(c_anhb)
+            .and_then(c_alhb)
+            .and_then(c_ap);
     }
 
     // TODO: Implement 'valiate_self()' ... consider if it is even needed or if its not already done elsewhere
@@ -396,11 +397,13 @@ class BarV : public Base {
             self.axisName_verRight_bool = false;
         }
 
+        // PLOT AREA
         // Plot area width (-2 is for the 2 vertical axes positions)
         self.areaWidth = dp.targetWidth.value() - self.pad_left -
                          (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
                          self.labels_verRightWidth - (Config::axis_verName_width_vl * self.axisName_verRight_bool) -
                          self.pad_right;
+        if (self.areaWidth < Config::min_areaWidth) { return std::unexpected(Unexp_plotDrawer::areaWidth_insufficient); }
 
         // Labels and axis name bottom
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
@@ -417,14 +420,19 @@ class BarV : public Base {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             self.areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
         }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-            self.areaHeight = self.areaWidth / 3;
+        else if (not dp.targetHeight.has_value()) {
+            if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+                self.areaHeight = self.areaWidth / 6;
+            }
+            else { self.areaHeight = self.areaWidth / 3; }
         }
         else {
-            self.areaHeight = dp.targetHeight.value() - self.pad_top - self.axisName_horTop_bool -
-                              self.labels_horTop_bool - 2 - self.labels_horBottom_bool - self.axisName_horBottom_bool -
-                              self.pad_bottom;
+            self.areaHeight =
+                std::max(1ll, static_cast<long long>(dp.targetHeight.value()) - self.pad_top -
+                                  self.axisName_horTop_bool - self.labels_horTop_bool - 2ll -
+                                  self.labels_horBottom_bool - self.axisName_horBottom_bool - self.pad_bottom);
         }
+        if (self.areaHeight < Config::min_areaHeight) { return std::unexpected(Unexp_plotDrawer::areaHeight_insufficient); }
 
         // Axes steps
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {

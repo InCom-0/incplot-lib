@@ -50,7 +50,7 @@ struct CL_Args {
         return res;
     }
 
-    static constexpr void finishAp(argparse::ArgumentParser &out_ap, int const &sb_width, int const &sb_height) {
+    static constexpr void finishAp(argparse::ArgumentParser &out_ap) {
         out_ap.add_description(
             "Draw coloured plots using unicode symbols inside terminal.\n\nAutomatically infers what to display and "
             "how based on the shape of the data piped in.\nPipe in data in JSON Lines (or NDJSON) format. All "
@@ -77,11 +77,9 @@ struct CL_Args {
 
         out_ap.add_group("Size options");
         out_ap.add_argument("-w", "--width").help("Requested width (in characters)").nargs(1).scan<'d', int>();
-        // .default_value(sb_width + incom::terminal_plot::Config::delta_toInferredWidth);
 
 
         out_ap.add_argument("-t", "--height").help("Requested height (in characters)").nargs(1).scan<'d', int>();
-        // .default_value(sb_height + incom::terminal_plot::Config::delta_toInferredHeight);
     }
 };
 } // namespace terminal_plot

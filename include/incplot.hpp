@@ -1,5 +1,7 @@
 #pragma once
 
+#include "incplot/detail/misc.hpp"
+#include <expected>
 #include <incplot/plot_structures.hpp>
 #include <type_traits>
 
@@ -11,15 +13,10 @@ class PlotDrawer {
 private:
     PS_VAR m_ps_var;
 
+
 public:
     constexpr PlotDrawer() {};
-    PlotDrawer(auto ps_var, DesiredPlot const &dp, DataStore const &ds) {
-        auto ol = [&](auto &&var) {
-            m_ps_var = std::move(ps_var).build_self(dp, ds);
-            int a    = 0;
-        };
-        std::visit(ol, m_ps_var);
-    }
+    PlotDrawer(auto ps_var) : m_ps_var(std::move(ps_var)) {}
 
     void update_newPlotStructure(DesiredPlot const &dp, DataStore const &ds) {
         auto ol = [&](auto &&var) { m_ps_var = decltype(var)().build_self(dp, ds); };
@@ -51,14 +48,15 @@ inline static const auto mp_names2Types =
                                     plot_structures::Multiline, plot_structures::Scatter>();
 
 inline constexpr auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) {
-    auto const &ref   = mp_names2Types.at(dp.plot_type_name.value());
-    using varType     = std::decay_t<decltype(ref)>;
-    auto overload_set = [&](auto const &variantItem) -> PlotDrawer<varType> {
-        return PlotDrawer<varType>(variantItem, dp, ds);
-    };
-    return std::visit(overload_set, ref);
-}
+    auto varCpy   = mp_names2Types.at(dp.plot_type_name.value());
+    using varType = std::decay_t<decltype(mp_names2Types)::mapped_type>;
 
+    auto ol = [&](auto &&var) -> std::expected<PlotDrawer<varType>, Unexp_plotDrawer> {
+        return std::move(var).build_self(dp, ds).and_then(
+            [](auto &&ps) -> std::expected<PlotDrawer<varType>, Unexp_plotDrawer> { return PlotDrawer<varType>(ps); });
+    };
+    return std::visit(ol, varCpy);
+}
 
 } // namespace terminal_plot
 } // namespace incom

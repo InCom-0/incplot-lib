@@ -478,74 +478,74 @@ int main(int argc, char *argv[]) {
 {"period":144,"value":432,"value2":112})");
 
 
-/*     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
+    /*     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
 
 
-    auto dp_autoGuessed =
-        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 96}).guess_missingParams(ds);
+        auto dp_autoGuessed =
+            incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 96}).guess_missingParams(ds);
 
-    if (not dp_autoGuessed.has_value()) {
-        std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
-        return 1;
-    }
+        if (not dp_autoGuessed.has_value()) {
+            std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
+            return 1;
+        }
 
-    auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
+        auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
 
-    auto outExp = plotDrawer2.validateAndDrawPlot();
+        auto outExp = plotDrawer2.validateAndDrawPlot();
 
-    if (not outExp.has_value()) {
-        std::print("{0}{1}", "Invalid plot structure", "Exiting ...");
-        return 1;
-    }
+        if (not outExp.has_value()) {
+            std::print("{0}{1}", "Invalid plot structure", "Exiting ...");
+            return 1;
+        }
 
-    std::print("{}\n", outExp.value());
-
-
-    std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green),
-               incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
-    std::print("{}Rhodo {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Red),
-               incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
-    std::print("{}Tanza {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Blue),
-               incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
+        std::print("{}\n", outExp.value());
 
 
-    // std::print("{0}{1}\n", "\x1b[38;2;125;125;0m", "TESTEST");
+        std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green),
+                   incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
+        std::print("{}Rhodo {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Red),
+                   incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
+        std::print("{}Tanza {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Blue),
+                   incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
 
 
-    auto ds2 = incplot::Parser::parse_NDJSON_intoDS(testInput_petal);
-
-    auto dp2_autoGuessed =
-        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 48, .plot_type_name = "Scatter"})
-            .guess_missingParams(ds2);
+        // std::print("{0}{1}\n", "\x1b[38;2;125;125;0m", "TESTEST");
 
 
-    if (not dp2_autoGuessed.has_value()) {
-        std::print("{0}{1}", "Autoguessing of 'DesiresPlot_2' parameters failed \n", "Exiting ...");
-        return 1;
-    }
+        auto ds2 = incplot::Parser::parse_NDJSON_intoDS(testInput_petal);
 
-    auto plotDrawer3 = incplot::make_plotDrawer(dp2_autoGuessed.value(), ds2);
+        auto dp2_autoGuessed =
+            incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 48, .plot_type_name = "Scatter"})
+                .guess_missingParams(ds2);
 
-    auto outExp2 = plotDrawer3.validateAndDrawPlot();
 
-    if (not outExp2.has_value()) {
-        std::print("{0}{1}", "Invalid plot structure 2", "Exiting ...");
-        return 1;
-    }
+        if (not dp2_autoGuessed.has_value()) {
+            std::print("{0}{1}", "Autoguessing of 'DesiresPlot_2' parameters failed \n", "Exiting ...");
+            return 1;
+        }
 
-    std::print("{}\n", outExp2.value()); */
+        auto plotDrawer3 = incplot::make_plotDrawer(dp2_autoGuessed.value(), ds2);
+
+        auto outExp2 = plotDrawer3.validateAndDrawPlot();
+
+        if (not outExp2.has_value()) {
+            std::print("{0}{1}", "Invalid plot structure 2", "Exiting ...");
+            return 1;
+        }
+
+        std::print("{}\n", outExp2.value()); */
 
     argparse::ArgumentParser ap("incplot", "1.0", argparse::default_arguments::help);
-    incplot::CL_Args::finishAp(ap, 120, 12);
-    auto dpCtor_Structs = incplot::CL_Args::get_dpCtorStruct(ap, argc, argv);
+    incplot::CL_Args::finishAp(ap);
+    auto dpCtor_Structs              = incplot::CL_Args::get_dpCtorStruct(ap, argc, argv);
+    dpCtor_Structs.front().tar_width = 120uz;
 
 
-    auto        ds = incplot::Parser::parse_NDJSON_intoDS(testInput_flights);
+    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput_flights);
 
 
     for (auto const &dpctr : dpCtor_Structs) {
         auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds);
-
         if (not dp_autoGuessed.has_value()) {
             std::print("{0}{1}{2}", "Autoguessing of 'DesiresPlot' parameters for: ",
                        dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
@@ -554,41 +554,22 @@ int main(int argc, char *argv[]) {
         }
 
         auto plotDrawer = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
-        auto outExp     = plotDrawer.validateAndDrawPlot();
+        if (not plotDrawer.has_value()) {
+            std::print("{0}{1}{2}", "Creating 'Plot Structure' for: ",
+                       dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
+                       " failed.\n");
+            continue;
+        }
 
+        auto outExp = plotDrawer.value().validateAndDrawPlot();
         if (not outExp.has_value()) {
             std::print("{0}{1}{2}", "Invalid plot structure for: ",
                        dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
-                       ".");
+                       ".\n");
             continue;
         }
         std::print("{}\n", outExp.value());
     }
-
-
-
-/*     auto ds3 = incplot::Parser::parse_NDJSON_intoDS(testInput_flights);
-
-    auto dp3_autoGuessed =
-        incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 96, .plot_type_name = "Multiline"})
-            .guess_missingParams(ds3);
-
-
-    if (not dp3_autoGuessed.has_value()) {
-        std::print("{0}{1}", "Autoguessing of 'DesiresPlot_3' parameters failed \n", "Exiting ...");
-        return 1;
-    }
-
-    auto plotDrawer4 = incplot::make_plotDrawer(dp3_autoGuessed.value(), ds3);
-
-    auto outExp3 = plotDrawer4.validateAndDrawPlot();
-
-    if (not outExp3.has_value()) {
-        std::print("{0}{1}", "Invalid plot structure 2", "Exiting ...");
-        return 1;
-    }
-
-    std::print("{}\n", outExp3.value()); */
 
     return 0;
 }

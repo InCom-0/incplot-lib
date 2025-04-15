@@ -410,20 +410,22 @@ private:
 
         // Width always need to be provided, otherwise the whole thing doesn't work
         if (not dp.targetWidth.has_value()) { dp.targetWidth = 64; }
-        else if (dp.targetWidth.value() < 24) { return std::unexpected(Unexp_plotSpecs::tarWidth); }
+        else if (dp.targetWidth.value() < 24 || dp.targetWidth.value() > 256) {
+            return std::unexpected(Unexp_plotSpecs::tarWidth);
+        }
 
         // Height can be inferred
         if (not dp.targetHeight.has_value()) {
-            if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-                dp.targetHeight = dp.targetWidth.value() / 6;
-            }
+            if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {}
+            else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {}
+            else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {}
             else { dp.targetHeight = dp.targetWidth.value() / 2; }
         }
 
         // Impossible to print with height <3 under all circumstances
-        if (dp.targetHeight.value() < 3) { return std::unexpected(Unexp_plotSpecs::tarWidth); }
-
-
+        if (dp.targetHeight.has_value() && dp.targetHeight.value() < 5) {
+            return std::unexpected(Unexp_plotSpecs::tarWidth);
+        }
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds) {
