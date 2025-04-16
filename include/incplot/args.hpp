@@ -70,8 +70,6 @@ struct CL_Args {
 
         out_ap.add_group("Size options");
         out_ap.add_argument("-w", "--width").help("Requested width (in characters)").nargs(1).scan<'d', int>();
-
-
         out_ap.add_argument("-t", "--height").help("Requested height (in characters)").nargs(1).scan<'d', int>();
     }
 };

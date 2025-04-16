@@ -189,41 +189,41 @@ private:
         // ACTUAL DEICISIOM MAKING
         // Can't plot anything without at least 1 value column
         if (useableValCols_count == 0) { return std::unexpected(Unexp_plotSpecs::valCols); }
-        // LabelCol was specified and there are some valueCols to plot
-        else if (dp.labelTS_colID.has_value() &&
-                 dp.m_colAssessments.at(dp.labelTS_colID.value()).is_timeSeriesLikeIndex == false &&
-                 useableValCols_count > 0) {
-            dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
+
+        // labelTS_colID was specified
+        else if (dp.labelTS_colID.has_value()) {
+            if (ds.colTypes.at(dp.labelTS_colID.value()).first == NLMjson::value_t::string) {
+                if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
+                // More than 1 value cols is impossible with labelTS col being string
+                else { return std::unexpected(Unexp_plotSpecs::plotType); }
+            }
+            else {
+                // If labelTSCol is value then select based on whether its is 'timeSeriesLike' or not
+                if (dp.m_colAssessments.at(dp.labelTS_colID.value()).is_timeSeriesLikeIndex == true) {
+                    dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>();
+                }
+                else { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
+            }
         }
 
-        // BarV
-        else if (useableValCols_count == 1 && labelCols_sz > 0 && tsLikeIndexCols_count == 0) {
-            dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
+        // labelTS_colID is not specified
+        else {
+            if (tsLikeIndexCols_count != 0) { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
+            else if (dp.values_colIDs.size() == 0) {
+                // No TSlikeCol and one useable val col
+                if (useableValCols_count == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
+                // No TSlikeCol and more than one useable val col
+                else { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
+            }
+            else if (dp.values_colIDs.size() == 1) {
+                dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
+            }
+            else { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
         }
-        else if (useableValCols_count == 1 && labelCols_sz == 0 && tsLikeIndexCols_count == 0) {
-            dp.plot_type_name = detail::TypeToString<plot_structures::BarH>();
-        }
-
-        // Scatter
-        else if (useableValCols_count > 1 && (not dp.labelTS_colID.has_value() && tsLikeIndexCols_count == 0)) {
-            dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>();
-        }
-        // Multiline
-        else if (tsLikeIndexCols_count > 0) { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
-
-        // None of the above options, therefore Unexp unable to guess plotType
-        // Generally, this shouldn't happen
-        else { return std::unexpected(Unexp_plotSpecs::plotType); }
-
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
-        if (dp.labelTS_colID.has_value()) {
-            if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-                return std::unexpected(Unexp_plotSpecs::TScol);
-            }
-        }
-        else {
+        if (not dp.labelTS_colID.has_value()) {
             if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
                 for (auto const &fvItem :
                      std::views::filter(std::views::enumerate(dp.m_colAssessments),
@@ -472,9 +472,9 @@ public:
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
             Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
-        std::optional<std::string> lts_colName  = std::nullopt;
-        std::vector<std::string>   v_colNames = {};
-        std::optional<std::string> c_colName  = std::nullopt;
+        std::optional<std::string> lts_colName = std::nullopt;
+        std::vector<std::string>   v_colNames  = {};
+        std::optional<std::string> c_colName   = std::nullopt;
     };
 
     DesiredPlot(DP_CtorStruct &&dp_struct)
@@ -485,9 +485,10 @@ public:
           values_colNames(std::move(dp_struct.v_colNames)), cat_colName(std::move(dp_struct.c_colName)) {}
     DesiredPlot(DP_CtorStruct const &dp_struct)
         : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
-          plot_type_name(dp_struct.plot_type_name), labelTS_colID(dp_struct.lts_colID), values_colIDs(dp_struct.v_colIDs),
-          cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors), labelTS_colName(dp_struct.lts_colName),
-          values_colNames(dp_struct.v_colNames), cat_colName(dp_struct.c_colName) {}
+          plot_type_name(dp_struct.plot_type_name), labelTS_colID(dp_struct.lts_colID),
+          values_colIDs(dp_struct.v_colIDs), cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors),
+          labelTS_colName(dp_struct.lts_colName), values_colNames(dp_struct.v_colNames),
+          cat_colName(dp_struct.c_colName) {}
 
     // Create a new copy and guess_missingParams on it.
     std::expected<DesiredPlot, Unexp_plotSpecs> build_guessedParamsCPY(this DesiredPlot &self, DataStore const &ds) {

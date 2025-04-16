@@ -399,7 +399,7 @@ int main(int argc, char *argv[]) {
     incplot::CL_Args::finishAp(ap);
     auto dpCtor_Structs             = incplot::CL_Args::get_dpCtorStruct(ap, argc, argv);
     // dpCtor_Structs.front().tar_width = 120uz;
-    dpCtor_Structs.front().v_colIDs = {2};
+    dpCtor_Structs.front().v_colIDs = {2, 0};
     dpCtor_Structs.front().lts_colID  = 1;
 
     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput_petal_OLD);
