@@ -1,8 +1,10 @@
 #pragma once
 
-#include "detail/misc.hpp"
-#include "incplot/config.hpp"
-#include "incplot/plot_structures.hpp"
+#include <ranges>
+#include <string>
+#include <type_traits>
+#include <variant>
+
 #include <incplot/braille_drawer.hpp>
 #include <incplot/parser.hpp>
 
@@ -325,13 +327,22 @@ class BarV : public Base {
 
         // VERTICAL LEFT LABELS SIZE
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            auto const &labelColRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
-            auto const  labelSizes =
-                std::views::transform(labelColRef, [](auto const &a) { return detail::strlen_utf8(a); });
+            auto &labelColVarRef = ds.vec_colVariants.at(dp.labelTS_colID.value());
 
-            self.labels_verLeftWidth = std::min(
-                Config::axisLabels_maxLength_vl,
-                std::min(std::ranges::max(labelSizes), (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
+            auto olset = [](auto const &var) -> size_t {
+                if constexpr (std::same_as<std::decay_t<decltype(var)>,
+                                           std::reference_wrapper<std::vector<std::string>>>) {
+                    return std::ranges::max(
+                        std::views::transform(var.get(), [](auto const &a) { return detail::strlen_utf8(a); }));
+                }
+                else { return Config::max_sizeOfValueLabels; }
+            };
+
+            auto const maxLabelSize = std::visit(olset, labelColVarRef);
+
+            self.labels_verLeftWidth =
+                std::min(Config::axisLabels_maxLength_vl,
+                         std::min(maxLabelSize, (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
         }
         else { self.labels_verLeftWidth = Config::max_valLabelSize; }
 
@@ -403,7 +414,9 @@ class BarV : public Base {
                          (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
                          self.labels_verRightWidth - (Config::axis_verName_width_vl * self.axisName_verRight_bool) -
                          self.pad_right;
-        if (self.areaWidth < Config::min_areaWidth) { return std::unexpected(Unexp_plotDrawer::areaWidth_insufficient); }
+        if (self.areaWidth < Config::min_areaWidth) {
+            return std::unexpected(Unexp_plotDrawer::areaWidth_insufficient);
+        }
 
         // Labels and axis name bottom
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
@@ -418,7 +431,8 @@ class BarV : public Base {
 
         // Plot area height (-2 is for the 2 horizontal axes positions)
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            self.areaHeight = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second).size();
+            self.areaHeight = std::visit([](auto const &a) { return a.get().size(); },
+                                         ds.vec_colVariants.at(dp.labelTS_colID.value()));
         }
         else if (not dp.targetHeight.has_value()) {
             if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
@@ -432,7 +446,9 @@ class BarV : public Base {
                                   self.axisName_horTop_bool - self.labels_horTop_bool - 2ll -
                                   self.labels_horBottom_bool - self.axisName_horBottom_bool - self.pad_bottom);
         }
-        if (self.areaHeight < Config::min_areaHeight) { return std::unexpected(Unexp_plotDrawer::areaHeight_insufficient); }
+        if (self.areaHeight < Config::min_areaHeight) {
+            return std::unexpected(Unexp_plotDrawer::areaHeight_insufficient);
+        }
 
         // Axes steps
         if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
@@ -456,7 +472,7 @@ class BarV : public Base {
         if (self.axisName_verLeft_bool) {
             if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
                 self.axisName_verLeft =
-                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.label_colID.value()), self.areaHeight);
+                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.labelTS_colID.value()), self.areaHeight);
             }
             else {
                 self.axisName_verLeft =
@@ -473,16 +489,34 @@ class BarV : public Base {
 
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        auto const &labelsRef = ds.stringCols.at(ds.colTypes.at(dp.label_colID.value()).second);
+
         self.labels_verLeft.push_back(
             std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
 
-        for (auto const &rawLabel : labelsRef) {
-            self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
-            for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
-                self.labels_verLeft.back().push_back(Config::space);
+        auto const &labelsRef = ds.vec_colVariants.at(dp.labelTS_colID.value());
+        auto        olset     = [&](auto const &vari) -> void {
+            if constexpr (std::same_as<std::decay_t<decltype(vari)>,
+                                                  std::reference_wrapper<std::vector<std::string>>>) {
+                for (auto const &rawLabel : vari.get()) {
+                    self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
+                    for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
+                        self.labels_verLeft.back().push_back(Config::space);
+                    }
+                }
             }
-        }
+            else {
+                for (auto const &rawLabelNumeric : vari.get()) {
+                    self.labels_verLeft.push_back(detail::trim2Size_leading(
+                        detail::format_toMax5length(rawLabelNumeric), self.labels_verLeftWidth));
+                    for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
+                        self.labels_verLeft.back().push_back(Config::space);
+                    }
+                }
+            }
+        };
+
+        std::visit(olset, labelsRef);
+
         self.labels_verLeft.push_back(
             std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
 

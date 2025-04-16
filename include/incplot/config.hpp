@@ -68,6 +68,8 @@ public:
 
     // OTHER PLOT SETTINGS
 
+    static constexpr size_t max_sizeOfValueLabels  = 5uz;
+
     static constexpr size_t min_areaWidth  = 8uz;
     static constexpr size_t min_areaHeight = 1uz;
 

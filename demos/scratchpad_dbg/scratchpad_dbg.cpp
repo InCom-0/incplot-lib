@@ -27,156 +27,16 @@ int main(int argc, char *argv[]) {
 {"name":"VTune","size":0})");
 
     std::string testInput_petal_OLD(
-        R"({"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.9,"sepal_width":3,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.7,"sepal_width":3.2,"petal_length":1.3,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.6,"sepal_width":3.1,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3.6,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.4,"sepal_width":3.9,"petal_length":1.7,"petal_width":0.4,"species":"Iris-setosa"}
-{"sepal_length":4.6,"sepal_width":3.4,"petal_length":1.4,"petal_width":0.3,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3.4,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.4,"sepal_width":2.9,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.9,"sepal_width":3.1,"petal_length":1.5,"petal_width":0.1,"species":"Iris-setosa"}
-{"sepal_length":5.4,"sepal_width":3.7,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.8,"sepal_width":3.4,"petal_length":1.6,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.8,"sepal_width":3,"petal_length":1.4,"petal_width":0.1,"species":"Iris-setosa"}
-{"sepal_length":4.3,"sepal_width":3,"petal_length":1.1,"petal_width":0.1,"species":"Iris-setosa"}
-{"sepal_length":5.8,"sepal_width":4,"petal_length":1.2,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.7,"sepal_width":4.4,"petal_length":1.5,"petal_width":0.4,"species":"Iris-setosa"}
-{"sepal_length":5.4,"sepal_width":3.9,"petal_length":1.3,"petal_width":0.4,"species":"Iris-setosa"}
-{"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.3,"species":"Iris-setosa"}
-{"sepal_length":5.7,"sepal_width":3.8,"petal_length":1.7,"petal_width":0.3,"species":"Iris-setosa"}
-{"sepal_length":5.1,"sepal_width":3.8,"petal_length":1.5,"petal_width":0.3,"species":"Iris-setosa"}
-{"sepal_length":5.4,"sepal_width":3.4,"petal_length":1.7,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.1,"sepal_width":3.7,"petal_length":1.5,"petal_width":0.4,"species":"Iris-setosa"}
-{"sepal_length":4.6,"sepal_width":3.6,"petal_length":1,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.1,"sepal_width":3.3,"petal_length":1.7,"petal_width":0.5,"species":"Iris-setosa"}
-{"sepal_length":4.8,"sepal_width":3.4,"petal_length":1.9,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3,"petal_length":1.6,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3.4,"petal_length":1.6,"petal_width":0.4,"species":"Iris-setosa"}
-{"sepal_length":5.2,"sepal_width":3.5,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.2,"sepal_width":3.4,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.7,"sepal_width":3.2,"petal_length":1.6,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.8,"sepal_width":3.1,"petal_length":1.6,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.4,"sepal_width":3.4,"petal_length":1.5,"petal_width":0.4,"species":"Iris-setosa"}
-{"sepal_length":5.2,"sepal_width":4.1,"petal_length":1.5,"petal_width":0.1,"species":"Iris-setosa"}
-{"sepal_length":5.5,"sepal_width":4.2,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.9,"sepal_width":3.1,"petal_length":1.5,"petal_width":0.1,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3.2,"petal_length":1.2,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.5,"sepal_width":3.5,"petal_length":1.3,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.9,"sepal_width":3.1,"petal_length":1.5,"petal_width":0.1,"species":"Iris-setosa"}
-{"sepal_length":4.4,"sepal_width":3,"petal_length":1.3,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.1,"sepal_width":3.4,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3.5,"petal_length":1.3,"petal_width":0.3,"species":"Iris-setosa"}
-{"sepal_length":4.5,"sepal_width":2.3,"petal_length":1.3,"petal_width":0.3,"species":"Iris-setosa"}
-{"sepal_length":4.4,"sepal_width":3.2,"petal_length":1.3,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3.5,"petal_length":1.6,"petal_width":0.6,"species":"Iris-setosa"}
-{"sepal_length":5.1,"sepal_width":3.8,"petal_length":1.9,"petal_width":0.4,"species":"Iris-setosa"}
-{"sepal_length":4.8,"sepal_width":3,"petal_length":1.4,"petal_width":0.3,"species":"Iris-setosa"}
-{"sepal_length":5.1,"sepal_width":3.8,"petal_length":1.6,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":4.6,"sepal_width":3.2,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5.3,"sepal_width":3.7,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":5,"sepal_width":3.3,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
-{"sepal_length":7,"sepal_width":3.2,"petal_length":4.7,"petal_width":1.4,"species":"Iris-versicolor"}
-{"sepal_length":6.4,"sepal_width":3.2,"petal_length":4.5,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":6.9,"sepal_width":3.1,"petal_length":4.9,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":5.5,"sepal_width":2.3,"petal_length":4,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":6.5,"sepal_width":2.8,"petal_length":4.6,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":5.7,"sepal_width":2.8,"petal_length":4.5,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":6.3,"sepal_width":3.3,"petal_length":4.7,"petal_width":1.6,"species":"Iris-versicolor"}
-{"sepal_length":4.9,"sepal_width":2.4,"petal_length":3.3,"petal_width":1,"species":"Iris-versicolor"}
-{"sepal_length":6.6,"sepal_width":2.9,"petal_length":4.6,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":5.2,"sepal_width":2.7,"petal_length":3.9,"petal_width":1.4,"species":"Iris-versicolor"}
-{"sepal_length":5,"sepal_width":2,"petal_length":3.5,"petal_width":1,"species":"Iris-versicolor"}
-{"sepal_length":5.9,"sepal_width":3,"petal_length":4.2,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":6,"sepal_width":2.2,"petal_length":4,"petal_width":1,"species":"Iris-versicolor"}
-{"sepal_length":6.1,"sepal_width":2.9,"petal_length":4.7,"petal_width":1.4,"species":"Iris-versicolor"}
-{"sepal_length":5.6,"sepal_width":2.9,"petal_length":3.6,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":6.7,"sepal_width":3.1,"petal_length":4.4,"petal_width":1.4,"species":"Iris-versicolor"}
-{"sepal_length":5.6,"sepal_width":3,"petal_length":4.5,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":5.8,"sepal_width":2.7,"petal_length":4.1,"petal_width":1,"species":"Iris-versicolor"}
-{"sepal_length":6.2,"sepal_width":2.2,"petal_length":4.5,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":5.6,"sepal_width":2.5,"petal_length":3.9,"petal_width":1.1,"species":"Iris-versicolor"}
-{"sepal_length":5.9,"sepal_width":3.2,"petal_length":4.8,"petal_width":1.8,"species":"Iris-versicolor"}
-{"sepal_length":6.1,"sepal_width":2.8,"petal_length":4,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":6.3,"sepal_width":2.5,"petal_length":4.9,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":6.1,"sepal_width":2.8,"petal_length":4.7,"petal_width":1.2,"species":"Iris-versicolor"}
-{"sepal_length":6.4,"sepal_width":2.9,"petal_length":4.3,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":6.6,"sepal_width":3,"petal_length":4.4,"petal_width":1.4,"species":"Iris-versicolor"}
-{"sepal_length":6.8,"sepal_width":2.8,"petal_length":4.8,"petal_width":1.4,"species":"Iris-versicolor"}
-{"sepal_length":6.7,"sepal_width":3,"petal_length":5,"petal_width":1.7,"species":"Iris-versicolor"}
-{"sepal_length":6,"sepal_width":2.9,"petal_length":4.5,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":5.7,"sepal_width":2.6,"petal_length":3.5,"petal_width":1,"species":"Iris-versicolor"}
-{"sepal_length":5.5,"sepal_width":2.4,"petal_length":3.8,"petal_width":1.1,"species":"Iris-versicolor"}
-{"sepal_length":5.5,"sepal_width":2.4,"petal_length":3.7,"petal_width":1,"species":"Iris-versicolor"}
-{"sepal_length":5.8,"sepal_width":2.7,"petal_length":3.9,"petal_width":1.2,"species":"Iris-versicolor"}
-{"sepal_length":6,"sepal_width":2.7,"petal_length":5.1,"petal_width":1.6,"species":"Iris-versicolor"}
-{"sepal_length":5.4,"sepal_width":3,"petal_length":4.5,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":6,"sepal_width":3.4,"petal_length":4.5,"petal_width":1.6,"species":"Iris-versicolor"}
-{"sepal_length":6.7,"sepal_width":3.1,"petal_length":4.7,"petal_width":1.5,"species":"Iris-versicolor"}
-{"sepal_length":6.3,"sepal_width":2.3,"petal_length":4.4,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":5.6,"sepal_width":3,"petal_length":4.1,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":5.5,"sepal_width":2.5,"petal_length":4,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":5.5,"sepal_width":2.6,"petal_length":4.4,"petal_width":1.2,"species":"Iris-versicolor"}
-{"sepal_length":6.1,"sepal_width":3,"petal_length":4.6,"petal_width":1.4,"species":"Iris-versicolor"}
-{"sepal_length":5.8,"sepal_width":2.6,"petal_length":4,"petal_width":1.2,"species":"Iris-versicolor"}
-{"sepal_length":5,"sepal_width":2.3,"petal_length":3.3,"petal_width":1,"species":"Iris-versicolor"}
-{"sepal_length":5.6,"sepal_width":2.7,"petal_length":4.2,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":5.7,"sepal_width":3,"petal_length":4.2,"petal_width":1.2,"species":"Iris-versicolor"}
-{"sepal_length":5.7,"sepal_width":2.9,"petal_length":4.2,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":6.2,"sepal_width":2.9,"petal_length":4.3,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":5.1,"sepal_width":2.5,"petal_length":3,"petal_width":1.1,"species":"Iris-versicolor"}
-{"sepal_length":5.7,"sepal_width":2.8,"petal_length":4.1,"petal_width":1.3,"species":"Iris-versicolor"}
-{"sepal_length":6.3,"sepal_width":3.3,"petal_length":6,"petal_width":2.5,"species":"Iris-virginica"}
-{"sepal_length":5.8,"sepal_width":2.7,"petal_length":5.1,"petal_width":1.9,"species":"Iris-virginica"}
-{"sepal_length":7.1,"sepal_width":3,"petal_length":5.9,"petal_width":2.1,"species":"Iris-virginica"}
-{"sepal_length":6.3,"sepal_width":2.9,"petal_length":5.6,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6.5,"sepal_width":3,"petal_length":5.8,"petal_width":2.2,"species":"Iris-virginica"}
-{"sepal_length":7.6,"sepal_width":3,"petal_length":6.6,"petal_width":2.1,"species":"Iris-virginica"}
-{"sepal_length":4.9,"sepal_width":2.5,"petal_length":4.5,"petal_width":1.7,"species":"Iris-virginica"}
-{"sepal_length":7.3,"sepal_width":2.9,"petal_length":6.3,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6.7,"sepal_width":2.5,"petal_length":5.8,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":7.2,"sepal_width":3.6,"petal_length":6.1,"petal_width":2.5,"species":"Iris-virginica"}
-{"sepal_length":6.5,"sepal_width":3.2,"petal_length":5.1,"petal_width":2,"species":"Iris-virginica"}
-{"sepal_length":6.4,"sepal_width":2.7,"petal_length":5.3,"petal_width":1.9,"species":"Iris-virginica"}
-{"sepal_length":6.8,"sepal_width":3,"petal_length":5.5,"petal_width":2.1,"species":"Iris-virginica"}
-{"sepal_length":5.7,"sepal_width":2.5,"petal_length":5,"petal_width":2,"species":"Iris-virginica"}
-{"sepal_length":5.8,"sepal_width":2.8,"petal_length":5.1,"petal_width":2.4,"species":"Iris-virginica"}
-{"sepal_length":6.4,"sepal_width":3.2,"petal_length":5.3,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":6.5,"sepal_width":3,"petal_length":5.5,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":7.7,"sepal_width":3.8,"petal_length":6.7,"petal_width":2.2,"species":"Iris-virginica"}
-{"sepal_length":7.7,"sepal_width":2.6,"petal_length":6.9,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":6,"sepal_width":2.2,"petal_length":5,"petal_width":1.5,"species":"Iris-virginica"}
-{"sepal_length":6.9,"sepal_width":3.2,"petal_length":5.7,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":5.6,"sepal_width":2.8,"petal_length":4.9,"petal_width":2,"species":"Iris-virginica"}
-{"sepal_length":7.7,"sepal_width":2.8,"petal_length":6.7,"petal_width":2,"species":"Iris-virginica"}
-{"sepal_length":6.3,"sepal_width":2.7,"petal_length":4.9,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6.7,"sepal_width":3.3,"petal_length":5.7,"petal_width":2.1,"species":"Iris-virginica"}
-{"sepal_length":7.2,"sepal_width":3.2,"petal_length":6,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6.2,"sepal_width":2.8,"petal_length":4.8,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6.1,"sepal_width":3,"petal_length":4.9,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6.4,"sepal_width":2.8,"petal_length":5.6,"petal_width":2.1,"species":"Iris-virginica"}
-{"sepal_length":7.2,"sepal_width":3,"petal_length":5.8,"petal_width":1.6,"species":"Iris-virginica"}
-{"sepal_length":7.4,"sepal_width":2.8,"petal_length":6.1,"petal_width":1.9,"species":"Iris-virginica"}
-{"sepal_length":7.9,"sepal_width":3.8,"petal_length":6.4,"petal_width":2,"species":"Iris-virginica"}
-{"sepal_length":6.4,"sepal_width":2.8,"petal_length":5.6,"petal_width":2.2,"species":"Iris-virginica"}
-{"sepal_length":6.3,"sepal_width":2.8,"petal_length":5.1,"petal_width":1.5,"species":"Iris-virginica"}
-{"sepal_length":6.1,"sepal_width":2.6,"petal_length":5.6,"petal_width":1.4,"species":"Iris-virginica"}
-{"sepal_length":7.7,"sepal_width":3,"petal_length":6.1,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":6.3,"sepal_width":3.4,"petal_length":5.6,"petal_width":2.4,"species":"Iris-virginica"}
-{"sepal_length":6.4,"sepal_width":3.1,"petal_length":5.5,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6,"sepal_width":3,"petal_length":4.8,"petal_width":1.8,"species":"Iris-virginica"}
-{"sepal_length":6.9,"sepal_width":3.1,"petal_length":5.4,"petal_width":2.1,"species":"Iris-virginica"}
-{"sepal_length":6.7,"sepal_width":3.1,"petal_length":5.6,"petal_width":2.4,"species":"Iris-virginica"}
-{"sepal_length":6.9,"sepal_width":3.1,"petal_length":5.1,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":5.8,"sepal_width":2.7,"petal_length":5.1,"petal_width":1.9,"species":"Iris-virginica"}
-{"sepal_length":6.8,"sepal_width":3.2,"petal_length":5.9,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":6.7,"sepal_width":3.3,"petal_length":5.7,"petal_width":2.5,"species":"Iris-virginica"}
-{"sepal_length":6.7,"sepal_width":3,"petal_length":5.2,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":6.3,"sepal_width":2.5,"petal_length":5,"petal_width":1.9,"species":"Iris-virginica"}
-{"sepal_length":6.5,"sepal_width":3,"petal_length":5.2,"petal_width":2,"species":"Iris-virginica"}
-{"sepal_length":6.2,"sepal_width":3.4,"petal_length":5.4,"petal_width":2.3,"species":"Iris-virginica"}
-{"sepal_length":5.9,"sepal_width":3,"petal_length":5.1,"petal_width":1.8,"species":"Iris-virginica"})");
+        R"({"ID":0,"bill_length_mm":39.1,"bill_depth_mm":18.7}
+{"ID":1,"bill_length_mm":39.5,"bill_depth_mm":17.4}
+{"ID":2,"bill_length_mm":40.3,"bill_depth_mm":18}
+{"ID":3,"bill_length_mm":36.7,"bill_depth_mm":19.3}
+{"ID":4,"bill_length_mm":39.3,"bill_depth_mm":20.6}
+{"ID":5,"bill_length_mm":38.9,"bill_depth_mm":17.8}
+{"ID":6,"bill_length_mm":39.2,"bill_depth_mm":19.6}
+{"ID":7,"bill_length_mm":34.1,"bill_depth_mm":18.1}
+{"ID":8,"bill_length_mm":42,"bill_depth_mm":20.2}
+{"ID":9,"bill_length_mm":37.8,"bill_depth_mm":17.1})");
 
 
     std::string testInput_petal(
@@ -537,11 +397,12 @@ int main(int argc, char *argv[]) {
 
     argparse::ArgumentParser ap("incplot", "1.0", argparse::default_arguments::help);
     incplot::CL_Args::finishAp(ap);
-    auto dpCtor_Structs              = incplot::CL_Args::get_dpCtorStruct(ap, argc, argv);
-    dpCtor_Structs.front().tar_width = 120uz;
+    auto dpCtor_Structs             = incplot::CL_Args::get_dpCtorStruct(ap, argc, argv);
+    // dpCtor_Structs.front().tar_width = 120uz;
+    dpCtor_Structs.front().v_colIDs = {2};
+    dpCtor_Structs.front().lts_colID  = 1;
 
-
-    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput_flights);
+    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput_petal_OLD);
 
 
     for (auto const &dpctr : dpCtor_Structs) {

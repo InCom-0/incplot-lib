@@ -1,19 +1,13 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
-#include <cstdint>
 #include <expected>
 
-#include <functional>
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
 #include <nlohmann/json.hpp>
-#include <optional>
-#include <ranges>
-#include <vector>
 
 
 namespace incom {
@@ -146,11 +140,11 @@ private:
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
                                                                                   DataStore const &ds) {
-        if (dp.label_colName.has_value()) {
-            auto it = std::ranges::find(ds.colNames, dp.label_colName.value());
+        if (dp.labelTS_colName.has_value()) {
+            auto it = std::ranges::find(ds.colNames, dp.labelTS_colName.value());
             if (it == ds.colNames.end()) { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
-            else if (not dp.label_colID.has_value()) { dp.label_colID = it - ds.colNames.begin(); }
-            else if ((it - ds.colNames.begin()) == dp.label_colID.value()) { dp.label_colName = std::nullopt; }
+            else if (not dp.labelTS_colID.has_value()) { dp.labelTS_colID = it - ds.colNames.begin(); }
+            else if ((it - ds.colNames.begin()) == dp.labelTS_colID.value()) { dp.labelTS_colName = std::nullopt; }
             else { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
         }
 
@@ -196,7 +190,9 @@ private:
         // Can't plot anything without at least 1 value column
         if (useableValCols_count == 0) { return std::unexpected(Unexp_plotSpecs::valCols); }
         // LabelCol was specified and there are some valueCols to plot
-        else if (dp.label_colID.has_value() && useableValCols_count > 0) {
+        else if (dp.labelTS_colID.has_value() &&
+                 dp.m_colAssessments.at(dp.labelTS_colID.value()).is_timeSeriesLikeIndex == false &&
+                 useableValCols_count > 0) {
             dp.plot_type_name = detail::TypeToString<plot_structures::BarV>();
         }
 
@@ -223,15 +219,27 @@ private:
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
         if (dp.labelTS_colID.has_value()) {
-            if (dp.plot_type_name != detail::TypeToString<plot_structures::Multiline>()) {
+            if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
                 return std::unexpected(Unexp_plotSpecs::TScol);
             }
         }
         else {
             if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-                for (size_t i = 0; auto const &fvItem : std::views::filter(
-                                       dp.m_colAssessments, [](auto const &ca) { return ca.is_timeSeriesLikeIndex; })) {
-                    dp.labelTS_colID = i;
+                for (auto const &fvItem :
+                     std::views::filter(std::views::enumerate(dp.m_colAssessments),
+                                        [](auto const &ca) { return std::get<1>(ca).is_timeSeriesLikeIndex; })) {
+
+                    dp.labelTS_colID = std::get<0>(fvItem);
+                    return dp;
+                }
+                // If there are none (therefore the loop doesn't execute at all) then return unexpected
+                return std::unexpected(Unexp_plotSpecs::TScol);
+            }
+            else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+                for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.colTypes), [](auto const &ct) {
+                         return std::get<1>(ct).first == NLMjson::value_t::string;
+                     })) {
+                    dp.labelTS_colID = std::get<0>(fvItem);
                     return dp;
                 }
                 // If there are none (therefore the loop doesn't execute at all) then return unexpected
@@ -307,19 +315,6 @@ private:
         }
 
         return dp;
-    }
-    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_labelCol(DesiredPlot &&dp, DataStore const &ds) {
-        if (dp.label_colID.has_value()) {
-            if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) { return dp; }
-            else { return std::unexpected(Unexp_plotSpecs::labelCol); }
-        }
-        else if (dp.plot_type_name != detail::TypeToString<plot_structures::BarV>()) { return dp; }
-        else {
-            auto it = std::ranges::find_if(ds.colTypes, [](auto &&a) { return a.first == NLMjson::value_t::string; });
-            if (it == ds.colTypes.end()) { return std::unexpected(Unexp_plotSpecs::labelCol); }
-            else { dp.label_colID = it->second; }
-            return dp;
-        }
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
         auto useableValCols_tpl = std::views::filter(
@@ -401,7 +396,9 @@ private:
         // MULTILINE PLOT
         else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
             if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
-            else if (not addValColsUntil(1, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            else if (dp.values_colIDs.size() == 0) {
+                if (not addValColsUntil(1, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            }
         }
 
         return dp;
@@ -441,9 +438,6 @@ private:
 public:
     std::optional<std::string> plot_type_name;
 
-    std::optional<size_t>      label_colID; // ID in colTypes
-    std::optional<std::string> label_colName;
-
     // Category column ID
     std::optional<size_t>      cat_colID; // ID in colTypes
     std::optional<std::string> cat_colName;
@@ -471,28 +465,28 @@ public:
         std::optional<size_t>      tar_width      = std::nullopt;
         std::optional<size_t>      tar_height     = std::nullopt;
         std::optional<std::string> plot_type_name = std::nullopt;
-        std::optional<size_t>      l_colID        = std::nullopt;
+        std::optional<size_t>      lts_colID      = std::nullopt;
         std::vector<size_t>        v_colIDs       = {};
         std::optional<size_t>      c_colID        = std::nullopt;
         std::array<Color_CVTS, 6>  colors         = {
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
             Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
-        std::optional<std::string> l_colName  = std::nullopt;
+        std::optional<std::string> lts_colName  = std::nullopt;
         std::vector<std::string>   v_colNames = {};
         std::optional<std::string> c_colName  = std::nullopt;
     };
 
     DesiredPlot(DP_CtorStruct &&dp_struct)
         : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
-          plot_type_name(std::move(dp_struct.plot_type_name)), label_colID(std::move(dp_struct.l_colID)),
+          plot_type_name(std::move(dp_struct.plot_type_name)), labelTS_colID(std::move(dp_struct.lts_colID)),
           values_colIDs(std::move(dp_struct.v_colIDs)), cat_colID(std::move(dp_struct.c_colID)),
-          color_basePalette(std::move(dp_struct.colors)), label_colName(std::move(dp_struct.l_colName)),
+          color_basePalette(std::move(dp_struct.colors)), labelTS_colName(std::move(dp_struct.lts_colName)),
           values_colNames(std::move(dp_struct.v_colNames)), cat_colName(std::move(dp_struct.c_colName)) {}
     DesiredPlot(DP_CtorStruct const &dp_struct)
         : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
-          plot_type_name(dp_struct.plot_type_name), label_colID(dp_struct.l_colID), values_colIDs(dp_struct.v_colIDs),
-          cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors), label_colName(dp_struct.l_colName),
+          plot_type_name(dp_struct.plot_type_name), labelTS_colID(dp_struct.lts_colID), values_colIDs(dp_struct.v_colIDs),
+          cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors), labelTS_colName(dp_struct.lts_colName),
           values_colNames(dp_struct.v_colNames), cat_colName(dp_struct.c_colName) {}
 
     // Create a new copy and guess_missingParams on it.
@@ -520,9 +514,6 @@ public:
         auto gcc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
             return DesiredPlot::guess_catCol(std::forward<decltype(dp)>(dp), ds);
         };
-        auto glc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-            return DesiredPlot::guess_labelCol(std::forward<decltype(dp)>(dp), ds);
-        };
         auto gvc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
             return DesiredPlot::guess_valueCols(std::forward<decltype(dp)>(dp), ds);
         };
@@ -538,7 +529,6 @@ public:
             .and_then(gpt)
             .and_then(gtsc)
             .and_then(gcc)
-            .and_then(glc)
             .and_then(gvc)
             .and_then(gsz)
             .and_then(gtff);

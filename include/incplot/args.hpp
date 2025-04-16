@@ -1,14 +1,8 @@
 #pragma once
 
-#include "desired_plot.hpp"
-#include "incplot/plot_structures.hpp"
 #include <argparse/argparse.hpp>
-#include <expected>
 #include <incplot/config.hpp>
 #include <incplot/desired_plot.hpp>
-#include <optional>
-#include <string_view>
-#include <vector>
 
 
 namespace incom {
@@ -34,7 +28,7 @@ struct CL_Args {
             if (auto hgt = out_ap.present<int>("-t")) { res.back().tar_height = hgt.value(); }
 
             res.back().plot_type_name = sv_opt;
-            if (auto optVal = out_ap.present<int>("-x")) { res.back().l_colID = optVal.value(); }
+            if (auto optVal = out_ap.present<int>("-x")) { res.back().lts_colID = optVal.value(); }
             if (auto optVal = out_ap.present<std::vector<int>>("-y")) {
                 res.back().v_colIDs = std::vector<size_t>(optVal.value().begin(), optVal.value().end());
             }
