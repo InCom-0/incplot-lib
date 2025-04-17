@@ -54,43 +54,72 @@ constexpr inline std::size_t strlen_utf8(const std::string &str) {
 
 constexpr inline std::string trim2Size_leading(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
-    if (str.size() > maxSize) {
+
+    if (str.size() <= maxSize) { return std::string(maxSize - strlen_utf8(str), Config::space).append(str); }
+    // Special cases where maxSize is very small
+    else if (maxSize < 5) {
+        if (maxSize == 0) { return ""; }
+        std::string res(str.begin(), str.begin() + std::min(str.size(), 1uz));
+        while (res.size() < maxSize) { res.push_back('.'); }
+        return res;
+    }
+    // Regular case, we know that size of string is larger than maxSize
+    else {
         size_t cutPoint = maxSize / 2;
         return std::string(str.begin(), str.begin() + cutPoint)
             .append("...")
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
-    else { return std::string(maxSize - strlen_utf8(str), Config::space).append(str); }
 }
 constexpr inline std::string trim2Size_leading(std::string const &&str, size_t maxSize) {
     return trim2Size_leading(str, maxSize);
 }
 constexpr inline std::string trim2Size_ending(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
-    if (str.size() > maxSize) {
+
+    if (str.size() <= maxSize) {
+        return std::string(str).append(std::string(maxSize - strlen_utf8(str), Config::space));
+    }
+    // Special cases where maxSize is very small
+    else if (maxSize < 5) {
+        if (maxSize == 0) { return ""; }
+        std::string res(str.begin(), str.begin() + std::min(str.size(), 1uz));
+        while (res.size() < maxSize) { res.push_back('.'); }
+        return res;
+    }
+    // Regular case, we know that size of string is larger than maxSize
+    else {
         size_t cutPoint = maxSize / 2;
         return std::string(str.begin(), str.begin() + cutPoint)
             .append("...")
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
-    else { return std::string(str).append(std::string(maxSize - strlen_utf8(str), Config::space)); }
 }
 constexpr inline std::string trim2Size_ending(std::string const &&str, size_t maxSize) {
     return trim2Size_ending(str, maxSize);
 }
 constexpr inline std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
     // TODO: Need to somehow handle unicode in labels in this function
-    if (str.size() > maxSize) {
-        size_t cutPoint = maxSize / 2;
-        return std::string(str.begin(), str.begin() + cutPoint)
-            .append("...")
-            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
-    }
-    else {
+
+    if (str.size() <= maxSize) {
         return std::string((maxSize - strlen_utf8(str)) / 2, Config::space)
             .append(str)
             .append(
                 std::string(((maxSize - strlen_utf8(str)) / 2) + ((maxSize - strlen_utf8(str)) % 2), Config::space));
+    }
+    // Special cases where maxSize is very small
+    else if (maxSize < 5) {
+        if (maxSize == 0) { return ""; }
+        std::string res(str.begin(), str.begin() + std::min(str.size(), 1uz));
+        while (res.size() < maxSize) { res.push_back('.'); }
+        return res;
+    }
+    // Regular case, we know that size of string is larger than maxSize
+    else {
+        size_t cutPoint = maxSize / 2;
+        return std::string(str.begin(), str.begin() + cutPoint)
+            .append("...")
+            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
 }
 constexpr inline std::string trim2Size_leadingEnding(std::string const &&str, size_t maxSize) {
