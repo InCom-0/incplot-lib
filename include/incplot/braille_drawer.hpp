@@ -29,10 +29,10 @@ private:
               canvas_height,
               std::vector(canvas_width,
                           std::array<std::array<std::vector<size_t>, 2>, 4>{
-                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0),
-                              std::vector<size_t>(numOf_categories, 0), std::vector<size_t>(numOf_categories, 0)}))) {};
+                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
+                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
+                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
+                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)}))) {};
 
     constexpr void compute_canvasColors() {
         ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor));

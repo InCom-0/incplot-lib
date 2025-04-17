@@ -1,5 +1,6 @@
 #pragma once
 
+#include "incplot/config.hpp"
 #include <ranges>
 #include <string>
 #include <type_traits>
@@ -29,7 +30,8 @@ protected:
 
     size_t axis_verLeftSteps = 0, axis_varRightSteps = 0, axis_horTopSteps = 0, axis_horBottomSteps = 0;
 
-    long long pad_left = 2, pad_right = 0, pad_top = 1, pad_bottom = 0;
+    long long pad_left = Config::ps_padLeft, pad_right = Config::ps_padRight, pad_top = Config::ps_padTop,
+              pad_bottom = Config::ps_padBottom;
 
     bool labels_horTop_bool = false, labels_horBottom_bool = false;
     bool axisName_horTop_bool = false, axisName_horBottom_bool = false;
