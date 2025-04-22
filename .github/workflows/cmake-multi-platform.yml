@@ -39,4 +39,4 @@ jobs:
     - name: '🚧 Build TOOL'
       run: |
         cmake --preset gcc_DBG
-        cmake --build --preset gcc_DBG
+        cmake --build build --target all
