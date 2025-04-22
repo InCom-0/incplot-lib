@@ -15,14 +15,14 @@ jobs:
 
         icon: ['🟨']
         sys: [ucrt64]
-        runs-on: ['windows-latest']
-        cmake-presets: ['gcc_DBG', 'gcc_REL']
-        target : ['all', 'incplot_scratchpad_dbg']
+        runs-on: [windows-latest]
+        cmake-presets: [gcc_DBG, gcc_REL]
+        target : [all, incplot_scratchpad_dbg]
         include:
-          - cmake-presets: 'gcc_DBG'
-            target: 'incplot_scratchpad_dbg' 
-          - cmake-presets: 'gcc_REL'
-            target: 'all'
+          - cmake-presets: gcc_DBG
+            target: incplot_scratchpad_dbg 
+          - cmake-presets: gcc_REL
+            target: all
     name: 🚧${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
     defaults:
       run:
@@ -47,5 +47,5 @@ jobs:
 
     - name: '🚧 Build TOOL'
       run: |
-        cmake --preset 'gcc_DBG'
+        cmake --preset ${{matrix.cmake-presets}}
         cmake --build build --target ${{matrix.target}}
