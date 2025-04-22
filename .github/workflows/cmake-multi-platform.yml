@@ -21,7 +21,7 @@ jobs:
         include:
           - { cmake-presets: 'gcc_DBG', target: 'incplot_scratchpad_dbg' }
           - { cmake-presets: 'gcc_REL', target: 'all' }
-    name: 🚧${{ matrix.icon }} ${{ matrix.sys }}
+    name: 🚧${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
     defaults:
       run:
         shell: msys2 {0}
