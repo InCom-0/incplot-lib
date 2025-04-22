@@ -727,9 +727,7 @@ int main(int argc, char *argv[]) {
 
         std::print("{}\n", outExp2.value()); */
 
-    argparse::ArgumentParser ap("incplot", "1.0", argparse::default_arguments::help);
-    incplot::CL_Args::finishAp(ap);
-    auto dpCtor_Structs             = incplot::CL_Args::get_dpCtorStruct(ap, argc, argv);
+    auto dpCtor_Structs             = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     dpCtor_Structs.front().plot_type_name = "Scatter";
     dpCtor_Structs.front().tar_width = 30;

@@ -3,6 +3,7 @@
 #include <argparse/argparse.hpp>
 #include <incplot/config.hpp>
 #include <incplot/desired_plot.hpp>
+#include <optional>
 
 
 namespace incom {
@@ -41,6 +42,9 @@ struct CL_Args {
         if (res.empty()) { addOne(std::nullopt); }
 
         return res;
+    }
+    static constexpr std::vector<DesiredPlot::DP_CtorStruct> get_dpCtorStruct() {
+        return std::vector<DesiredPlot::DP_CtorStruct>{DesiredPlot::DP_CtorStruct{.plot_type_name = std::nullopt}};
     }
 
     static constexpr void finishAp(argparse::ArgumentParser &out_ap) {

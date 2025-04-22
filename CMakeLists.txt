@@ -21,6 +21,7 @@ target_link_libraries(incplot INTERFACE
 
 # The line below is commented out for debugging purposes (getting linking error otherwise)
 # TODO: Will have to fix this problem somehow
-# target_link_options(incplot INTERFACE -static-libgcc -static-libstdc++ -fno-rtti "LINKER:-Bstatic,--whole-archive" -lwinpthread "LINKER:-Bdynamic,--no-whole-archive")
+target_link_options(incplot INTERFACE -static-libgcc -static-libstdc++ -fno-rtti "LINKER:-Bstatic,--whole-archive" -lwinpthread "LINKER:-Bdynamic,--no-whole-archive")
+
 
 add_subdirectory(demos)

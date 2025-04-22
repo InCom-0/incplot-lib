@@ -2,65 +2,39 @@
     "version": 8,
     "configurePresets": [
         {
-            "name": "InCom's x64-mingw_gcc_dynamic DBG",
-            "displayName": "InCom's x64-mingw_dynamic, Debug",
-            "hidden": false,
-            "inherits": [
-                "debug",
-                "x64-mingw_gcc_dynamic"
-            ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
-            "environment": {
-                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
-            }
-        },
-        {
-            "name": "InCom's x64-mingw_gcc_dynamic RLS",
-            "displayName": "InCom's x64-mingw_dynamic, Release",
-            "hidden": false,
-            "inherits": [
-                "release",
-                "x64-mingw_gcc_dynamic"
-            ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
-            "environment": {
-                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
-            }
-        },
-        {
-            "name": "x64-mingw_gcc_dynamic",
-            "displayName": "GCC x64-mingw_dynamic, Debug",
+            "name": "InComs gcc DBG",
+            "displayName": "InCom's gcc DBG",
             "hidden": false,
             "inherits": [
                 "_common",
                 "_gcc",
-                "debug"
+                "InComs"
             ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe"
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "environment": {
+                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
         },
         {
-            "name": "x64-mingw_gcc_static",
-            "displayName": "GCC x64-mingw_static, Release",
+            "name": "InComs gcc REL",
+            "displayName": "InCom's gcc REL",
             "hidden": false,
             "inherits": [
                 "_common",
                 "_gcc",
-                "release"
+                "InComs"
             ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe"
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "environment": {
+                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         },
-        {
-            "name": "x64-clang",
-            "displayName": "Clang, Release",
-            "hidden": false,
-            "inherits": [
-                "_common",
-                "_clang",
-                "release"
-            ],
-            "description": "Using: C = clang.exe, CXX = clang++.exe"
-        },
-        
         {
             "name": "_common",
             "hidden": true,
@@ -87,18 +61,31 @@
             }
         },
         {
-            "name": "debug",
+            "name": "InComs",
             "hidden": true,
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
+            "environment": {
+                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
             }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "scrachpad_dbg",
+            "displayName": "scratchpad_dbg",
+            "configurePreset": "InComs gcc DBG",
+            "configuration": "Debug",
+            "targets": [
+                "incplot_scratchpad_dbg"
+            ]
         },
         {
-            "name": "release",
-            "hidden": true,
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
+            "name": "scratchpad",
+            "displayName": "scratchpad",
+            "configurePreset": "InComs gcc REL",
+            "configuration": "Release",
+            "targets": [
+                "incplot_scratchpad"
+            ]
         }
     ]
 }
