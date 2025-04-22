@@ -23,7 +23,7 @@ FetchContent_MakeAvailable(nlh_json)
 
 FetchContent_Declare(
     argparse
-    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+    GIT_REPOSITORY https://github.com/InCom-0/argparse.git
     GIT_TAG master
 )
 FetchContent_MakeAvailable(argparse)

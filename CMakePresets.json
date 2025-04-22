@@ -11,9 +11,6 @@
                 "InComs"
             ],
             "description": "Using: C = gcc.exe, CXX = g++.exe",
-            "environment": {
-                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
-            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -28,13 +25,37 @@
                 "InComs"
             ],
             "description": "Using: C = gcc.exe, CXX = g++.exe",
-            "environment": {
-                "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
-            },
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
         },
+        {
+            "name": "gcc DBG",
+            "displayName": "InCom's gcc DBG",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_gcc"
+            ],
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "gcc REL",
+            "displayName": "InCom's gcc REL",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_gcc"
+            ],
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+
         {
             "name": "_common",
             "hidden": true,
@@ -66,26 +87,6 @@
             "environment": {
                 "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
             }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "scrachpad_dbg",
-            "displayName": "scratchpad_dbg",
-            "configurePreset": "InComs gcc DBG",
-            "configuration": "Debug",
-            "targets": [
-                "incplot_scratchpad_dbg"
-            ]
-        },
-        {
-            "name": "scratchpad",
-            "displayName": "scratchpad",
-            "configurePreset": "InComs gcc REL",
-            "configuration": "Release",
-            "targets": [
-                "incplot_scratchpad"
-            ]
         }
     ]
 }
