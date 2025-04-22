@@ -1,4 +1,4 @@
-name: Example CMake
+name: Build
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  build:
+  WindowsMSYS:
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
