@@ -48,4 +48,4 @@ jobs:
     - name: '🚧 Build TOOL'
       run: |
         cmake --preset ${{matrix.cmake-presets}}
-        cmake --build --target ${{matrix.target}}
+        cmake --build build --target ${{matrix.target}}
