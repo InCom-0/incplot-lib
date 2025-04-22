@@ -8,8 +8,6 @@ include(FetchContent)
 # set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 # FetchContent_MakeAvailable(googletest)
 
-find_package(nlohmann_json REQUIRED)
-
 
 FetchContent_Declare(
     glaze
@@ -18,6 +16,9 @@ FetchContent_Declare(
     GIT_SHALLOW TRUE
 )
 FetchContent_MakeAvailable(glaze)
+
+FetchContent_Declare(nlh_json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
+FetchContent_MakeAvailable(nlh_json)
 
 
 FetchContent_Declare(

@@ -36,11 +36,7 @@
                 "_gcc",
                 "debug"
             ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
-            "cacheVariables": {
-                "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic",
-                "VCPKG_HOST_TRIPLET": "x64-mingw-dynamic"
-            }
+            "description": "Using: C = gcc.exe, CXX = g++.exe"
         },
         {
             "name": "x64-mingw_gcc_static",
@@ -51,11 +47,7 @@
                 "_gcc",
                 "release"
             ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
-            "cacheVariables": {
-                "VCPKG_TARGET_TRIPLET": "x64-mingw-static",
-                "VCPKG_HOST_TRIPLET": "x64-mingw-static"
-            }
+            "description": "Using: C = gcc.exe, CXX = g++.exe"
         },
         {
             "name": "x64-clang",
@@ -74,7 +66,6 @@
             "hidden": true,
             "binaryDir": "${sourceDir}/build/",
             "generator": "Ninja",
-            "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": true
             }
