@@ -22,9 +22,6 @@ jobs:
 
     - name: '🧰 Checkout'
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        persist-credentials: false
 
     - name: '${{ matrix.icon }} Setup MSYS2'
       uses: msys2/setup-msys2@v2
@@ -41,5 +38,5 @@ jobs:
 
     - name: '🚧 Build TOOL'
       run: |
-        cmake --preset "gcc DBG"
-        cmake --build --preset "gcc DBG"
+        cmake --preset gcc_DBG
+        cmake --build --preset gcc_DBG

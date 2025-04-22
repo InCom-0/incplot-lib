@@ -30,7 +30,7 @@
             }
         },
         {
-            "name": "gcc DBG",
+            "name": "gcc_DBG",
             "displayName": "InCom's gcc DBG",
             "hidden": false,
             "inherits": [
@@ -43,7 +43,7 @@
             }
         },
         {
-            "name": "gcc REL",
+            "name": "gcc_REL",
             "displayName": "InCom's gcc REL",
             "hidden": false,
             "inherits": [
