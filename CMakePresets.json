@@ -6,27 +6,20 @@
             "displayName": "InCom's gcc DBG",
             "hidden": false,
             "inherits": [
-                "_common",
-                "_gcc",
+                "gcc_DBG",
                 "InComs"
-            ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
+            ]
         },
         {
             "name": "InComs gcc REL",
             "displayName": "InCom's gcc REL",
             "hidden": false,
             "inherits": [
-                "_common",
-                "_gcc",
+                "gcc_REL",
                 "InComs"
             ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
             "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
+                "CMAKE_EXE_LINKER_FLAGS": "-static-libgcc -static-libstdc++ -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,-Bdynamic,--no-whole-archive"
             }
         },
         {
@@ -37,7 +30,6 @@
                 "_common",
                 "_gcc"
             ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
             }
@@ -50,12 +42,10 @@
                 "_common",
                 "_gcc"
             ],
-            "description": "Using: C = gcc.exe, CXX = g++.exe",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
         },
-
         {
             "name": "_common",
             "hidden": true,
@@ -68,6 +58,7 @@
         {
             "name": "_gcc",
             "hidden": true,
+            "description": "Using: C = gcc.exe, CXX = g++.exe",
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "gcc",
                 "CMAKE_CXX_COMPILER": "g++"
