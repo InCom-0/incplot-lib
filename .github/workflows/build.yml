@@ -54,13 +54,13 @@ jobs:
 
 # Based on https://github.com/tcbrindle/flux/blob/main/.github/workflows/linux.yml
   Linux-Ubuntu:
-    name: ${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
+    name: ${{ matrix.icon }} linux (${{matrix.compiler}}_${{matrix.build-type}}, ${{ matrix.target }}
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
 
-        icon: ['🟨']
+        icon: ['🟧']
         sys: [ubuntu]
         runs-on: ["ubuntu-latest"]
         compiler: ["gcc", "clang"]
