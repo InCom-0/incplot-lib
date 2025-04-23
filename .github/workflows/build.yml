@@ -126,9 +126,9 @@ jobs:
 
           - compiler: "clang"
             compiler-ver: "20"
-            cmake-override: "-DCMAKE_C_COMPILER=$(brew --prefix llvm@20)/bin/clang/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@20)/bin/clang/clang++"
+            cmake-override: "-DCMAKE_C_COMPILER=$(brew --prefix llvm)/bin/clang/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm)/bin/clang/clang++"
             install: |
-              brew install llvm@20
+              brew install llvm
 
     steps:
     - name: '🧰 Checkout'
