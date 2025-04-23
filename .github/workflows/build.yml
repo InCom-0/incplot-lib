@@ -131,6 +131,10 @@ jobs:
     - name: '🧰 Checkout'
       uses: actions/checkout@v4
 
+    - name: Create Build Environment
+      run: |
+        ${{matrix.install}}
+
     - name: Configure
       run: |
         cmake --preset ${{matrix.compiler}}_${{matrix.build-type}}
