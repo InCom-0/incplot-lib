@@ -8,7 +8,7 @@ on:
 jobs:
 
 # Based on https://github.com/msys2/setup-msys2/blob/main/examples/cmake.yml
-  WindowsMSYS:
+  Windows-MSYS:
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -53,7 +53,7 @@ jobs:
 
 
 # Based on https://github.com/tcbrindle/flux/blob/main/.github/workflows/linux.yml
-  Linux Ubuntu:
+  Linux-Ubuntu:
     name: ${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
     runs-on: ${{ matrix.runs-on }}
     strategy:
