@@ -71,8 +71,10 @@ jobs:
             compiler-ver: "14"
             cxx: g++-14
             install: |
-              brew install ninja binutils
-              brew link --force binutils
+              sudo apt install gcc-14 g++-14
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
+              sudo update-alternatives --set gcc /usr/bin/gcc-14
+              brew install ninja
 
           - compiler: "clang"
             compiler-ver: "20"
@@ -91,7 +93,6 @@ jobs:
     - name: Create Build Environment
       run: |
         ${{matrix.install}}
-        cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure
       run: |
