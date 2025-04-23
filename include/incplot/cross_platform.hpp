@@ -25,7 +25,7 @@ constexpr inline bool is_inTerminal() {
     if (csbi.dwSize.X == 0 || csbi.dwSize.Y == 0) { return false; }
     else { return true; }
 
-#elif defined(__linux__)
+#elif defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
     struct winsize ws;
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {

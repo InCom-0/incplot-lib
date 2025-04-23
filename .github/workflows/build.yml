@@ -18,7 +18,6 @@ jobs:
         icon: ['🟦']
         sys: [ucrt64]
         runs-on: ["windows-latest"]
-        cmake-presets: ["gcc_DBG", "gcc_REL"]
         compiler: ["gcc"]
         build-type: ["DBG", "REL"]
         target : ["all", "incplot_scratchpad_dbg"]
@@ -97,6 +96,40 @@ jobs:
     - name: Create Build Environment
       run: |
         ${{matrix.install}}
+
+    - name: Configure
+      run: |
+        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}}
+
+    - name: '🚧 Build'
+      run: cmake --build build --target ${{matrix.target}}
+
+
+  macOS:
+    name: ${{ matrix.icon }} linux (${{matrix.build-type}}, ${{matrix.compiler}} ${{matrix.compiler-ver}}, ${{ matrix.target }})
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+
+        icon: ['⬛']
+        sys: [macOS]
+        runs-on: ["macos-latest"]
+        compiler: ["gcc"]
+        build-type: ["DBG", "REL"]
+        target : ["all"]
+        include:
+          - compiler: "gcc"
+            compiler-ver: "14"
+            cxx: g++-14
+            install: |
+              sudo apt install gcc-14 g++-14
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
+              sudo update-alternatives --set gcc /usr/bin/gcc-14
+
+    steps:
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v4
 
     - name: Configure
       run: |
