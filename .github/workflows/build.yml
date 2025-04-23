@@ -115,7 +115,7 @@ jobs:
         icon: ['⬛']
         sys: [macOS]
         runs-on: ["macos-latest"]
-        compiler: ["gcc", "clang"]
+        compiler: ["gcc"]
         build-type: ["DBG", "REL"]
         target : ["all"]
         include:
@@ -123,12 +123,6 @@ jobs:
             compiler-ver: "14"
             cmake-override: "-DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14"
             install:
-
-          - compiler: "clang"
-            compiler-ver: "20"
-            cmake-override: "-DCMAKE_C_COMPILER=$(brew --prefix llvm@19)/bin/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@19)/bin/clang++"
-            install: |
-              brew install llvm@19
 
     steps:
     - name: '🧰 Checkout'
