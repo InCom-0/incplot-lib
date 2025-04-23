@@ -1,6 +1,7 @@
 #pragma once
 
 #include "incplot/config.hpp"
+#include <limits>
 #include <ranges>
 #include <string>
 #include <type_traits>
@@ -733,7 +734,7 @@ class BarV : public Base {
             auto const [minV, maxV] = std::ranges::minmax(valColRef);
             long long scalingFactor;
             if constexpr (std::is_integral_v<std::decay_t<typename T::value_type>>) {
-                scalingFactor = LONG_LONG_MAX / (std::max(std::abs(maxV), std::abs(minV)));
+                scalingFactor = std::numeric_limits<long long>::max() / (std::max(std::abs(maxV), std::abs(minV)));
             }
             else if constexpr (std::is_floating_point_v<std::decay_t<typename T::value_type>>) { scalingFactor = 1; }
             else { static_assert(false); } // Can't plot non-numeric values
