@@ -47,6 +47,30 @@
             }
         },
         {
+            "name": "clang_DBG",
+            "displayName": "clang DBG",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_clang"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "clang_REL",
+            "displayName": "clang REL",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_clang"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
             "name": "_common",
             "hidden": true,
             "binaryDir": "${sourceDir}/build/",

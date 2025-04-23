@@ -86,11 +86,9 @@ struct Parser {
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
     static DataStore parse_NDJSON_intoDS(T const &stringLike) {
-
         auto parsed = parse_NDJSON(stringLike);
         if (not validate_jsonSameness(parsed)) {} // Throw something here
-
-        return DataStore(std::move(parsed));
+        return parsed;
     }
 
     template <typename T>

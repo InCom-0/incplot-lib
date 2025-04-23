@@ -7,13 +7,14 @@ on:
 
 jobs:
 
+# Based on https://github.com/msys2/setup-msys2/blob/main/examples/cmake.yml
   WindowsMSYS:
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
 
-        icon: ['🟨']
+        icon: ['🟦']
         sys: [ucrt64]
         runs-on: ["windows-latest"]
         cmake-presets: ["gcc_DBG", "gcc_REL"]
@@ -23,7 +24,7 @@ jobs:
             target: "all"
           - cmake-presets: "gcc_REL"
             target: "incplot_scratchpad_dbg"
-    name: 🚧${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
+    name: ${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
     defaults:
       run:
         shell: msys2 {0}
@@ -49,3 +50,55 @@ jobs:
       run: |
         cmake --preset ${{matrix.cmake-presets}}
         cmake --build build --target ${{matrix.target}}
+
+
+# Based on https://github.com/tcbrindle/flux/blob/main/.github/workflows/linux.yml
+  Linux Ubuntu:
+    name: ${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+
+        icon: ['🟨']
+        sys: [ubuntu]
+        runs-on: ["ubuntu-latest"]
+        compiler: ["gcc", "clang"]
+        build-type: ["DBG", "REL"]
+        target : ["all"]
+        include:
+          - compiler: "gcc"
+            compiler-ver: "14"
+            cxx: g++-14
+            install: |
+              brew install gcc@14 ninja binutils
+              brew link --force binutils
+
+          - compiler: "clang"
+            compiler-ver: "20"
+            cxx: $(brew --prefix llvm@20)/bin/clang++
+            install: |
+              brew install llvm@20 ninja binutils
+              brew link --force binutils
+
+    steps:
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v4
+
+    - name: Set up Homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+
+    - name: Create Build Environment
+      run: |
+        ${{matrix.install}}
+        cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure
+      working-directory: ${{runner.workspace}}/build
+      run: |
+        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} \
+              $GITHUB_WORKSPACE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --target ${{matrix.target}}
