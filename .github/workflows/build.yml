@@ -94,10 +94,11 @@ jobs:
         cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure
-      working-directory: ${{runner.workspace}}/build
+      working-directory: ${{runner.workspace}}
       run: |
-        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}}
+        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} \
+              $GITHUB_WORKSPACE
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
-      run: cmake --build build --target ${{matrix.target}}
+      working-directory: ${{runner.workspace}}
+      run: cmake --build . --target ${{matrix.target}}
