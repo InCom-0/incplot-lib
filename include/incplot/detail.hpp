@@ -12,6 +12,7 @@
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -230,7 +231,7 @@ constexpr inline std::string format_toMax5length(T &&val) {
 using variadicColumns = std::variant<std::pair<std::string, std::reference_wrapper<const std::vector<long long>>>,
                                      std::pair<std::string, std::reference_wrapper<const std::vector<double>>>>;
 
-constexpr inline std::pair<double, double> compute_minMaxMulti(auto &&vectorOfVariantRefWrpVectors) {
+constexpr inline std::tuple<double, double> compute_minMaxMulti(auto &&vectorOfVariantRefWrpVectors) {
     std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
 
     auto ol_set = [&](auto &var) -> void {
