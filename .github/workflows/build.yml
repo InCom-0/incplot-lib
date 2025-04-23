@@ -74,14 +74,12 @@ jobs:
               sudo apt install gcc-14 g++-14
               sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
               sudo update-alternatives --set gcc /usr/bin/gcc-14
-              brew install ninja
 
           - compiler: "clang"
             compiler-ver: "20"
             cxx: $(brew --prefix llvm@20)/bin/clang++
             install: |
-              brew install llvm@20 ninja binutils
-              brew link --force binutils
+              brew install llvm@20
 
     steps:
     - name: '🧰 Checkout'
