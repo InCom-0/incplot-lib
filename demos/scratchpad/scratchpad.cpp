@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <print>
-#include <windows.h>
+#include <incplot/cross_platform.hpp>
 
 #include <incplot.hpp>
 #include <incplot/args.hpp>
@@ -9,14 +9,8 @@
 int main(int argc, char *argv[]) {
     using json = nlohmann::json;
 
-
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-    auto width  = (int)(csbi.srWindow.Right - csbi.srWindow.Left + 1);
-    auto height = (int)(csbi.srWindow.Bottom - csbi.srWindow.Top + 1);
-
     // NOT RUNNING IN CONSOLE TERMINAL
-    if (csbi.dwSize.X == 0 || csbi.dwSize.Y == 0) {
+    if (not incplot::detail::is_inTerminal()) {
         std::print("{}",
                    "Console screen buffer size equals 0.\nPlease run from inside terminal console window ... exiting");
         std::exit(1);
