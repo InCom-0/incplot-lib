@@ -9,6 +9,7 @@ jobs:
 
 # Based on https://github.com/msys2/setup-msys2/blob/main/examples/cmake.yml
   Windows-MSYS:
+    name: ${{ matrix.icon }} windows (${{matrix.build-type}}, ${{matrix.compiler}}, ${{ matrix.target }})
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -18,13 +19,17 @@ jobs:
         sys: [ucrt64]
         runs-on: ["windows-latest"]
         cmake-presets: ["gcc_DBG", "gcc_REL"]
+        compiler: ["gcc"]
+        build-type: ["DBG", "REL"]
         target : ["all", "incplot_scratchpad_dbg"]
         exclude:
-          - cmake-presets: "gcc_DBG"
+          - compiler: "gcc"
+            build-type: "DBG"
             target: "all"
-          - cmake-presets: "gcc_REL"
+          - compiler: "gcc"
+            build-type: "REL"
             target: "incplot_scratchpad_dbg"
-    name: ${{ matrix.icon }} Windows ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
+    
     defaults:
       run:
         shell: msys2 {0}
@@ -46,10 +51,11 @@ jobs:
           cmake:p
           ninja:p
 
-    - name: '🚧 Build TOOL'
-      run: |
-        cmake --preset ${{matrix.cmake-presets}}
-        cmake --build build --target ${{matrix.target}}
+    - name: 'Configure'
+      run: cmake --preset ${{matrix.compiler}}_${{matrix.build-type}}
+
+    - name: '🚧 Build'
+      run: cmake --build build --target ${{matrix.target}}
 
 
 # Based on https://github.com/tcbrindle/flux/blob/main/.github/workflows/linux.yml
@@ -96,5 +102,5 @@ jobs:
       run: |
         cmake --preset ${{matrix.compiler}}_${{matrix.build-type}}
 
-    - name: Build
+    - name: '🚧 Build'
       run: cmake --build build --target ${{matrix.target}}
