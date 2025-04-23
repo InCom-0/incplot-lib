@@ -115,21 +115,32 @@ jobs:
         icon: ['⬛']
         sys: [macOS]
         runs-on: ["macos-latest"]
-        compiler: ["gcc"]
+        compiler: ["gcc", "clang"]
         build-type: ["DBG", "REL"]
         target : ["all"]
         include:
           - compiler: "gcc"
             compiler-ver: "14"
-            cxx: g++-14
+            cmake-override: "-DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14"
+            install:
+
+          - compiler: "clang"
+            compiler-ver: "20"
+            cmake-override: "-DCMAKE_C_COMPILER=$(brew --prefix llvm@20)/bin/clang/clang -DCMAKE_CXX_COMPILER=$(brew --prefix llvm@20)/bin/clang/clang++"
+            install: |
+              brew install llvm@20
 
     steps:
     - name: '🧰 Checkout'
       uses: actions/checkout@v4
 
+    - name: Create Build Environment
+      run: |
+        ${{matrix.install}}
+
     - name: Configure
       run: |
-        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
 
     - name: '🚧 Build'
       run: cmake --build build --target ${{matrix.target}}
