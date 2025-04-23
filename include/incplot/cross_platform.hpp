@@ -26,7 +26,7 @@ constexpr inline bool is_inTerminal() {
     else { return true; }
 
 #elif defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
-    struct winsize ws;
+    winsize ws;
 
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0) {
         if (ws.ws_row == 0 || ws.ws_col == 0) { return false; }
