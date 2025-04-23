@@ -106,7 +106,7 @@ jobs:
 
 
   macOS:
-    name: ${{ matrix.icon }} linux (${{matrix.build-type}}, ${{matrix.compiler}} ${{matrix.compiler-ver}}, ${{ matrix.target }})
+    name: ${{ matrix.icon }} macos (${{matrix.build-type}}, ${{matrix.compiler}} ${{matrix.compiler-ver}}, ${{ matrix.target }})
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -122,22 +122,14 @@ jobs:
           - compiler: "gcc"
             compiler-ver: "14"
             cxx: g++-14
-            install: |
-              sudo apt install gcc-14 g++-14
-              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
-              sudo update-alternatives --set gcc /usr/bin/gcc-14
 
     steps:
     - name: '🧰 Checkout'
       uses: actions/checkout@v4
 
-    - name: Create Build Environment
-      run: |
-        ${{matrix.install}}
-
     - name: Configure
       run: |
-        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}}
+        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
 
     - name: '🚧 Build'
       run: cmake --build build --target ${{matrix.target}}
