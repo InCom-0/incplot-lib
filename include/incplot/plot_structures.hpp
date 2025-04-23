@@ -344,7 +344,8 @@ class BarV : public Base {
 
             self.labels_verLeftWidth =
                 std::min(Config::axisLabels_maxLength_vl,
-                         std::min(maxLabelSize, (dp.targetWidth.value() - self.pad_left - self.pad_right) / 4));
+                         std::min(maxLabelSize,
+                                  static_cast<size_t>((dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
         }
         else { self.labels_verLeftWidth = Config::max_valLabelSize; }
 
