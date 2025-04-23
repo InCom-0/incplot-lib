@@ -1,8 +1,7 @@
-#include <io.h>
+#include <unistd.h>
 #include <print>
 #include <windows.h>
 
-#include <typeinfo>
 #include <incplot.hpp>
 #include <incplot/args.hpp>
 

@@ -54,7 +54,7 @@ jobs:
 
 # Based on https://github.com/tcbrindle/flux/blob/main/.github/workflows/linux.yml
   Linux-Ubuntu:
-    name: ${{ matrix.icon }} linux (${{matrix.compiler}}_${{matrix.build-type}}, ${{ matrix.target }}
+    name: ${{ matrix.icon }} linux (${{matrix.build-type}}, ${{matrix.compiler}} ${{matrix.compiler-ver}}, ${{ matrix.target }})
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
