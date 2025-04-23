@@ -24,7 +24,7 @@ jobs:
             target: "all"
           - cmake-presets: "gcc_REL"
             target: "incplot_scratchpad_dbg"
-    name: ${{ matrix.icon }} ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
+    name: ${{ matrix.icon }} Windows ${{ matrix.sys }} ${{ matrix.cmake-presets }} ${{ matrix.target }}
     defaults:
       run:
         shell: msys2 {0}
@@ -71,7 +71,7 @@ jobs:
             compiler-ver: "14"
             cxx: g++-14
             install: |
-              brew install gcc@14 ninja binutils
+              brew install ninja binutils
               brew link --force binutils
 
           - compiler: "clang"
