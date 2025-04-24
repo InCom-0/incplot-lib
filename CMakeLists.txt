@@ -17,4 +17,11 @@ target_link_libraries(incplot INTERFACE
     glaze::glaze
     argparse::argparse)
 
-add_subdirectory(demos)
+
+
+option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
+
+
+if (INCPLOT_BUILD_DEMOS)
+    add_subdirectory(demos)
+endif()

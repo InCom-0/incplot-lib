@@ -1,7 +1,6 @@
 #pragma once
 
 #include <incplot/datastore.hpp>
-#include <nlohmann/json_fwd.hpp>
 #include <print>
 
 

@@ -7,7 +7,6 @@
 #include <incplot/datastore.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
-#include <nlohmann/json.hpp>
 
 
 namespace incom {
