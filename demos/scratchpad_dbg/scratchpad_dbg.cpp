@@ -2,7 +2,6 @@
 #include <string>
 
 #include <incplot.hpp>
-#include <incplot/args.hpp>
 
 
 int main(int argc, char *argv[]) {

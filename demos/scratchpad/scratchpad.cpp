@@ -1,9 +1,7 @@
 #include <unistd.h>
 #include <print>
-#include <incplot/cross_platform.hpp>
 
 #include <incplot.hpp>
-#include <incplot/args.hpp>
 
 
 int main(int argc, char *argv[]) {

@@ -9,9 +9,7 @@ include(CMake_dependencies.cmake) ### Loads and declares the requires external l
 
 add_library(incplot INTERFACE)
 target_include_directories(incplot INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-set_target_properties(incplot PROPERTIES
-    LINKER_LANGUAGE CXX
-    CXX_STANDARD 23)
+target_compile_features(incplot INTERFACE cxx_std_23)
 
 
 target_link_libraries(incplot INTERFACE

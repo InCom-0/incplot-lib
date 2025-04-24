@@ -1,14 +1,13 @@
 #pragma once
 
-#include "incplot/config.hpp"
 #include <limits>
 #include <ranges>
 #include <string>
 #include <type_traits>
 #include <variant>
 
+#include <incplot/desired_plot.hpp>
 #include <incplot/braille_drawer.hpp>
-#include <incplot/parser.hpp>
 
 namespace incom {
 namespace terminal_plot {

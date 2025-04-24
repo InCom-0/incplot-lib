@@ -1,20 +1,18 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <codecvt>
 #include <cstddef>
+#include <format>
 #include <locale>
 
 #include <incplot/color_mixer.hpp>
-#include <incplot/desired_plot.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
 #include <string>
 #include <tuple>
 #include <utility>
-#include <vector>
 
 
 namespace incom {

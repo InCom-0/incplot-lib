@@ -1,9 +1,9 @@
 #pragma once
 
-#include "incplot/detail/misc.hpp"
-#include <expected>
 #include <incplot/plot_structures.hpp>
-#include <type_traits>
+#include <incplot/parser.hpp>
+#include <incplot/cross_platform.hpp>
+#include <incplot/args.hpp>
 
 namespace incom {
 namespace terminal_plot {
