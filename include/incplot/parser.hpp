@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <expected>
 #include <print>
 
@@ -24,6 +25,9 @@ class Parser {
     };
     enum class Unexp_parser {
         malformatted_array_like,
+        braceCountDoesntMatch,
+        braceCountDoesntMatchNLcount,
+        ndjsonNotFlat
     };
 
     using NLMjson = nlohmann::ordered_json;
@@ -38,10 +42,7 @@ class Parser {
                                      stringLike.rbegin()));
     }
 
-public:
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static std::expected<input_t, Unexp_parser> assess_inputType(T const &stringLike) {
+    static std::expected<input_t, Unexp_parser> assess_inputType(std::string_view const stringLike) {
         std::string_view trimmed     = get_trimmedSV(stringLike);
         size_t           begBrcCount = 0, endBrcCount = 0;
         for (auto it = trimmed.begin(); it != trimmed.end(); ++it) {
@@ -52,21 +53,68 @@ public:
             if (*it == '}') { endBrcCount++; }
             else { break; }
         }
+        // '{', '}', '\n', ',', '\t'
+        auto count_symbols =
+            std::ranges::fold_left(trimmed, std::tuple(0uz, 0uz, 0uz), [](auto &&accu, auto const &&a) {
+                std::get<0>(accu) += (a == '{');
+                std::get<1>(accu) += (a == '}');
+                std::get<2>(accu) += (a == '\n');
+                std::get<3>(accu) += (a == ',');
+                std::get<4>(accu) += (a == '\t');
+                return accu;
+            });
 
+        // CSV / TSV?
+        if ((std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
+            // No brace at the beginning ... not idea but good enough
+            // TODO: Possibly improve this heuristic
+            if (trimmed.front() != '{' && trimmed.front() != '[') { return input_t::CSV; }
+        }
+
+        // This heuristic shoud be fine as '\t' is hardly every used in contexts outside of TSV
+        else if ((std::get<4>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
+            if (trimmed.front() != '{' && trimmed.front() != '[') { return input_t::TSV; }
+        }
+
+        // JSON / NDJSON
         if (trimmed.front() == '[') {
             if (trimmed.back() == ']') { return input_t::JSON; }
             else { return std::unexpected(Unexp_parser::malformatted_array_like); }
         }
         else if (trimmed.back() == ']') { return std::unexpected(Unexp_parser::malformatted_array_like); }
         else if (begBrcCount == endBrcCount && begBrcCount == 1) {
-            // TODO: Add more logic here to really test this
 
-            return input_t::NDJSON;
+            if (std::get<0>(count_symbols) != std::get<1>(count_symbols)) {
+                return std::unexpected(Unexp_parser::braceCountDoesntMatch);
+            }
+            else if (std::get<0>(count_symbols) != (std::get<2>(count_symbols) - 1)) {
+                return std::unexpected(Unexp_parser::braceCountDoesntMatchNLcount);
+            }
+            else { return input_t::NDJSON; }
         }
         else if (begBrcCount == endBrcCount && begBrcCount > 1) { return input_t::JSON; }
+        else { return std::unexpected(Unexp_parser::ndjsonNotFlat); }
+    }
+
+    static std::expected<DataStore, Unexp_parser> dispatch_toParsers(input_t              &&inp_t,
+                                                                     std::string_view const stringLike) {
+        switch (inp_t) {
+            case input_t::NDJSON: return parse_NDJSON_intoDS(stringLike); break;
+            case input_t::JSON:   break;
+            case input_t::CSV:    break;
+            case input_t::TSV:    break;
+        }
 
 
-        return input_t::TSV;
+        return std::unexpected(Unexp_parser::ndjsonNotFlat);
+    }
+
+
+public:
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    std::expected<DataStore, Unexp_parser> parse(T const &stringLike) {
+        std::string_view trimmed = get_trimmedSV(stringLike);
     }
 
 
@@ -146,7 +194,7 @@ public:
     static DataStore parse_NDJSON_intoDS(T const &stringLike) {
         auto parsed = parse_NDJSON(stringLike);
         if (not validate_jsonSameness(parsed)) {} // Throw something here
-        return parsed;
+        return DataStore(std::move(parsed));
     }
 
     template <typename T>
