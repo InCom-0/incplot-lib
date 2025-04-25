@@ -53,9 +53,12 @@ class Parser {
             if (*it == '}') { endBrcCount++; }
             else { break; }
         }
+
+        std::tuple arr(1, 2, 3, 4, 5);
+
         // '{', '}', '\n', ',', '\t'
         auto count_symbols =
-            std::ranges::fold_left(trimmed, std::tuple(0uz, 0uz, 0uz), [](auto &&accu, auto const &&a) {
+            std::ranges::fold_left(trimmed, std::tuple(0uz, 0uz, 0uz, 0uz, 0uz), [](auto &&accu, auto const &a) {
                 std::get<0>(accu) += (a == '{');
                 std::get<1>(accu) += (a == '}');
                 std::get<2>(accu) += (a == '\n');
@@ -115,6 +118,10 @@ public:
     requires std::is_convertible_v<T, std::string_view>
     std::expected<DataStore, Unexp_parser> parse(T const &stringLike) {
         std::string_view trimmed = get_trimmedSV(stringLike);
+
+        auto d_tprs = [&](auto &&inp_t) { return dispatch_toParsers(inp_t, stringLike); };
+
+        return assess_inputType(stringLike).and_then(d_tprs);
     }
 
 
