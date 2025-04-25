@@ -24,8 +24,7 @@ class Parser {
     };
     enum class Unexp_parser {
         malformatted_array_like,
-
-    }
+    };
 
     using NLMjson = nlohmann::ordered_json;
 
