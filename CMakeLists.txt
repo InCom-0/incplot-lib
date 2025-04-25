@@ -14,7 +14,7 @@ target_compile_features(incplot INTERFACE cxx_std_23)
 
 target_link_libraries(incplot INTERFACE
     nlohmann_json::nlohmann_json
-    glaze::glaze
+    csv2::csv2
     argparse::argparse)
 
 

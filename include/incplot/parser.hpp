@@ -1,7 +1,13 @@
 #pragma once
 
-#include <incplot/datastore.hpp>
+#include <expected>
 #include <print>
+
+#include <csv2/reader.hpp>
+#include <nlohmann/json.hpp>
+
+#include <incplot/datastore.hpp>
+#include <string_view>
 
 
 namespace incom {
@@ -9,8 +15,62 @@ namespace terminal_plot {
 // Encapsulates parsing of the input into DataStore
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
-struct Parser {
+class Parser {
+    enum class input_t {
+        NDJSON,
+        JSON,
+        CSV,
+        TSV
+    };
+    enum class Unexp_parser {
+        malformatted_array_like,
+
+    }
+
     using NLMjson = nlohmann::ordered_json;
+
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static std::string_view get_trimmedSV(T const &stringLike) {
+        return std::string_view(stringLike.begin(),
+                                stringLike.end() -
+                                    (std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(),
+                                                              [](auto &&chr) { return (chr == '\n' || chr == ' '); }) -
+                                     stringLike.rbegin()));
+    }
+
+public:
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static std::expected<input_t, Unexp_parser> assess_inputType(T const &stringLike) {
+        std::string_view trimmed     = get_trimmedSV(stringLike);
+        size_t           begBrcCount = 0, endBrcCount = 0;
+        for (auto it = trimmed.begin(); it != trimmed.end(); ++it) {
+            if (*it == '{') { begBrcCount++; }
+            else { break; }
+        }
+        for (auto it = trimmed.rbegin(); it != trimmed.rend(); ++it) {
+            if (*it == '}') { endBrcCount++; }
+            else { break; }
+        }
+
+        if (trimmed.front() == '[') {
+            if (trimmed.back() == ']') { return input_t::JSON; }
+            else { return std::unexpected(Unexp_parser::malformatted_array_like); }
+        }
+        else if (trimmed.back() == ']') { return std::unexpected(Unexp_parser::malformatted_array_like); }
+        else if (begBrcCount == endBrcCount && begBrcCount == 1) {
+            // TODO: Add more logic here to really test this
+
+            return input_t::NDJSON;
+        }
+        else if (begBrcCount == endBrcCount && begBrcCount > 1) { return input_t::JSON; }
+
+
+        return input_t::TSV;
+    }
+
+
     static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
         // Validate that all the JSON objects parsed above have the same structure
         for (auto const &js : jsonVec) {

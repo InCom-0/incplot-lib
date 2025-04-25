@@ -1,9 +1,18 @@
 #pragma once
 
+#include <cmath>
 #include <nlohmann/json.hpp>
 
 namespace incom {
 namespace terminal_plot {
+
+enum class parsedVal_t {
+    double_like,
+    unsigned_like,
+    signed_like,
+    string_like
+};
+
 // Data storage for the actual data that are to be plotted
 struct DataStore {
     using NLMjson = nlohmann::ordered_json;

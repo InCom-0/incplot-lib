@@ -1,6 +1,7 @@
 #include <print>
 #include <string>
 
+#include <csv2/reader.hpp>
 #include <incplot.hpp>
 
 
@@ -667,67 +668,34 @@ int main(int argc, char *argv[]) {
 {"period":144,"value":432,"value2":112})");
 
 
-    /*     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput);
+    std::string iriCsv(R"(sepal_length,sepal_width,petal_length,petal_width,species
+5.1,3.5,1.4,0.2,Iris-setosa
+4.9,3,1.4,0.2,Iris-setosa
+4.7,3.2,1.3,0.2,Iris-setosa
+4.6,3.1,1.5,0.2,Iris-setosa
+5,3.6,1.4,0.2,Iris-setosa
+)");
 
+    csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>, csv2::first_row_is_header<true>,
+                 csv2::trim_policy::trim_whitespace>
+        csv;
 
-        auto dp_autoGuessed =
-            incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 96}).guess_missingParams(ds);
-
-        if (not dp_autoGuessed.has_value()) {
-            std::print("{0}{1}", "Autoguessing of 'DesiresPlot' parameters failed \n", "Exiting ...");
-            return 1;
+    if (csv.parse(iriCsv)) {
+        std::string TMP;
+        const auto header = csv.header();
+        for (const auto row : csv) {
+            for (const auto cell : row) {
+                cell.read_value(TMP);
+                std::print("{}\n", TMP);
+            }
         }
-
-        auto plotDrawer2 = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
-
-        auto outExp = plotDrawer2.validateAndDrawPlot();
-
-        if (not outExp.has_value()) {
-            std::print("{0}{1}", "Invalid plot structure", "Exiting ...");
-            return 1;
-        }
-
-        std::print("{}\n", outExp.value());
+    }
 
 
-        std::print("{}Viridis {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Green),
-                   incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
-        std::print("{}Rhodo {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Red),
-                   incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
-        std::print("{}Tanza {}Reset \n", incplot::TermColors::get_basicColor(incplot::Color_CVTS::Foreground_Blue),
-                   incplot::TermColors::get_basicColor(incplot::Color_CVTS::Default));
-
-
-        // std::print("{0}{1}\n", "\x1b[38;2;125;125;0m", "TESTEST");
-
-
-        auto ds2 = incplot::Parser::parse_NDJSON_intoDS(testInput_petal);
-
-        auto dp2_autoGuessed =
-            incplot::DesiredPlot(incplot::DesiredPlot::DP_CtorStruct{.tar_width = 48, .plot_type_name = "Scatter"})
-                .guess_missingParams(ds2);
-
-
-        if (not dp2_autoGuessed.has_value()) {
-            std::print("{0}{1}", "Autoguessing of 'DesiresPlot_2' parameters failed \n", "Exiting ...");
-            return 1;
-        }
-
-        auto plotDrawer3 = incplot::make_plotDrawer(dp2_autoGuessed.value(), ds2);
-
-        auto outExp2 = plotDrawer3.validateAndDrawPlot();
-
-        if (not outExp2.has_value()) {
-            std::print("{0}{1}", "Invalid plot structure 2", "Exiting ...");
-            return 1;
-        }
-
-        std::print("{}\n", outExp2.value()); */
-
-    auto dpCtor_Structs             = incplot::CL_Args::get_dpCtorStruct();
+    auto dpCtor_Structs                   = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     dpCtor_Structs.front().plot_type_name = "Scatter";
-    dpCtor_Structs.front().tar_width = 30;
+    dpCtor_Structs.front().tar_width      = 30;
 
     auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput_petal_OLD);
 
