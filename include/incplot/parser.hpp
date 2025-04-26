@@ -11,6 +11,7 @@
 #include <ranges>
 #include <string_view>
 #include <utility>
+#include <windows.h>
 
 
 namespace incom {
@@ -29,6 +30,10 @@ class Parser {
         malformatted_array_like,
         braceCountDoesntMatch,
         braceCountDoesntMatchNLcount,
+        parsedNDJSONisEmpty,
+        JSONObjectsNotOfSameSize,
+        valueTypeInsideJSONdoesntMatch,
+        keyNameInsideJSONdoesntMatch,
         ndjsonNotFlat
     };
 
@@ -45,89 +50,6 @@ class Parser {
                                      stringLike.rbegin()));
     }
 
-    // COMPOSITION METHODS
-    static std::expected<input_t, Unexp_parser> assess_inputType(std::string_view const stringLike) {
-        std::string_view trimmed     = get_trimmedSV(stringLike);
-        size_t           begBrcCount = 0, endBrcCount = 0;
-        for (auto it = trimmed.begin(); it != trimmed.end(); ++it) {
-            if (*it == '{') { begBrcCount++; }
-            else { break; }
-        }
-        for (auto it = trimmed.rbegin(); it != trimmed.rend(); ++it) {
-            if (*it == '}') { endBrcCount++; }
-            else { break; }
-        }
-
-        std::tuple arr(1, 2, 3, 4, 5);
-
-        // '{', '}', '\n', ',', '\t'
-        auto count_symbols =
-            std::ranges::fold_left(trimmed, std::tuple(0uz, 0uz, 0uz, 0uz, 0uz), [](auto &&accu, auto const &a) {
-                std::get<0>(accu) += (a == '{');
-                std::get<1>(accu) += (a == '}');
-                std::get<2>(accu) += (a == '\n');
-                std::get<3>(accu) += (a == ',');
-                std::get<4>(accu) += (a == '\t');
-                return accu;
-            });
-
-        // CSV / TSV?
-        if ((std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
-            // No brace at the beginning ... not idea but good enough
-            // TODO: Possibly improve this heuristic
-            if (trimmed.front() != '{' && trimmed.front() != '[') { return input_t::CSV; }
-        }
-
-        // This heuristic shoud be fine as '\t' is hardly every used in contexts outside of TSV
-        else if ((std::get<4>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
-            if (trimmed.front() != '{' && trimmed.front() != '[') { return input_t::TSV; }
-        }
-
-        // JSON / NDJSON
-        if (trimmed.front() == '[') {
-            if (trimmed.back() == ']') { return input_t::JSON; }
-            else { return std::unexpected(Unexp_parser::malformatted_array_like); }
-        }
-        else if (trimmed.back() == ']') { return std::unexpected(Unexp_parser::malformatted_array_like); }
-        else if (begBrcCount == endBrcCount && begBrcCount == 1) {
-
-            if (std::get<0>(count_symbols) != std::get<1>(count_symbols)) {
-                return std::unexpected(Unexp_parser::braceCountDoesntMatch);
-            }
-            else if (std::get<0>(count_symbols) != (std::get<2>(count_symbols) - 1)) {
-                return std::unexpected(Unexp_parser::braceCountDoesntMatchNLcount);
-            }
-            else { return input_t::NDJSON; }
-        }
-        else if (begBrcCount == endBrcCount && begBrcCount > 1) { return input_t::JSON; }
-        else { return std::unexpected(Unexp_parser::ndjsonNotFlat); }
-    }
-
-    static std::expected<DataStore, Unexp_parser> dispatch_toParsers(input_t &&inp_t, std::string_view const sv) {
-        switch (inp_t) {
-            case input_t::NDJSON: return parse_NDJSON_intoDS(sv);
-            case input_t::JSON:   return parse_JSON_intoDS(sv);
-            case input_t::CSV:    break;
-            case input_t::TSV:    break;
-            default:              std::unreachable();
-        }
-    }
-
-
-public:
-    // MAIN INTENDED INTERFACE METHOD
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    std::expected<DataStore, Unexp_parser> parse(T const &stringLike) {
-        std::string_view trimmed = get_trimmedSV(stringLike);
-
-        auto d_tprs = [&](auto &&inp_t) { return dispatch_toParsers(inp_t, stringLike); };
-
-        return assess_inputType(stringLike).and_then(d_tprs);
-    }
-
-
-    // JSON AND NDJSON - RELATED
     static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
         // Validate that all the JSON objects parsed above have the same structure
         for (auto const &js : std::views::drop(jsonVec, 1)) {
@@ -149,18 +71,100 @@ public:
         return true;
     }
 
+
+    // COMPOSITION METHODS
+    // TODO: Maybe make this public for later use?
+    static std::expected<input_t, Unexp_parser> assess_inputType(std::string_view const &sv) {
+        size_t begBrcCount = 0, endBrcCount = 0;
+        for (auto it = sv.begin(); it != sv.end(); ++it) {
+            if (*it == '{') { begBrcCount++; }
+            else { break; }
+        }
+        for (auto it = sv.rbegin(); it != sv.rend(); ++it) {
+            if (*it == '}') { endBrcCount++; }
+            else { break; }
+        }
+
+        std::tuple arr(1, 2, 3, 4, 5);
+
+        // '{', '}', '\n', ',', '\t'
+        auto count_symbols =
+            std::ranges::fold_left(sv, std::tuple(0uz, 0uz, 0uz, 0uz, 0uz), [](auto &&accu, auto const &a) {
+                std::get<0>(accu) += (a == '{');
+                std::get<1>(accu) += (a == '}');
+                std::get<2>(accu) += (a == '\n');
+                std::get<3>(accu) += (a == ',');
+                std::get<4>(accu) += (a == '\t');
+                return accu;
+            });
+
+        // CSV / TSV?
+        if ((std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
+            // No brace at the beginning ... not idea but good enough
+            // TODO: Possibly improve this heuristic
+            if (sv.front() != '{' && sv.front() != '[') { return input_t::CSV; }
+        }
+
+        // This heuristic shoud be fine as '\t' is hardly every used in contexts outside of TSV
+        else if ((std::get<4>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
+            if (sv.front() != '{' && sv.front() != '[') { return input_t::TSV; }
+        }
+
+        // JSON / NDJSON
+        if (sv.front() == '[') {
+            if (sv.back() == ']') { return input_t::JSON; }
+            else { return std::unexpected(Unexp_parser::malformatted_array_like); }
+        }
+        else if (sv.back() == ']') { return std::unexpected(Unexp_parser::malformatted_array_like); }
+        else if (begBrcCount == endBrcCount && begBrcCount == 1) {
+
+            if (std::get<0>(count_symbols) != std::get<1>(count_symbols)) {
+                return std::unexpected(Unexp_parser::braceCountDoesntMatch);
+            }
+            else if (std::get<0>(count_symbols) != (std::get<2>(count_symbols) + 1)) {
+                return std::unexpected(Unexp_parser::braceCountDoesntMatchNLcount);
+            }
+            else { return input_t::NDJSON; }
+        }
+        else if (begBrcCount == endBrcCount && begBrcCount > 1) { return input_t::JSON; }
+        else { return std::unexpected(Unexp_parser::ndjsonNotFlat); }
+    }
+
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> dispatch_toParsers(input_t const          &inp_t,
+                                                                                         std::string_view const &sv) {
+        switch (inp_t) {
+            case input_t::NDJSON: return parse_NDJSON(sv);
+            case input_t::JSON:   return parse_JSON(sv);
+            case input_t::CSV:    return parse_CSV(sv);
+            case input_t::TSV:    return parse_TSV(sv);
+            default:              std::unreachable();
+        }
+        std::unreachable();
+    }
+
+
+public:
+    // MAIN INTENDED INTERFACE METHOD
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
-    static std::vector<NLMjson> parse_NDJSON(T const &stringLike) {
+    static std::expected<DataStore, Unexp_parser> parse(T const &stringLike) {
+        std::string_view const trimmed = get_trimmedSV(stringLike);
 
-        // Trim input 'string like' of all 'newline' chars at the end
-        std::string_view const trimmed(
-            stringLike.begin(), stringLike.end() - (std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(),
-                                                                             [](auto &&chr) { return chr == '\n'; }) -
-                                                    stringLike.rbegin()));
+        auto d_tprsrs = [&](auto const &&inp_t) { return dispatch_toParsers(inp_t, trimmed); };
+        auto c_dstr   = [&](auto const &&data) { return DataStore(data); };
+
+        return assess_inputType(trimmed).and_then(d_tprsrs).transform(c_dstr);
+    }
+
+
+    // JSON AND NDJSON - RELATED
+
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_NDJSON(T const &sv_like) {
 
         std::vector<NLMjson> parsed;
-        for (auto const &oneLine : std::views::split(trimmed, '\n') |
+        for (auto const &oneLine : std::views::split(sv_like, '\n') |
                                        std::views::transform([](auto const &in) { return std::string_view(in); })) {
             NLMjson oneLineJson;
             try {
@@ -171,20 +175,90 @@ public:
                 std::print("{}\n", e.what());
                 std::exit(1);
             }
+            // TODO: Consider if and how we need to flatten each line of NDJSON
+            // oneLineJson = oneLineJson.flatten();
             parsed.push_back(std::move(oneLineJson));
         }
-        return parsed;
+
+        if (parsed.size() == 0) { return std::unexpected(Unexp_parser::parsedNDJSONisEmpty); }
+
+
+        // Construct 'vec_pr_strVarVec_t' based on the first line
+        DataStore::vec_pr_strVarVec_t res;
+        std::vector<NLMjson::value_t> temp_firstLineTypes;
+
+        for (auto const &[key, val] : parsed.front().items()) {
+            if (val.type() == NLMjson::value_t::string) {
+                res.push_back(std::make_pair(
+                    key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
+            }
+            else if (val.type() == NLMjson::value_t::number_float) {
+                res.push_back(
+                    std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
+            }
+            else if (val.type() == NLMjson::value_t::number_integer ||
+                     val.type() == NLMjson::value_t::number_unsigned) {
+                res.push_back(std::make_pair(
+                    key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
+            }
+            else {}
+            temp_firstLineTypes.push_back(val.type());
+        }
+
+        for (auto const &parsedLine : parsed) {
+            if (parsedLine.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
+            for (int i = 0; auto const &[key, val] : parsedLine.items()) {
+                if (key != res[i].first) { return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch); }
+                // TODO: Problem with type checking different NDJSON lines 
+                else if (val.type() != temp_firstLineTypes[i]) {
+                    return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                }
+                else {
+                    switch (res[i].second.index()) {
+                        case 0uz: std::get<0>(res[i].second).push_back(val); break;
+                        case 1uz: std::get<1>(res[i].second).push_back(val); break;
+                        case 2uz: std::get<2>(res[i].second).push_back(val); break;
+                        default:  std::unreachable();
+                    }
+                }
+
+
+                ++i;
+            }
+        }
+
+
+        for (int colID = 0; colID < res.size(); ++colID) {
+            size_t curVarIDX = res.at(colID).second.index();
+
+            for (int lineID = 0; lineID < parsed.size(); ++lineID) {
+                if (colID >= parsed[lineID].size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
+                else if ((parsed[lineID].begin() + colID)->type() != parsed.front().begin()->type()) {
+                    return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                }
+                else {
+                    switch (curVarIDX) {
+                        case 0uz: std::get<0>(res[colID].second).push_back(*(parsed[lineID].begin() + colID)); break;
+                        case 1uz: std::get<1>(res[colID].second).push_back(*(parsed[lineID].begin() + colID)); break;
+                        case 2uz: std::get<2>(res[colID].second).push_back(*(parsed[lineID].begin() + colID)); break;
+                        default:  std::unreachable();
+                    }
+                }
+            }
+        }
+
+        return res;
     }
 
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
-    static std::vector<NLMjson> parse_JSON(T const &stringLike) {
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_JSON(T const &sv_like) {
 
         // Trim input 'string like' of all 'newline' chars at the end
         std::string_view const trimmed(
-            stringLike.begin(), stringLike.end() - (std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(),
-                                                                             [](auto &&chr) { return chr == '\n'; }) -
-                                                    stringLike.rbegin()));
+            sv_like.begin(), sv_like.end() - (std::ranges::find_if_not(sv_like.rbegin(), sv_like.rend(),
+                                                                       [](auto &&chr) { return chr == '\n'; }) -
+                                              sv_like.rbegin()));
 
         std::vector<NLMjson> parsed;
 
@@ -198,51 +272,31 @@ public:
         }
         parsed.push_back(std::move(wholeJson));
 
-        return parsed;
+        return DataStore::vec_pr_strVarVec_t();
     }
 
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static DataStore parse_NDJSON_intoDS(T const &stringLike) {
-        auto parsed = parse_NDJSON(stringLike);
-        if (not validate_jsonSameness(parsed)) {} // Throw something here
-        return DataStore(std::move(parsed));
-    }
-
-    static DataStore parse_JSON_intoDS(std::string_view const sv) {
-        auto parsed = parse_JSON(sv);
-        return DataStore(std::move(parsed));
-    }
 
     template <typename T>
     requires std::is_convertible_v<typename T::value_type, std::string_view>
-    static DataStore parse_NDJSON(T containerOfStringLike) {
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_NDJSON(T containerOfStringLike) {
 
         for (auto &oneStr : containerOfStringLike) {
             while (oneStr.back() == '\n') { oneStr.popback(); }
         }
 
-        std::vector<NLMjson> parsed;
-        for (auto const &contItem : containerOfStringLike) {
-            for (auto const oneLine : std::views::split(contItem, '\n') |
-                                          std::views::transform([](auto const &in) { return std::string_view(in); })) {
 
-                NLMjson oneLineJson;
-                try {
-                    oneLineJson = NLMjson::parse(oneLine);
-                }
-                catch (const NLMjson::exception &e) {
-                    std::print("{}\n", e.what());
-                }
-                parsed.push_back(std::move(oneLineJson));
-            }
-        }
-        return DataStore(std::move(parsed));
+        return DataStore::vec_pr_strVarVec_t();
     }
 
     // CSV AND TSV - RELATED
 
-    static DataStore parse_CSV_intoDS(std::string_view const sv) { return DataStore(); }
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_CSV(std::string_view const sv_like) {
+        return DataStore::vec_pr_strVarVec_t();
+    }
+
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_TSV(std::string_view const sv_like) {
+        return DataStore::vec_pr_strVarVec_t();
+    }
 };
 } // namespace terminal_plot
 } // namespace incom

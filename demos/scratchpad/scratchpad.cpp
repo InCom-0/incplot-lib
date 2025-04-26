@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
 
 
     std::string const input((std::istreambuf_iterator(std::cin)), std::istreambuf_iterator<char>());
-    auto              ds = incplot::Parser::parse_NDJSON_intoDS(std::string_view(input));
+    auto              ds = incplot::Parser::parse(std::string_view(input));
 
 
     for (auto const &dpctr : incplot::CL_Args::get_dpCtorStruct(ap, argc, argv)) {
-        auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds);
+        auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds.value());
 
         if (not dp_autoGuessed.has_value()) {
             std::print("{0}{1}{2}", "Autoguessing of 'DesiresPlot' parameters for: ",
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        auto plotDrawer = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
+        auto plotDrawer = incplot::make_plotDrawer(dp_autoGuessed.value(), ds.value());
         if (not plotDrawer.has_value()) {
             std::print("{0}{1}{2}", "Creating 'Plot Structure' for: ",
                        dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",

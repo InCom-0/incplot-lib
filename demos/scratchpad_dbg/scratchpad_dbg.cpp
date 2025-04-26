@@ -728,12 +728,12 @@ int main(int argc, char *argv[]) {
     dpCtor_Structs.front().plot_type_name = "Scatter";
     dpCtor_Structs.front().tar_width      = 30;
 
-    auto ds = incplot::Parser::parse_NDJSON_intoDS(std::string_view(testInput_petal_OLD));
-    auto ds_t5 = incplot::Parser::parse_JSON_intoDS(std::string_view(irisJSON_t5));
+    auto ds = incplot::Parser::parse(std::string_view(testInput_petal_OLD));
+    // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));
 
 
     for (auto const &dpctr : dpCtor_Structs) {
-        auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds);
+        auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds.value());
         if (not dp_autoGuessed.has_value()) {
             std::print("{0}{1}{2}", "Autoguessing of 'DesiresPlot' parameters for: ",
                        dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
@@ -741,7 +741,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        auto plotDrawer = incplot::make_plotDrawer(dp_autoGuessed.value(), ds);
+        auto plotDrawer = incplot::make_plotDrawer(dp_autoGuessed.value(), ds.value());
         if (not plotDrawer.has_value()) {
             std::print("{0}{1}{2}", "Creating 'Plot Structure' for: ",
                        dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
