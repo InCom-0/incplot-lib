@@ -8,10 +8,6 @@
 #include <nlohmann/json.hpp>
 
 #include <incplot/datastore.hpp>
-#include <ranges>
-#include <string_view>
-#include <utility>
-#include <windows.h>
 
 
 namespace incom {
