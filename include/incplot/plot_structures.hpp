@@ -1,5 +1,6 @@
 #pragma once
 
+#include "incplot/datastore.hpp"
 #include <limits>
 #include <ranges>
 #include <string>
@@ -714,7 +715,7 @@ class BarV : public Base {
         }
         else {
             auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
-            if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
+            if (valColTypeRef.first == parsedVal_t::double_like) {
                 auto const &valColRef = ds.doubleCols.at(valColTypeRef.second);
                 computeLabels(valColRef);
             }
@@ -754,7 +755,7 @@ class BarV : public Base {
         };
 
         auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
-        if (valColTypeRef.first == nlohmann::detail::value_t::number_float) {
+        if (valColTypeRef.first == parsedVal_t::double_like) {
             computePA(ds.doubleCols.at(valColTypeRef.second));
         }
         else { computePA(ds.llCols.at(valColTypeRef.second)); }
@@ -993,7 +994,7 @@ class Scatter : public BarV {
             opt_catIDs_vec = std::visit(create_catIDs_vec, cat_values);
         }
 
-        if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
+        if (valColTypeRef_x.first == parsedVal_t::double_like) {
             self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight,
                                                               ds.doubleCols.at(valColTypeRef_x.second), view_yValCols,
                                                               opt_catIDs_vec, dp.color_basePalette);
@@ -1187,7 +1188,7 @@ class Multiline : public Scatter {
                              }) |
                              std::views::transform([](auto const &b) { return std::get<1>(b); });
 
-        if (valColTypeRef_x.first == nlohmann::detail::value_t::number_float) {
+        if (valColTypeRef_x.first == parsedVal_t::double_like) {
             self.plotArea = detail::BrailleDrawer::drawLines(self.areaWidth, self.areaHeight,
                                                              ds.doubleCols.at(valColTypeRef_x.second), view_yValCols,
                                                              dp.color_basePalette);

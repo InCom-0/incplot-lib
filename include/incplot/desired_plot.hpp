@@ -27,8 +27,6 @@ class Scatter;
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
 class DesiredPlot {
-    using NLMjson = nlohmann::json;
-
 private:
     struct ColumnParams {
         size_t categoryCount;
@@ -164,9 +162,8 @@ private:
         // Helpers
         size_t useableValCols_count =
             std::ranges::count_if(std::views::zip(ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
-                bool arithmeticCol = std::get<0>(colType).first == NLMjson::value_t::number_integer ||
-                                     std::get<0>(colType).first == NLMjson::value_t::number_unsigned ||
-                                     std::get<0>(colType).first == NLMjson::value_t::number_float;
+                bool arithmeticCol = std::get<0>(colType).first == parsedVal_t::signed_like ||
+                                     std::get<0>(colType).first == parsedVal_t::double_like;
 
                 // Not timeSeriesLike and Not categoryLike
                 bool notExcluded =
@@ -181,7 +178,7 @@ private:
         size_t labelCols_sz =
             std::ranges::count_if(std::views::zip(ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
                 // Must be string AND not categoryLike
-                return (std::get<0>(colType).first == NLMjson::value_t::string &&
+                return (std::get<0>(colType).first == parsedVal_t::string_like &&
                         not std::get<1>(colType).is_categoryLike);
             });
 
@@ -191,7 +188,7 @@ private:
 
         // labelTS_colID was specified
         else if (dp.labelTS_colID.has_value()) {
-            if (ds.colTypes.at(dp.labelTS_colID.value()).first == NLMjson::value_t::string) {
+            if (ds.colTypes.at(dp.labelTS_colID.value()).first == parsedVal_t::string_like) {
                 if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
                 // More than 1 value cols is impossible with labelTS col being string
                 else { return std::unexpected(Unexp_plotSpecs::plotType); }
@@ -236,7 +233,7 @@ private:
             }
             else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
                 for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.colTypes), [](auto const &ct) {
-                         return std::get<1>(ct).first == NLMjson::value_t::string;
+                         return std::get<1>(ct).first == parsedVal_t::string_like;
                      })) {
                     dp.labelTS_colID = std::get<0>(fvItem);
                     return dp;
@@ -318,9 +315,8 @@ private:
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
         auto useableValCols_tpl = std::views::filter(
             std::views::zip(std::views::iota(0), ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
-                bool arithmeticCol = std::get<1>(colType).first == NLMjson::value_t::number_integer ||
-                                     std::get<1>(colType).first == NLMjson::value_t::number_unsigned ||
-                                     std::get<1>(colType).first == NLMjson::value_t::number_float;
+                bool arithmeticCol = std::get<1>(colType).first == parsedVal_t::signed_like ||
+                                     std::get<1>(colType).first == parsedVal_t::double_like;
 
                 // Not timeSeriesLike and Not categoryLike
                 bool notExcluded =

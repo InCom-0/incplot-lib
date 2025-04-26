@@ -8,7 +8,9 @@
 #include <nlohmann/json.hpp>
 
 #include <incplot/datastore.hpp>
+#include <ranges>
 #include <string_view>
+#include <utility>
 
 
 namespace incom {
@@ -32,6 +34,7 @@ class Parser {
 
     using NLMjson = nlohmann::ordered_json;
 
+    // HLPRS
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
     static std::string_view get_trimmedSV(T const &stringLike) {
@@ -42,6 +45,7 @@ class Parser {
                                      stringLike.rbegin()));
     }
 
+    // COMPOSITION METHODS
     static std::expected<input_t, Unexp_parser> assess_inputType(std::string_view const stringLike) {
         std::string_view trimmed     = get_trimmedSV(stringLike);
         size_t           begBrcCount = 0, endBrcCount = 0;
@@ -105,14 +109,13 @@ class Parser {
             case input_t::JSON:   return parse_JSON_intoDS(sv);
             case input_t::CSV:    break;
             case input_t::TSV:    break;
+            default:              std::unreachable();
         }
-
-
-        return std::unexpected(Unexp_parser::ndjsonNotFlat);
     }
 
 
 public:
+    // MAIN INTENDED INTERFACE METHOD
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
     std::expected<DataStore, Unexp_parser> parse(T const &stringLike) {
@@ -124,22 +127,11 @@ public:
     }
 
 
+    // JSON AND NDJSON - RELATED
     static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
         // Validate that all the JSON objects parsed above have the same structure
-        for (auto const &js : jsonVec) {
-            // Different number of items in this line vs the firstline
-            if (js.size() != jsonVec.front().size()) { return false; }
-
-            auto firstLineIT = jsonVec.front().items().begin();
-            for (auto const &[key, val] : js.items()) {
-
-                // Key is not the same as in the first line
-                if (key != firstLineIT.key()) { return false; }
-
-                // Type is not the same as in the first line
-                if (val.type() != firstLineIT.value().type()) { return false; }
-                ++firstLineIT;
-            }
+        for (auto const &js : std::views::drop(jsonVec, 1)) {
+            if (not validate_jsonSameness(js, jsonVec.front())) { return false; }
         }
         return true;
     }
@@ -177,6 +169,7 @@ public:
             catch (const NLMjson::exception &e) {
                 // TODO: Finally figure out how to handle exceptions somewhat professionally
                 std::print("{}\n", e.what());
+                std::exit(1);
             }
             parsed.push_back(std::move(oneLineJson));
         }
@@ -208,20 +201,6 @@ public:
         return parsed;
     }
 
-
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static void parse_NDJSON_andAddTo(T const &stringLike, DataStore &out_DS_toAppend) {
-
-        auto parsed = parse_NDJSON(stringLike);
-        if (not validate_jsonSameness(parsed)) {} // Throw something here
-        if (not validate_jsonSameness(parsed.front(), out_DS_toAppend.constructedWith.front())) {
-        } // Throw something here
-
-        out_DS_toAppend.append_jsonAndData(parsed);
-    }
-
-
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
     static DataStore parse_NDJSON_intoDS(T const &stringLike) {
@@ -230,8 +209,8 @@ public:
         return DataStore(std::move(parsed));
     }
 
-    static DataStore parse_JSON_intoDS(std::string_view const stringLike) {
-        auto parsed = parse_JSON(stringLike);
+    static DataStore parse_JSON_intoDS(std::string_view const sv) {
+        auto parsed = parse_JSON(sv);
         return DataStore(std::move(parsed));
     }
 
@@ -260,6 +239,10 @@ public:
         }
         return DataStore(std::move(parsed));
     }
+
+    // CSV AND TSV - RELATED
+
+    static DataStore parse_CSV_intoDS(std::string_view const sv) { return DataStore(); }
 };
 } // namespace terminal_plot
 } // namespace incom
