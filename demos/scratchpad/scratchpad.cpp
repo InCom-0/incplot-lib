@@ -1,5 +1,7 @@
-#include <unistd.h>
 #include <print>
+#include <string_view>
+#include <unistd.h>
+
 
 #include <incplot.hpp>
 
@@ -24,8 +26,8 @@ int main(int argc, char *argv[]) {
     incplot::CL_Args::finishAp(ap);
 
 
-    std::string input((std::istreambuf_iterator(std::cin)), std::istreambuf_iterator<char>());
-    auto        ds = incplot::Parser::parse_NDJSON_intoDS(input);
+    std::string const input((std::istreambuf_iterator(std::cin)), std::istreambuf_iterator<char>());
+    auto              ds = incplot::Parser::parse_NDJSON_intoDS(std::string_view(input));
 
 
     for (auto const &dpctr : incplot::CL_Args::get_dpCtorStruct(ap, argc, argv)) {

@@ -3,6 +3,7 @@
 
 #include <csv2/reader.hpp>
 #include <incplot.hpp>
+#include <string_view>
 
 
 int main(int argc, char *argv[]) {
@@ -676,17 +677,47 @@ int main(int argc, char *argv[]) {
 5,3.6,1.4,0.2,Iris-setosa
 )");
 
+
+    std::string irisJSON_t5(R"([
+  {
+    "period": 1,
+    "value": 112,
+    "value2": 432
+  },
+  {
+    "period": 2,
+    "value": 118,
+    "value2": 390
+  },
+  {
+    "period": 3,
+    "value": 132,
+    "value2": 461
+  },
+  {
+    "period": 4,
+    "value": 129,
+    "value2": 508
+  },
+  {
+    "period": 5,
+    "value": 121,
+    "value2": 606
+  }
+]
+    )");
+
     csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>, csv2::first_row_is_header<true>,
                  csv2::trim_policy::trim_whitespace>
         csv;
 
     if (csv.parse(iriCsv)) {
         std::string TMP;
-        const auto header = csv.header();
+        const auto  header = csv.header();
         for (const auto row : csv) {
             for (const auto cell : row) {
                 cell.read_value(TMP);
-                std::print("{}\n", TMP);
+                // std::print("{}\n", TMP);
             }
         }
     }
@@ -697,7 +728,8 @@ int main(int argc, char *argv[]) {
     dpCtor_Structs.front().plot_type_name = "Scatter";
     dpCtor_Structs.front().tar_width      = 30;
 
-    auto ds = incplot::Parser::parse_NDJSON_intoDS(testInput_petal_OLD);
+    auto ds = incplot::Parser::parse_NDJSON_intoDS(std::string_view(testInput_petal_OLD));
+    auto ds_t5 = incplot::Parser::parse_JSON_intoDS(std::string_view(irisJSON_t5));
 
 
     for (auto const &dpctr : dpCtor_Structs) {

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <nlohmann/json.hpp>
+#include <variant>
 
 namespace incom {
 namespace terminal_plot {
@@ -29,8 +30,8 @@ struct DataStore {
     std::vector<std::vector<long long>>   llCols; // Don't care about signed unsigned, etc. ... all will be long long
     std::vector<std::vector<double>>      doubleCols;
 
-    // DataStore can be accessed using dynamic polymorphism with this vector of varints reference to each collumn in the
-    // data storage
+    // DataStore can be accessed using dynamic polymorphism with this vector of variants reference to each collumn in
+    // the data storage
     std::vector<
         std::variant<std::reference_wrapper<std::vector<std::string>>, std::reference_wrapper<std::vector<long long>>,
                      std::reference_wrapper<std::vector<double>>>>
@@ -61,8 +62,47 @@ struct DataStore {
         append_data(constructedWith);
         build_vecOfColVariants();
     }
+    // Pair first = name of the column, Pair second = values in that column
+    DataStore(std::vector<std::pair<std::string, std::variant<std::vector<std::string>, std::vector<double>,
+                                                              std::vector<long long>>>> const &vecOfDataVecs) {
+
+        // Create data descriptors and the structure
+        for (auto const &[colName, dataVect] : vecOfDataVecs) {
+            colNames.push_back(colName);
+
+            if (std::holds_alternative<std::vector<std::string>>(dataVect)) {
+                colTypes.push_back({NLMjson::value_t::string, stringCols.size()});
+            }
+            else if (std::holds_alternative<std::vector<double>>(dataVect)) {
+                colTypes.push_back({NLMjson::value_t::number_float, doubleCols.size()});
+            }
+            else if (std::holds_alternative<std::vector<long long>>(dataVect)) {
+                colTypes.push_back({NLMjson::value_t::number_integer, llCols.size()});
+            }
+        }
+
+        append_data(vecOfDataVecs);
+        build_vecOfColVariants();
+    }
 
     // APPENDING
+    void append_data(std::vector<std::pair<std::string, std::variant<std::vector<std::string>, std::vector<double>,
+                                                                     std::vector<long long>>>> const &vecOfDataVecs) {
+
+        for (int id = 0; auto const &[colt_t, idInDataVec] : colTypes) {
+            if (colt_t == NLMjson::value_t::string) {
+                stringCols.push_back(std::get<std::vector<std::string>>(vecOfDataVecs.at(id).second));
+            }
+            else if (colt_t == NLMjson::value_t::number_float) {
+                doubleCols.push_back(std::get<std::vector<double>>(vecOfDataVecs.at(id).second));
+            }
+            else if (colt_t == NLMjson::value_t::number_integer) {
+                llCols.push_back(std::get<std::vector<long long>>(vecOfDataVecs.at(id).second));
+            }
+            ++id;
+        }
+    }
+
     void append_data(std::vector<NLMjson> const &toAppend) {
         // For each json line ...
         for (auto const &oneJson : toAppend) {

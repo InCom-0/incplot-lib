@@ -99,11 +99,10 @@ class Parser {
         else { return std::unexpected(Unexp_parser::ndjsonNotFlat); }
     }
 
-    static std::expected<DataStore, Unexp_parser> dispatch_toParsers(input_t              &&inp_t,
-                                                                     std::string_view const stringLike) {
+    static std::expected<DataStore, Unexp_parser> dispatch_toParsers(input_t &&inp_t, std::string_view const sv) {
         switch (inp_t) {
-            case input_t::NDJSON: return parse_NDJSON_intoDS(stringLike); break;
-            case input_t::JSON:   break;
+            case input_t::NDJSON: return parse_NDJSON_intoDS(sv);
+            case input_t::JSON:   return parse_JSON_intoDS(sv);
             case input_t::CSV:    break;
             case input_t::TSV:    break;
         }
@@ -163,9 +162,10 @@ public:
     static std::vector<NLMjson> parse_NDJSON(T const &stringLike) {
 
         // Trim input 'string like' of all 'newline' chars at the end
-        auto const it =
-            std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(), [](auto &&chr) { return chr == '\n'; });
-        std::string_view const trimmed(stringLike.begin(), stringLike.end() - (it - stringLike.rbegin()));
+        std::string_view const trimmed(
+            stringLike.begin(), stringLike.end() - (std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(),
+                                                                             [](auto &&chr) { return chr == '\n'; }) -
+                                                    stringLike.rbegin()));
 
         std::vector<NLMjson> parsed;
         for (auto const &oneLine : std::views::split(trimmed, '\n') |
@@ -185,6 +185,32 @@ public:
 
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
+    static std::vector<NLMjson> parse_JSON(T const &stringLike) {
+
+        // Trim input 'string like' of all 'newline' chars at the end
+        std::string_view const trimmed(
+            stringLike.begin(), stringLike.end() - (std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(),
+                                                                             [](auto &&chr) { return chr == '\n'; }) -
+                                                    stringLike.rbegin()));
+
+        std::vector<NLMjson> parsed;
+
+        NLMjson wholeJson;
+        try {
+            wholeJson = NLMjson::parse(trimmed);
+        }
+        catch (const NLMjson::exception &e) {
+            // TODO: Finally figure out how to handle exceptions somewhat professionally
+            std::print("{}\n", e.what());
+        }
+        parsed.push_back(std::move(wholeJson));
+
+        return parsed;
+    }
+
+
+    template <typename T>
+    requires std::is_convertible_v<T, std::string_view>
     static void parse_NDJSON_andAddTo(T const &stringLike, DataStore &out_DS_toAppend) {
 
         auto parsed = parse_NDJSON(stringLike);
@@ -201,6 +227,11 @@ public:
     static DataStore parse_NDJSON_intoDS(T const &stringLike) {
         auto parsed = parse_NDJSON(stringLike);
         if (not validate_jsonSameness(parsed)) {} // Throw something here
+        return DataStore(std::move(parsed));
+    }
+
+    static DataStore parse_JSON_intoDS(std::string_view const stringLike) {
+        auto parsed = parse_JSON(stringLike);
         return DataStore(std::move(parsed));
     }
 
