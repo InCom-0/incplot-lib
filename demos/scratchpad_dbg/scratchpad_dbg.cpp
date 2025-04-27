@@ -369,6 +369,13 @@ int main(int argc, char *argv[]) {
 {"bill_length_mm":50.8,"bill_depth_mm":19,"body_mass_g":4100,"species":"Chinstrap"}
 {"bill_length_mm":50.2,"bill_depth_mm":18.7,"body_mass_g":3775,"species":"Chinstrap"})");
 
+std::string testInput_petal_OLD2(
+    R"({"bill_length_mm":39.1,"bill_depth_mm":18.7,"body_mass_g":3750,"species":"Adelie"}
+{"bill_length_mm":39.5,"bill_depth_mm":17.4,"body_mass_g":3800,"species":"Adelie"}
+{"bill_length_mm":40.3,"bill_depth_mm":18,"body_mass_g":3250,"species":"Adelie"}
+{"bill_length_mm":36.7,"bill_depth_mm":19.3,"body_mass_g":3450,"species":"Adelie"}
+{"bill_length_mm":39.3,"bill_depth_mm":20.6,"body_mass_g":3650,"species":"Adelie"})");
+
 
     std::string testInput_petal(
         R"({"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2}

@@ -205,8 +205,9 @@ public:
             if (parsedLine.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
             for (int i = 0; auto const &[key, val] : parsedLine.items()) {
                 if (key != res[i].first) { return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch); }
-                // TODO: Problem with type checking different NDJSON lines 
-                else if (val.type() != temp_firstLineTypes[i]) {
+                // TODO: Problem with type checking different NDJSON lines
+                else if (val.type() != temp_firstLineTypes[i] && (val.type() == NLMjson::value_t::string ||
+                                                                  temp_firstLineTypes[i] == NLMjson::value_t::string)) {
                     return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
                 }
                 else {
@@ -217,29 +218,7 @@ public:
                         default:  std::unreachable();
                     }
                 }
-
-
                 ++i;
-            }
-        }
-
-
-        for (int colID = 0; colID < res.size(); ++colID) {
-            size_t curVarIDX = res.at(colID).second.index();
-
-            for (int lineID = 0; lineID < parsed.size(); ++lineID) {
-                if (colID >= parsed[lineID].size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
-                else if ((parsed[lineID].begin() + colID)->type() != parsed.front().begin()->type()) {
-                    return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
-                }
-                else {
-                    switch (curVarIDX) {
-                        case 0uz: std::get<0>(res[colID].second).push_back(*(parsed[lineID].begin() + colID)); break;
-                        case 1uz: std::get<1>(res[colID].second).push_back(*(parsed[lineID].begin() + colID)); break;
-                        case 2uz: std::get<2>(res[colID].second).push_back(*(parsed[lineID].begin() + colID)); break;
-                        default:  std::unreachable();
-                    }
-                }
             }
         }
 
