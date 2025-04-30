@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <expected>
 #include <print>
 
@@ -8,6 +9,8 @@
 #include <nlohmann/json.hpp>
 
 #include <incplot/datastore.hpp>
+#include <utility>
+#include <variant>
 
 
 namespace incom {
@@ -30,6 +33,8 @@ class Parser {
         JSONObjectsNotOfSameSize,
         valueTypeInsideJSONdoesntMatch,
         keyNameInsideJSONdoesntMatch,
+        JSON_empty,
+        JSON_topLevelEleNotArrayOrObject,
         ndjsonNotFlat
     };
 
@@ -139,6 +144,10 @@ class Parser {
     }
 
 
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> create_fromVerifiedJSON(
+        auto const &someJsonStructure) {}
+
+
 public:
     // MAIN INTENDED INTERFACE METHOD
     template <typename T>
@@ -227,15 +236,7 @@ public:
 
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
-    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_JSON(T const &sv_like) {
-
-        // Trim input 'string like' of all 'newline' chars at the end
-        std::string_view const trimmed(
-            sv_like.begin(), sv_like.end() - (std::ranges::find_if_not(sv_like.rbegin(), sv_like.rend(),
-                                                                       [](auto &&chr) { return chr == '\n'; }) -
-                                              sv_like.rbegin()));
-
-        std::vector<NLMjson> parsed;
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_JSON(T const &trimmed) {
 
         NLMjson wholeJson;
         try {
@@ -244,10 +245,77 @@ public:
         catch (const NLMjson::exception &e) {
             // TODO: Finally figure out how to handle exceptions somewhat professionally
             std::print("{}\n", e.what());
+            std::exit(1);
         }
-        parsed.push_back(std::move(wholeJson));
 
-        return DataStore::vec_pr_strVarVec_t();
+        // UNEXP CHECKS
+        if (wholeJson.empty()) { return std::unexpected(Unexp_parser::JSON_empty); }
+        if (not wholeJson.is_structured()) { return std::unexpected(Unexp_parser::JSON_topLevelEleNotArrayOrObject); }
+        if (wholeJson.items().begin().value().empty()) { return std::unexpected(Unexp_parser::JSON_empty); }
+
+        // The 'second level' is structured
+        if (wholeJson.items().begin().value().is_structured()) {
+            if (std::ranges::any_of(wholeJson.items().begin().value().items(),
+                                    [](auto const &a) { return a.value().is_structured(); })) {
+                // Flatten any 'structuring on the 'third level' down
+                for (auto &oneRecord : wholeJson) {
+                    for (auto &oneItemInRecord : oneRecord) {
+                        if (oneItemInRecord.is_structured()) { oneItemInRecord = oneItemInRecord.flatten(); }
+                    }
+                }
+            }
+
+
+            DataStore::vec_pr_strVarVec_t res;
+            std::vector<NLMjson::value_t> temp_firstLineTypes;
+
+            // First 'record' determines the structure of each record.
+            for (auto const &[key, val] : wholeJson.items().begin().value().items()) {
+                if (val.type() == NLMjson::value_t::string) {
+                    res.push_back(std::make_pair(
+                        key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
+                }
+                else if (val.type() == NLMjson::value_t::number_float) {
+                    res.push_back(std::make_pair(
+                        key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
+                }
+                else if (val.type() == NLMjson::value_t::number_integer ||
+                         val.type() == NLMjson::value_t::number_unsigned) {
+                    res.push_back(std::make_pair(
+                        key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
+                }
+                else {}
+                temp_firstLineTypes.push_back(val.type());
+            }
+
+            for (auto const &[key_l1, val_l1] : wholeJson.items()) {
+                if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
+
+                for (int i = 0; auto const &[key, val] : val_l1.items()) {
+                    // Check keys are the same and valTypes are the same on (flattened) 3rd level
+                    if (key != res[i].first) { return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch); }
+                    // TODO: Problem with type checking different NDJSON lines
+                    else if (val.type() != temp_firstLineTypes[i] &&
+                             (val.type() == NLMjson::value_t::string ||
+                              temp_firstLineTypes[i] == NLMjson::value_t::string)) {
+                        return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                    }
+                    else {
+                        std::visit([&](auto &vari) { vari.push_back(val); }, res[i].second);
+                    }
+                    ++i;
+                }
+            }
+
+
+            return res;
+        }
+        // The 'second level' isn't structured ... that is it is actually just one column of values
+        else {
+            DataStore::vec_pr_strVarVec_t res;
+            return res;
+        }
+        std::unreachable();
     }
 
 
