@@ -369,8 +369,8 @@ int main(int argc, char *argv[]) {
 {"bill_length_mm":50.8,"bill_depth_mm":19,"body_mass_g":4100,"species":"Chinstrap"}
 {"bill_length_mm":50.2,"bill_depth_mm":18.7,"body_mass_g":3775,"species":"Chinstrap"})");
 
-std::string testInput_petal_OLD2(
-    R"({"bill_length_mm":39.1,"bill_depth_mm":18.7,"body_mass_g":3750,"species":"Adelie"}
+    std::string testInput_petal_OLD2(
+        R"({"bill_length_mm":39.1,"bill_depth_mm":18.7,"body_mass_g":3750,"species":"Adelie"}
 {"bill_length_mm":39.5,"bill_depth_mm":17.4,"body_mass_g":3800,"species":"Adelie"}
 {"bill_length_mm":40.3,"bill_depth_mm":18,"body_mass_g":3250,"species":"Adelie"}
 {"bill_length_mm":36.7,"bill_depth_mm":19.3,"body_mass_g":3450,"species":"Adelie"}
@@ -714,6 +714,16 @@ std::string testInput_petal_OLD2(
 ]
     )");
 
+
+    std::string irisJSON_t7(R"([
+  112,
+  118,
+  132,
+  129,
+  121
+])");
+
+
     csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>, csv2::first_row_is_header<true>,
                  csv2::trim_policy::trim_whitespace>
         csv;
@@ -732,10 +742,10 @@ std::string testInput_petal_OLD2(
 
     auto dpCtor_Structs                   = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
-    dpCtor_Structs.front().plot_type_name = "Scatter";
+    dpCtor_Structs.front().plot_type_name = "BarV";
     dpCtor_Structs.front().tar_width      = 30;
 
-    auto ds = incplot::Parser::parse(std::string_view(irisJSON_t5));
+    auto ds = incplot::Parser::parse(std::string_view(irisJSON_t7));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));
 
 

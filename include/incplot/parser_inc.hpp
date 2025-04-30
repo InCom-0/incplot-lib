@@ -35,6 +35,7 @@ class Parser {
         keyNameInsideJSONdoesntMatch,
         JSON_empty,
         JSON_topLevelEleNotArrayOrObject,
+        JSONunhandledType,
         ndjsonNotFlat
     };
 
@@ -265,7 +266,6 @@ public:
                 }
             }
 
-
             DataStore::vec_pr_strVarVec_t res;
             std::vector<NLMjson::value_t> temp_firstLineTypes;
 
@@ -292,6 +292,7 @@ public:
                 if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
 
                 for (int i = 0; auto const &[key, val] : val_l1.items()) {
+                    // CHECKS
                     // Check keys are the same and valTypes are the same on (flattened) 3rd level
                     if (key != res[i].first) { return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch); }
                     // TODO: Problem with type checking different NDJSON lines
@@ -300,6 +301,7 @@ public:
                               temp_firstLineTypes[i] == NLMjson::value_t::string)) {
                         return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
                     }
+                    // 'CORRECT' PATH
                     else {
                         std::visit([&](auto &vari) { vari.push_back(val); }, res[i].second);
                     }
@@ -307,12 +309,62 @@ public:
                 }
             }
 
-
             return res;
         }
         // The 'second level' isn't structured ... that is it is actually just one column of values
         else {
+            for (auto &oneItem : std::views::drop(wholeJson, 1)) {
+                // If any JSON type on 'second level' doesn't match the type of the first record
+                if (oneItem.type() != wholeJson.items().begin().value().type()) {
+                    return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                }
+            }
+
             DataStore::vec_pr_strVarVec_t res;
+            std::vector<NLMjson::value_t> temp_firstLineTypes;
+
+            // First 'record' determines the structure of each record.
+            for (auto const &[key, val] : std::views::take(wholeJson.items(), 1)) {
+                if (val.type() == NLMjson::value_t::string) {
+                    res.push_back(std::make_pair(
+                        key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
+                }
+                else if (val.type() == NLMjson::value_t::number_float) {
+                    res.push_back(std::make_pair(
+                        key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
+                }
+                else if (val.type() == NLMjson::value_t::number_integer ||
+                         val.type() == NLMjson::value_t::number_unsigned) {
+                    res.push_back(std::make_pair(
+                        key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
+                }
+                else { return std::unexpected(Unexp_parser::JSONunhandledType); }
+                temp_firstLineTypes.push_back(val.type());
+            }
+
+            auto &resFront = res.at(0);
+            for (auto const &[key_l1, val_l1] : wholeJson.items()) {
+                if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
+
+                // CHECKS
+                // Check keys are the same and valTypes are the same on (flattened) 3rd level
+                if (wholeJson.is_object()) {
+                    if (key_l1 != resFront.first) {
+                        return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch);
+                    }
+                }
+
+                // TODO: Problem with type checking different NDJSON lines
+                else if (val_l1.type() != wholeJson.at(0).type()) {
+                    return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                }
+
+                // 'CORRECT' PATH
+                else {
+                    std::visit([&](auto &vari) { vari.push_back(val_l1); }, resFront.second);
+                }
+            }
+
             return res;
         }
         std::unreachable();
