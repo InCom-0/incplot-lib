@@ -1,9 +1,11 @@
 #pragma once
 
+#include "incplot/config.hpp"
 #include <iostream>
-#include <vector>
 #include <string>
 #include <variant>
+#include <vector>
+
 
 namespace incom {
 namespace terminal_plot {
@@ -24,7 +26,6 @@ struct DataStore {
         std::variant<std::reference_wrapper<std::vector<std::string>>, std::reference_wrapper<std::vector<long long>>,
                      std::reference_wrapper<std::vector<double>>>>;
 
-    // TODO: Maybe provide my own 'ColType' enum ... consider
     // Data descriptors
     std::vector<std::string>                    colNames;
     std::vector<std::pair<parsedVal_t, size_t>> colTypes; // First =  ColType, Second = ID in data vector
@@ -49,7 +50,8 @@ struct DataStore {
 
         // Create data descriptors and the structure
         for (auto const &[colName, dataVect] : vecOfDataVecs) {
-            colNames.push_back(colName);
+            if (colName == "0" || colName == "") { colNames.push_back(Config::noLabel); }
+            else { colNames.push_back(colName); }
 
             if (std::holds_alternative<std::vector<std::string>>(dataVect)) {
                 colTypes.push_back({parsedVal_t::string_like, stringCols.size()});
@@ -65,6 +67,15 @@ struct DataStore {
             }
         }
 
+        append_data(vecOfDataVecs);
+        // Append 'fake' label column of strings if there is just one val column
+        if (colTypes.size() == 1) {
+            auto getSize = [&](auto const &vec) -> size_t { return vec.size(); };
+            if (colTypes.at(0).first != parsedVal_t::string_like) {
+                append_fakeLabelCol(std::visit(getSize, vecOfDataVecs.at(0).second));
+            }
+        }
+
         auto build_vecOfColVariants = [&]() {
             for (auto const &[ct_t, colID] : colTypes) {
                 if (ct_t == parsedVal_t::string_like) { vec_colVariants.push_back(stringCols[colID]); }
@@ -74,8 +85,6 @@ struct DataStore {
             }
         };
         build_vecOfColVariants();
-
-        append_data(vecOfDataVecs);
     }
 
     // APPENDING
@@ -101,6 +110,14 @@ struct DataStore {
             else {}
             ++id;
         }
+    }
+
+    void append_fakeLabelCol(size_t const sz) {
+
+        colNames.push_back(Config::noLabel);
+        colTypes.push_back({parsedVal_t::string_like, stringCols.size()});
+
+        stringCols.push_back(decltype(stringCols)::value_type(sz, ""));
     }
 };
 

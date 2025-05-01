@@ -68,7 +68,9 @@ public:
 
     // OTHER PLOT SETTINGS
 
-    static constexpr size_t max_sizeOfValueLabels  = 5uz;
+    static constexpr std::string noLabel = "[no label]";
+
+    static constexpr size_t max_sizeOfValueLabels = 5uz;
 
     static constexpr size_t min_areaWidth  = 8uz;
     static constexpr size_t min_areaHeight = 1uz;
@@ -81,9 +83,9 @@ public:
     static constexpr size_t axisLabels_padRight_vl  = 1uz;
     static constexpr size_t axisLabels_padLeft_vr   = 1uz;
 
-    static constexpr size_t ps_padLeft = 2;
-    static constexpr size_t ps_padRight = 0;
-    static constexpr size_t ps_padTop = 1;
+    static constexpr size_t ps_padLeft   = 2;
+    static constexpr size_t ps_padRight  = 0;
+    static constexpr size_t ps_padTop    = 1;
     static constexpr size_t ps_padBottom = 0;
 
     static constexpr size_t axis_stepSize_vl = 5uz;

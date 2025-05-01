@@ -7,8 +7,9 @@
 #include <type_traits>
 #include <variant>
 
-#include <incplot/desired_plot.hpp>
 #include <incplot/braille_drawer.hpp>
+#include <incplot/desired_plot.hpp>
+
 
 namespace incom {
 namespace terminal_plot {
@@ -681,7 +682,7 @@ class BarV : public Base {
         auto computeLabels = [&](auto const &valColRef) -> void {
             size_t const fillerSize = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
             auto const [minV, maxV] = std::ranges::minmax(valColRef);
-            auto   stepSize         = (maxV - minV) / (self.areaWidth + 1);
+            auto   stepSize         = (maxV - minV) / static_cast<double>((self.areaWidth));
             size_t placedChars      = 0;
 
             self.label_horBottom.append(Config::color_Axes);
@@ -703,7 +704,7 @@ class BarV : public Base {
             }
 
             // Construct the [0:end] point label
-            tempStr = detail::format_toMax5length(maxV);
+            tempStr = detail::format_toMax5length(maxV + stepSize);
             for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
                 self.label_horBottom.push_back(Config::space);
             }
@@ -741,7 +742,7 @@ class BarV : public Base {
 
             auto maxV_adj = maxV * scalingFactor;
             auto minV_adj = minV * scalingFactor;
-            auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth + 1);
+            auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth);
 
             for (auto const &val : valColRef) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
@@ -755,9 +756,7 @@ class BarV : public Base {
         };
 
         auto const &valColTypeRef = ds.colTypes.at(dp.values_colIDs.front());
-        if (valColTypeRef.first == parsedVal_t::double_like) {
-            computePA(ds.doubleCols.at(valColTypeRef.second));
-        }
+        if (valColTypeRef.first == parsedVal_t::double_like) { computePA(ds.doubleCols.at(valColTypeRef.second)); }
         else { computePA(ds.llCols.at(valColTypeRef.second)); }
         return self;
     }

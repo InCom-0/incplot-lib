@@ -40,8 +40,6 @@ private:
 
     std::vector<ColumnParams> m_colAssessments;
 
-    std::vector<int> colsUsed;
-
     // BUILDING METHODS
     static std::expected<DesiredPlot, Unexp_plotSpecs> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds) {
 
@@ -132,7 +130,6 @@ private:
             dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol);
             dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol);
         }
-        dp.colsUsed = std::vector(dp.m_colAssessments.size(), 0);
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
@@ -239,6 +236,7 @@ private:
                     dp.labelTS_colID = std::get<0>(fvItem);
                     return dp;
                 }
+
                 // If there are none (therefore the loop doesn't execute at all) then return unexpected
                 return std::unexpected(Unexp_plotSpecs::TScol);
             }
