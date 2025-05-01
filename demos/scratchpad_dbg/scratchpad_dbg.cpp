@@ -716,11 +716,11 @@ int main(int argc, char *argv[]) {
 
 
     std::string irisJSON_t7(R"([
-  112,
-  118,
-  132,
-  129,
-  121
+  1,
+  3,
+  4,
+  5,
+  9
 ])");
 
 
@@ -743,7 +743,7 @@ int main(int argc, char *argv[]) {
     auto dpCtor_Structs                   = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     // dpCtor_Structs.front().plot_type_name = "BarV";
-    dpCtor_Structs.front().tar_width      = 30;
+    dpCtor_Structs.front().tar_width      = 60;
 
     auto ds = incplot::Parser::parse(std::string_view(irisJSON_t7));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

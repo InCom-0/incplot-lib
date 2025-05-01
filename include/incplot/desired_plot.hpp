@@ -216,7 +216,6 @@ private:
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
-        // TODO: Must somehow deal with a single column of values ... how to handle that, do that first.
         if (not dp.labelTS_colID.has_value()) {
             if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
                 for (auto const &fvItem :

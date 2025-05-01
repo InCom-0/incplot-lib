@@ -918,6 +918,7 @@ class Scatter : public BarV {
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
+
         auto computeLabels = [&](double const &minV, double const &maxV) -> void {
             size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
             auto         stepSize    = ((maxV - minV) / ((2 * self.areaWidth) + 1)) * 2;
@@ -1137,7 +1138,6 @@ class Multiline : public Scatter {
     }
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-
         auto computeLabels = [&](double const &minV, double const &maxV) -> void {
             size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
             auto         stepSize    = ((maxV - minV) / ((2 * self.areaWidth) - 1)) * 2;
