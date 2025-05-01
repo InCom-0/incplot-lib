@@ -20,14 +20,7 @@ jobs:
         runs-on: ["windows-latest"]
         compiler: ["gcc"]
         build-type: ["DBG", "REL"]
-        target : ["all", "incplot_scratchpad_dbg"]
-        exclude:
-          - compiler: "gcc"
-            build-type: "DBG"
-            target: "all"
-          - compiler: "gcc"
-            build-type: "REL"
-            target: "incplot_scratchpad_dbg"
+        target : ["all"]
     
     defaults:
       run:

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <algorithm>
-#include <array>
 #include <expected>
 #include <print>
 
@@ -146,7 +145,9 @@ class Parser {
 
 
     static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> create_fromVerifiedJSON(
-        auto const &someJsonStructure) {}
+        auto const &someJsonStructure) {
+        return std::unexpected(Unexp_parser::JSON_empty);
+    }
 
 
 public:
