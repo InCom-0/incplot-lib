@@ -26,6 +26,28 @@
             }
         },
         {
+            "name": "MSVC_DBG",
+            "displayName": "MSVC DBG",
+            "hidden": false,
+            "inherits": [
+                "_common"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "MSVC_REL",
+            "displayName": "MSVC REL",
+            "hidden": false,
+            "inherits": [
+                "_common"
+            ],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
             "name": "gcc_DBG",
             "displayName": "gcc DBG",
             "hidden": false,

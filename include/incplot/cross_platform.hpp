@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unistd.h>
-
 #if defined(_WIN64)
 #include <windows.h>
 
