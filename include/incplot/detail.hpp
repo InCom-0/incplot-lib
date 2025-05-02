@@ -1,54 +1,34 @@
 #pragma once
 
 #include <cmath>
-#include <cuchar>
 #include <format>
+#include <iterator>
+#include <type_traits>
 
 #include <incplot/color_mixer.hpp>
 #include <incplot/detail/concepts.hpp>
 #include <incplot/detail/misc.hpp>
+#include <ww898/utf_converters.hpp>
 
 
 namespace incom {
 namespace terminal_plot {
 namespace detail {
-constexpr inline std::string convert_u32u8(std::u32string const &str) {
-    std::mbstate_t mbstate_{};
-    std::string    result;
-    size_t         mblen;
-    char           mbchar[MB_CUR_MAX];
-
-    for (char32_t const wc : str) {
-        mblen = std::c32rtomb(mbchar, wc, &mbstate_);
-        if (mblen == static_cast<size_t>(-1)) { throw std::runtime_error("Invalid wide character encountered."); }
-        result.append(mbchar, mblen);
-    }
-    return result;
+constexpr inline std::string convert_u32u8(std::u32string &str) {
+    using namespace ww898::utf;
+    std::string res;
+    convz<utf_selector_t<std::decay_t<decltype(str)>::value_type>, utf8>(str.data(), std::back_inserter(res));
+    return res;
 }
-constexpr inline std::string convert_u32u8(std::u32string const &&str) {
+
+constexpr inline std::string convert_u32u8(std::u32string &&str) {
     return convert_u32u8(str);
 }
 constexpr inline std::u32string convert_u32u8(std::string const &str) {
-    std::mbstate_t mbstate_{};
-    std::u32string result;
-    size_t         mblen;
-    char32_t       wc = U'\0';
-    auto const endOut = str.end();
-
-    for (auto it = str.begin(); it < endOut;) {
-        if (mblen == static_cast<size_t>(-1)) { throw std::runtime_error("Invalid multibyte sequence encountered."); }
-        else if (mblen == static_cast<size_t>(-2)) {
-            throw std::runtime_error("Incomplete multibyte sequence encountered.");
-        }
-        else if (mblen == 0) {
-            break; // Null character encountered, terminate the loop.
-        }
-
-        mblen   = std::mbrtoc32(&wc, &(*it), endOut - it, &mbstate_);
-        result += wc;
-        it     += mblen;
-    }
-    return result;
+    using namespace ww898::utf;
+    std::u32string res;
+    convz<utf_selector_t<std::decay_t<decltype(str)>::value_type>, utf32>(str.data(), std::back_inserter(res));
+    return res;
 }
 constexpr inline std::u32string convert_u32u8(std::string const &&str) {
     return convert_u32u8(str);

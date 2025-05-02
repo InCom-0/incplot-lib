@@ -22,6 +22,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(csv2)
 
+FetchContent_Declare(
+    utf-cpp
+    GIT_REPOSITORY https://github.com/InCom-0/utf-cpp
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(utf-cpp)
+
 
 FetchContent_Declare(
     argparse

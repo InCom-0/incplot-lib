@@ -1,3 +1,4 @@
+#include "incplot/detail.hpp"
 #include <print>
 #include <string>
 
@@ -739,13 +740,12 @@ int main(int argc, char *argv[]) {
         }
     }
 
-
-    auto dpCtor_Structs                   = incplot::CL_Args::get_dpCtorStruct();
+    auto dpCtor_Structs              = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     // dpCtor_Structs.front().plot_type_name = "BarV";
-    dpCtor_Structs.front().tar_width      = 60;
+    dpCtor_Structs.front().tar_width = 60;
 
-    auto ds = incplot::Parser::parse(std::string_view(irisJSON_t7));
+    auto ds = incplot::Parser::parse(std::string_view(testInput_petal_OLD));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));
 
 
