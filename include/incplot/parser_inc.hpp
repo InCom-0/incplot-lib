@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <concepts>
-#include <cstdarg>
 #include <cstddef>
 #include <expected>
 #include <print>
@@ -238,7 +237,7 @@ class Parser {
         {
             auto   headerItem = csv2Reader.header().begin();
             size_t id         = 0;
-            
+
             for (auto const &firstRow : csv2Reader) {
                 for (auto const &cell : firstRow) {
                     if (not(id < hdr_sz)) { return std::unexpected(Unexp_parser::CSV_headerHasLessItemsThanDataRow); }
