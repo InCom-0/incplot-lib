@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cerrno>
 #include <concepts>
 #include <cstddef>
 #include <expected>
@@ -42,6 +43,7 @@ class Parser {
         JSON_topLevelEleNotArrayOrObject,
         JSONunhandledType,
         ndjsonNotFlat,
+        CSV_containsZeroNewLineChars,
         CSV_headerHasMoreItemsThanDataRow,
         CSV_headerHasLessItemsThanDataRow,
         CSV_cellTypeIsDifferentThanExpected,
@@ -87,7 +89,23 @@ class Parser {
         return true;
     }
 
-    static csvCellType assess_cellType(auto const &csvCell) { return csvCellType::string_like; }
+    static csvCellType assess_cellType(auto const &csvCell) {
+        std::string_view rv    = csvCell.read_view();
+        const char      *first = rv.data();
+        char            *next{};
+        char            *next2{};
+
+        errno = 0;
+        std::strtoll(first, &next, 10);
+
+        if (next == rv.end()) { return csvCellType::ll_like; }
+        else {
+            errno = 0;
+            std::strtod(first, &next2);
+            if (next2 == rv.end()) { return csvCellType::double_like; }
+        }
+        return csvCellType::string_like;
+    }
 
     static double conv_cellToDouble(auto const &csvCell) {
         std::string_view rv    = csvCell.read_view();
@@ -160,15 +178,18 @@ class Parser {
                 return accu;
             });
 
+        if (std::get<2>(count_symbols) == 0) { return std::unexpected(Unexp_parser::CSV_containsZeroNewLineChars); }
+
         // CSV / TSV?
-        if ((std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
+        if ((std::get<3>(count_symbols) != 0) && (std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
             // No brace at the beginning ... not idea but good enough
             // TODO: Possibly improve this heuristic
             if (sv.front() != '{' && sv.front() != '[') { return input_t::CSV; }
         }
 
         // This heuristic shoud be fine as '\t' is hardly ever used in contexts outside of TSV
-        else if ((std::get<4>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
+        else if ((std::get<4>(count_symbols) != 0) &&
+                 (std::get<4>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
             if (sv.front() != '{' && sv.front() != '[') { return input_t::TSV; }
         }
 
@@ -283,7 +304,7 @@ class Parser {
                     return std::unexpected(Unexp_parser::CSV_cellTypeIsDifferentThanExpected);
                 }
 
-                auto vis = [&](auto variVec) -> void {
+                auto vis = [&](auto &variVec) -> void {
                     // Selecting the right conversion based on the type inside the variant
                     if constexpr (std::same_as<std::decay_t<decltype(variVec)>, std::vector<double>>) {
                         variVec.push_back(conv_cellToDouble(cell));
@@ -548,7 +569,7 @@ public:
     }
 
     static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_TSV(std::string_view const sv_like) {
-        return parse_usingCSV2(csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
+        return parse_usingCSV2(csv2::Reader<csv2::delimiter<'\t'>, csv2::quote_character<'"'>,
                                             csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
                                sv_like);
     }
