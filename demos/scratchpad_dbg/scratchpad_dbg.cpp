@@ -1,4 +1,3 @@
-#include "incplot/detail.hpp"
 #include <print>
 #include <string>
 
@@ -725,20 +724,7 @@ int main(int argc, char *argv[]) {
 ])");
 
 
-    csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>, csv2::first_row_is_header<true>,
-                 csv2::trim_policy::trim_whitespace>
-        csv;
-
-    if (csv.parse(iriCsv)) {
-        std::string TMP;
-        const auto  header = csv.header();
-        for (const auto row : csv) {
-            for (const auto cell : row) {
-                cell.read_value(TMP);
-                // std::print("{}\n", TMP);
-            }
-        }
-    }
+    
 
     auto dpCtor_Structs              = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;

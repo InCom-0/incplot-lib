@@ -1,6 +1,9 @@
 #pragma once
 
 #include <algorithm>
+#include <concepts>
+#include <cstdarg>
+#include <cstddef>
 #include <expected>
 #include <print>
 
@@ -8,8 +11,12 @@
 #include <nlohmann/json.hpp>
 
 #include <incplot/datastore.hpp>
+#include <ranges>
+#include <string_view>
+#include <type_traits>
 #include <utility>
 #include <variant>
+#include <vector>
 
 
 namespace incom {
@@ -35,7 +42,16 @@ class Parser {
         JSON_empty,
         JSON_topLevelEleNotArrayOrObject,
         JSONunhandledType,
-        ndjsonNotFlat
+        ndjsonNotFlat,
+        CSV_headerHasMoreItemsThanDataRow,
+        CSV_headerHasLessItemsThanDataRow,
+        CSV_cellTypeIsDifferentThanExpected,
+    };
+
+    enum class csvCellType {
+        double_like,
+        ll_like,
+        string_like
     };
 
     using NLMjson = nlohmann::ordered_json;
@@ -72,6 +88,52 @@ class Parser {
         return true;
     }
 
+    static csvCellType assess_cellType(auto const &csvCell) { return csvCellType::string_like; }
+
+    static double conv_cellToDouble(auto const &csvCell) {
+        std::string_view rv    = csvCell.read_view();
+        const char      *first = rv.data();
+        char            *next{};
+        errno = 0;
+
+        double res = std::strtod(first, &next);
+        if (next != rv.end()) {
+            std::print("{}\n{}{}\n", "Error in assess_cellType, some characters left unparsed",
+                       "Encountered while parsing: ", rv);
+            errno = 0;
+            std::exit(1);
+        }
+        else if (errno == ERANGE) {
+            std::print("{}\n{}{}\n", "Error in assess_cellType, range error in std::strtod",
+                       "Encountered while parsing: ", rv);
+            errno = 0;
+            std::exit(1);
+        }
+        return res;
+    }
+    static long long conv_cellToLongLong(auto const &csvCell) {
+        std::string_view rv    = csvCell.read_view();
+        const char      *first = rv.data();
+        char            *next{};
+        errno = 0;
+
+        long long res = std::strtoll(first, &next, 10);
+        if (next != rv.end()) {
+            std::print("{}\n{}{}\n", "Error in assess_cellType, some characters left unparsed",
+                       "Encountered while parsing: ", rv);
+            errno = 0;
+            std::exit(1);
+        }
+        else if (errno == ERANGE) {
+            std::print("{}\n{}{}\n", "Error in assess_cellType, range error in std::strtod",
+                       "Encountered while parsing: ", rv);
+            errno = 0;
+            std::exit(1);
+        }
+        return res;
+    }
+    static std::string conv_cellToString(auto const &csvCell) { return std::string(csvCell.read_view()); }
+
 
     // COMPOSITION METHODS
     // TODO: Maybe make this public for later use?
@@ -106,7 +168,7 @@ class Parser {
             if (sv.front() != '{' && sv.front() != '[') { return input_t::CSV; }
         }
 
-        // This heuristic shoud be fine as '\t' is hardly every used in contexts outside of TSV
+        // This heuristic shoud be fine as '\t' is hardly ever used in contexts outside of TSV
         else if ((std::get<4>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
             if (sv.front() != '{' && sv.front() != '[') { return input_t::TSV; }
         }
@@ -149,6 +211,105 @@ class Parser {
         return std::unexpected(Unexp_parser::JSON_empty);
     }
 
+    // PARSE USING RANAV::CSV2
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_usingCSV2(auto                 &&csv2Reader,
+                                                                                      std::string_view const trimmed) {
+
+        if (not csv2Reader.parse_view(trimmed)) {
+            std::print("{}\n", "Parser error when parsing as CSV, please check input formatting.");
+            std::exit(1);
+        }
+
+        // Header 'size' for verification later
+        size_t hdr_sz = 0;
+        for (auto const &hdrItem : csv2Reader.header()) { hdr_sz++; }
+
+
+        DataStore::vec_pr_strVarVec_t res;
+        std::vector<csvCellType>      cellTypes;
+        if (csv2Reader.rows() < 1) { return std::unexpected(Unexp_parser::JSON_empty); }
+
+        // Set US locale for use in parsing CSV
+        std::string orig_loc = std::setlocale(LC_ALL, nullptr);
+        std::setlocale(LC_ALL, "en_US.UTF-8");
+
+        // Use first row to initialize the 'DataStore::vec_pr_strVarVec_t' data structure
+        // Enclosed because not so nice iterator and id 'leakage'
+        {
+            auto   headerItem = csv2Reader.header().begin();
+            size_t id         = 0;
+            
+            for (auto const &firstRow : csv2Reader) {
+                for (auto const &cell : firstRow) {
+                    if (not(id < hdr_sz)) { return std::unexpected(Unexp_parser::CSV_headerHasLessItemsThanDataRow); }
+
+                    switch (assess_cellType(cell)) {
+                        case csvCellType::double_like:
+                            res.push_back(std::make_pair(
+                                std::string((*headerItem).read_view()),
+                                DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
+                            cellTypes.push_back(csvCellType::double_like);
+                            break;
+
+                        case csvCellType::ll_like:
+                            res.push_back(std::make_pair(
+                                std::string((*headerItem).read_view()),
+                                DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
+                            cellTypes.push_back(csvCellType::ll_like);
+                            break;
+
+                        case csvCellType::string_like:
+                            res.push_back(std::make_pair(
+                                std::string((*headerItem).read_view()),
+                                DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
+                            cellTypes.push_back(csvCellType::string_like);
+                            break;
+                        default: std::unreachable();
+                    }
+                    id++;
+                    ++headerItem;
+                }
+                if (id != hdr_sz) { return std::unexpected(Unexp_parser::CSV_headerHasMoreItemsThanDataRow); }
+                // Taking just the first row
+                // TODO: This is wierd ... need to look into what I am doing wrong
+                break;
+            }
+        }
+
+        for (auto const &row : csv2Reader) {
+            size_t i = 0;
+            for (auto const &cell : row) {
+                if (not(i < hdr_sz)) { return std::unexpected(Unexp_parser::CSV_headerHasLessItemsThanDataRow); }
+                if (assess_cellType(cell) != cellTypes[i]) {
+                    return std::unexpected(Unexp_parser::CSV_cellTypeIsDifferentThanExpected);
+                }
+
+                auto vis = [&](auto variVec) -> void {
+                    // Selecting the right conversion based on the type inside the variant
+                    if constexpr (std::same_as<std::decay_t<decltype(variVec)>, std::vector<double>>) {
+                        variVec.push_back(conv_cellToDouble(cell));
+                    }
+                    else if constexpr (std::same_as<std::decay_t<decltype(variVec)>, std::vector<long long>>) {
+                        variVec.push_back(conv_cellToLongLong(cell));
+                    }
+                    else if constexpr (std::same_as<std::decay_t<decltype(variVec)>, std::vector<std::string>>) {
+                        variVec.push_back(conv_cellToString(cell));
+                    }
+                    // This shoudl be impossible to instantiate
+                    else { static_assert(false); };
+                };
+
+                std::visit(vis, res.at(i).second);
+                ++i;
+            }
+            if (i != hdr_sz) { return std::unexpected(Unexp_parser::CSV_headerHasMoreItemsThanDataRow); }
+        }
+
+        // Restore original locale so that we 'clean up' after ourselves
+        std::setlocale(LC_ALL, orig_loc.c_str());
+        return res;
+    }
+
 
 public:
     // MAIN INTENDED INTERFACE METHOD
@@ -166,12 +327,10 @@ public:
 
     // JSON AND NDJSON - RELATED
 
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_NDJSON(T const &sv_like) {
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_NDJSON(std::string_view const &trimmed) {
 
         std::vector<NLMjson> parsed;
-        for (auto const &oneLine : std::views::split(sv_like, '\n') |
+        for (auto const &oneLine : std::views::split(trimmed, '\n') |
                                        std::views::transform([](auto const &in) { return std::string_view(in); })) {
             NLMjson oneLineJson;
             try {
@@ -236,9 +395,7 @@ public:
         return res;
     }
 
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_JSON(T const &trimmed) {
+    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_JSON(std::string_view const &trimmed) {
 
         NLMjson wholeJson;
         try {
@@ -385,13 +542,16 @@ public:
     }
 
     // CSV AND TSV - RELATED
-
     static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_CSV(std::string_view const sv_like) {
-        return DataStore::vec_pr_strVarVec_t();
+        return parse_usingCSV2(csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
+                                            csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
+                               sv_like);
     }
 
     static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_TSV(std::string_view const sv_like) {
-        return DataStore::vec_pr_strVarVec_t();
+        return parse_usingCSV2(csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
+                                            csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
+                               sv_like);
     }
 };
 } // namespace terminal_plot
