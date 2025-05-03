@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
-#include <vector>
+#include <vector> 
 
 
 namespace incom {
@@ -300,7 +300,10 @@ class Parser {
             size_t i = 0;
             for (auto const &cell : row) {
                 if (not(i < hdr_sz)) { return std::unexpected(Unexp_parser::CSV_headerHasLessItemsThanDataRow); }
-                if (assess_cellType(cell) != cellTypes[i]) {
+                // Error when not the same type
+                // However if trying to parse 'something which looks like long long' into double ... then that's fine 
+                if (assess_cellType(cell) != cellTypes[i] && (not((assess_cellType(cell) == csvCellType::ll_like) &&
+                                                                  cellTypes[i] == csvCellType::double_like))) {
                     return std::unexpected(Unexp_parser::CSV_cellTypeIsDifferentThanExpected);
                 }
 
@@ -345,7 +348,7 @@ public:
     }
 
 
-    // JSON AND NDJSON - RELATED
+    // JSON AND NDJSON
 
     static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_NDJSON(std::string_view const &trimmed) {
 
@@ -548,20 +551,7 @@ public:
         std::unreachable();
     }
 
-
-    template <typename T>
-    requires std::is_convertible_v<typename T::value_type, std::string_view>
-    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_NDJSON(T containerOfStringLike) {
-
-        for (auto &oneStr : containerOfStringLike) {
-            while (oneStr.back() == '\n') { oneStr.popback(); }
-        }
-
-
-        return DataStore::vec_pr_strVarVec_t();
-    }
-
-    // CSV AND TSV - RELATED
+    // CSV AND TSV
     static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_CSV(std::string_view const sv_like) {
         return parse_usingCSV2(csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
                                             csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
