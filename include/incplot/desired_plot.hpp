@@ -216,18 +216,34 @@ private:
         return dp;
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
-        if (not dp.labelTS_colID.has_value()) {
+        if (dp.labelTS_colID.has_value()) { return dp; }
+        else {
             if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
                 for (auto const &fvItem :
-                     std::views::filter(std::views::enumerate(dp.m_colAssessments),
-                                        [](auto const &ca) { return std::get<1>(ca).is_timeSeriesLikeIndex; })) {
+                     std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
+                         return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                                std::ranges::none_of(dp.values_colIDs,
+                                                     [&](auto const &a) { return a == std::get<0>(ca); });
+                     })) {
 
                     dp.labelTS_colID = std::get<0>(fvItem);
                     return dp;
                 }
-                // If there are none (therefore the loop doesn't execute at all) then return unexpected
-                return std::unexpected(Unexp_plotSpecs::TScol);
             }
+            else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+                for (auto const &fvItem : std::views::filter(
+                         std::views::enumerate(std::views::zip(ds.colTypes, dp.m_colAssessments)), [&](auto const &ca) {
+                             return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
+                                    (std::get<0>(std::get<1>(ca)).first != parsedVal_t::string_like) &&
+                                    std::ranges::none_of(dp.values_colIDs,
+                                                         [&](auto const &a) { return a == std::get<0>(ca); });
+                         })) {
+
+                    dp.labelTS_colID = std::get<0>(fvItem);
+                    return dp;
+                }
+            }
+
             else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
                 for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.colTypes), [](auto const &ct) {
                          return std::get<1>(ct).first == parsedVal_t::string_like;
@@ -235,12 +251,12 @@ private:
                     dp.labelTS_colID = std::get<0>(fvItem);
                     return dp;
                 }
-
-                // If there are none (therefore the loop doesn't execute at all) then return unexpected
-                return std::unexpected(Unexp_plotSpecs::TScol);
             }
+
+            // If there are none (therefore none of the for loops execute at all) then return unexpected
+            return std::unexpected(Unexp_plotSpecs::TScol);
         }
-        return dp;
+        std::unreachable();
     }
     static std::expected<DesiredPlot, Unexp_plotSpecs> guess_catCol(DesiredPlot &&dp, DataStore const &ds) {
         auto useableCatCols_tpl = std::views::filter(
@@ -371,15 +387,16 @@ private:
                 return std::unexpected(Unexp_plotSpecs::valCols);
             }
             else if (dp.cat_colID.has_value()) {
-                if (dp.values_colIDs.size() <= 2) {
-                    if (not addValColsUntil(2, 2).has_value()) {
+                if (dp.values_colIDs.size() <= 1) {
+                    if (not addValColsUntil(1, 1).has_value()) {
                         return std::unexpected(Unexp_plotSpecs::guessValCols);
                     }
                 }
+                else { return std::unexpected(Unexp_plotSpecs::valCols); }
             }
             else {
-                if (dp.values_colIDs.size() < 2) {
-                    if (not addValColsUntil(2, Config::max_numOfValCols).has_value()) {
+                if (dp.values_colIDs.size() < 1) {
+                    if (not addValColsUntil(1, Config::max_numOfValCols).has_value()) {
                         return std::unexpected(Unexp_plotSpecs::guessValCols);
                     }
                 }

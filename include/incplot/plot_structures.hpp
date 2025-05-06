@@ -401,9 +401,7 @@ class BarV : public Base {
             self.axisName_verLeft_bool  = false;
             self.axisName_verRight_bool = false;
         }
-        else if (dp.values_colIDs.size() > 2 ||
-                 (dp.values_colIDs.size() > 1 &&
-                  dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>())) {
+        else if (dp.values_colIDs.size() > 1) {
             self.axisName_verLeft_bool  = false;
             self.axisName_verRight_bool = false;
         }
@@ -480,7 +478,7 @@ class BarV : public Base {
             }
             else {
                 self.axisName_verLeft =
-                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(1)), self.areaHeight);
+                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(0)), self.areaHeight);
             }
         }
 
@@ -768,6 +766,17 @@ class BarH : public BarV {
 class Scatter : public BarV {
     friend class Base;
 
+    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        if (self.axisName_verLeft_bool) {
+            if (dp.values_colIDs.size() == 1) {
+                self.axisName_verLeft =
+                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(0)), self.areaHeight);
+            }
+        }
+        return self;
+    }
+
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -808,13 +817,12 @@ class Scatter : public BarV {
             return res;
         };
 
-        auto yValCols_fv =
-            std::views::filter(std::views::enumerate(ds.vec_colVariants),
-                               [&](auto const &pr) {
-                                   return (std::ranges::find(dp.values_colIDs.begin() + 1, dp.values_colIDs.end(),
-                                                             std::get<0>(pr)) != dp.values_colIDs.end());
-                               }) |
-            std::views::transform([](auto const &pr2) { return std::get<1>(pr2); });
+        auto yValCols_fv = std::views::filter(std::views::enumerate(ds.vec_colVariants),
+                                              [&](auto const &pr) {
+                                                  return (std::ranges::find(dp.values_colIDs, std::get<0>(pr)) !=
+                                                          dp.values_colIDs.end());
+                                              }) |
+                           std::views::transform([](auto const &pr2) { return std::get<1>(pr2); });
 
         auto [minV, maxV] = detail::compute_minMaxMulti(yValCols_fv);
         self.labels_verLeft =
@@ -868,7 +876,7 @@ class Scatter : public BarV {
         }
 
         // Categories are specified by column names
-        else if (dp.values_colIDs.size() > 2) {
+        else if (dp.values_colIDs.size() > 1) {
             // horTop axis line
             self.labels_verRight.push_back(
                 std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
@@ -911,6 +919,14 @@ class Scatter : public BarV {
     auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         for (size_t i = 0; i < self.areaWidth; ++i) { self.axis_horTop.push_back(Config::axisFiller_t); }
+        return self;
+    }
+
+    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+        // Name of the TS column
+        self.axisName_horBottom =
+            detail::trim2Size_leadingEnding(ds.colNames.at(dp.labelTS_colID.value()), self.areaWidth);
         return self;
     }
 
@@ -960,12 +976,11 @@ class Scatter : public BarV {
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
-        auto const &valColTypeRef_x = ds.colTypes.at(dp.values_colIDs.front());
+        auto const &valColTypeRef_x = ds.colTypes.at(dp.labelTS_colID.value());
 
         // Filter only the yValCols, also filter out the first selected column
         auto view_yValCols = std::views::enumerate(ds.vec_colVariants) | std::views::filter([&](auto const &a) {
-                                 return (std::ranges::find(dp.values_colIDs.begin() + 1, dp.values_colIDs.end(),
-                                                           std::get<0>(a)) != dp.values_colIDs.end());
+                                 return (std::ranges::find(dp.values_colIDs, std::get<0>(a)) != dp.values_colIDs.end());
                              }) |
                              std::views::transform([](auto const &b) { return std::get<1>(b); });
 
@@ -1012,16 +1027,6 @@ class Scatter : public BarV {
 class Multiline : public Scatter {
     friend class Base;
 
-    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        if (self.axisName_verLeft_bool) {
-            if (dp.values_colIDs.size() == 1) {
-                self.axisName_verLeft =
-                    detail::trim2Size_leadingEnding(ds.colNames.at(dp.values_colIDs.at(0)), self.areaHeight);
-            }
-        }
-        return self;
-    }
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -1064,13 +1069,12 @@ class Multiline : public Scatter {
             return res;
         };
 
-        auto yValCols_fv =
-            std::views::filter(std::views::enumerate(ds.vec_colVariants),
-                               [&](auto const &pr) {
-                                   return (std::ranges::find(dp.values_colIDs.begin(), dp.values_colIDs.end(),
-                                                             std::get<0>(pr)) != dp.values_colIDs.end());
-                               }) |
-            std::views::transform([](auto const &pr2) { return std::get<1>(pr2); });
+        auto yValCols_fv = std::views::filter(std::views::enumerate(ds.vec_colVariants),
+                                              [&](auto const &pr) {
+                                                  return (std::ranges::find(dp.values_colIDs, std::get<0>(pr)) !=
+                                                          dp.values_colIDs.end());
+                                              }) |
+                           std::views::transform([](auto const &pr2) { return std::get<1>(pr2); });
 
         auto [minV, maxV] = detail::compute_minMaxMulti(yValCols_fv);
         self.labels_verLeft =
@@ -1128,13 +1132,7 @@ class Multiline : public Scatter {
         return self;
     }
 
-    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        // Name of the TS column
-        self.axisName_horBottom =
-            detail::trim2Size_leadingEnding(ds.colNames.at(dp.labelTS_colID.value()), self.areaWidth);
-        return self;
-    }
+
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
         auto computeLabels = [&](double const &minV, double const &maxV) -> void {

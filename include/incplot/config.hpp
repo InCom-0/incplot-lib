@@ -75,7 +75,7 @@ public:
     static constexpr size_t min_areaWidth  = 8uz;
     static constexpr size_t min_areaHeight = 1uz;
 
-    static constexpr size_t max_numOfValCols       = 4uz;
+    static constexpr size_t max_numOfValCols       = 3uz;
     static constexpr size_t max_maxNumOfCategories = 3uz;
 
     static constexpr size_t axisLabels_maxLength_vl = 16uz;

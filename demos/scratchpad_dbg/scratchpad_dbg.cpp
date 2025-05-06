@@ -162,10 +162,9 @@ int main(int argc, char *argv[]) {
 
     auto dpCtor_Structs              = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
-    // dpCtor_Structs.front().plot_type_name = "BarV";
+    dpCtor_Structs.front().plot_type_name = "Scatter";
     dpCtor_Structs.front().tar_width = 60;
-    dpCtor_Structs.front().v_colIDs = {1};
-    dpCtor_Structs.front().lts_colID = 0;
+    dpCtor_Structs.front().v_colIDs = {0};
 
     auto ds = incplot::parsers::Parser::parse(std::string_view(irisTSV_2025));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

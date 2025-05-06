@@ -112,7 +112,6 @@ public:
                 }
             }
         }
-        auto valOrMinMax = [&](int &val) -> int { return 0; };
 
         std::array<unsigned int, 3> res{m_fakeZeroColor.r, m_fakeZeroColor.g, m_fakeZeroColor.b};
         for (auto const &[steps, stepSize] : std::views::zip(stepsForPos_perColor, m_stepSize_perColor)) {
