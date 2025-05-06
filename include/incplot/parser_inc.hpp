@@ -16,7 +16,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
-#include <vector> 
+#include <vector>
 
 
 namespace incom {
@@ -24,7 +24,13 @@ namespace terminal_plot {
 // Encapsulates parsing of the input into DataStore
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
+// TODO: Would it be possible to cleave he parser from the library so that it is easier to customize later?
+// TODO: How would one do the above in a reasonable manner?
+namespace parsers {
 class Parser {
+
+    //
+
     enum class input_t {
         NDJSON,
         JSON,
@@ -58,14 +64,11 @@ class Parser {
     using NLMjson = nlohmann::ordered_json;
 
     // HLPRS
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static std::string_view get_trimmedSV(T const &stringLike) {
-        return std::string_view(stringLike.begin(),
-                                stringLike.end() -
-                                    (std::ranges::find_if_not(stringLike.rbegin(), stringLike.rend(),
-                                                              [](auto &&chr) { return (chr == '\n' || chr == ' '); }) -
-                                     stringLike.rbegin()));
+    static std::string_view get_trimmedSV(std::string_view const &sv) {
+        return std::string_view(
+            sv.begin(), sv.end() - (std::ranges::find_if_not(sv.rbegin(), sv.rend(),
+                                                             [](auto &&chr) { return (chr == '\n' || chr == ' '); }) -
+                                    sv.rbegin()));
     }
 
     static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
@@ -225,12 +228,6 @@ class Parser {
         std::unreachable();
     }
 
-
-    static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> create_fromVerifiedJSON(
-        auto const &someJsonStructure) {
-        return std::unexpected(Unexp_parser::JSON_empty);
-    }
-
     // PARSE USING RANAV::CSV2
     static std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser> parse_usingCSV2(auto                 &&csv2Reader,
                                                                                       std::string_view const trimmed) {
@@ -301,7 +298,7 @@ class Parser {
             for (auto const &cell : row) {
                 if (not(i < hdr_sz)) { return std::unexpected(Unexp_parser::CSV_headerHasLessItemsThanDataRow); }
                 // Error when not the same type
-                // However if trying to parse 'something which looks like long long' into double ... then that's fine 
+                // However if trying to parse 'something which looks like long long' into double ... then that's fine
                 if (assess_cellType(cell) != cellTypes[i] && (not((assess_cellType(cell) == csvCellType::ll_like) &&
                                                                   cellTypes[i] == csvCellType::double_like))) {
                     return std::unexpected(Unexp_parser::CSV_cellTypeIsDifferentThanExpected);
@@ -336,10 +333,9 @@ class Parser {
 
 public:
     // MAIN INTENDED INTERFACE METHOD
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static std::expected<DataStore, Unexp_parser> parse(T const &stringLike) {
-        std::string_view const trimmed = get_trimmedSV(stringLike);
+    // Dispatches the string_view to the right parser and constructs DataStore
+    static std::expected<DataStore, Unexp_parser> parse(std::string_view const sv) {
+        std::string_view const trimmed = get_trimmedSV(sv);
 
         auto d_tprsrs = [&](auto const &&inp_t) { return dispatch_toParsers(inp_t, trimmed); };
         auto c_dstr   = [&](auto const &&data) { return DataStore(data); };
@@ -564,5 +560,6 @@ public:
                                sv_like);
     }
 };
+} // namespace parsers
 } // namespace terminal_plot
 } // namespace incom

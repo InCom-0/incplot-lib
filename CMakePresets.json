@@ -2,6 +2,18 @@
     "version": 8,
     "configurePresets": [
         {
+            "name": "InComs clang DBG",
+            "displayName": "InCom's clang DBG",
+            "hidden": false,
+            "inherits": [
+                "clang_DBG",
+                "InComs"
+            ],
+            "cacheVariables": {
+                "CMAKE_EXE_LINKER_FLAGS": "-Wl,-Bstatic,--whole-archive -Wl,-Bdynamic,--no-whole-archive"
+            }
+        },
+        {
             "name": "InComs gcc DBG",
             "displayName": "InCom's gcc DBG",
             "hidden": false,

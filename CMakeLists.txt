@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.30...4.0)
 
-project(incplot)
-
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
+project(incplot)
 
 include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
 
@@ -24,6 +24,6 @@ target_link_libraries(incplot-lib INTERFACE
 option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
 
 
-if (INCPLOT_BUILD_DEMOS)
+if(INCPLOT_BUILD_DEMOS)
     add_subdirectory(demos)
 endif()

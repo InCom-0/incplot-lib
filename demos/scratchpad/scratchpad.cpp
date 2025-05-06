@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
 
     std::string const input((std::istreambuf_iterator(std::cin)), std::istreambuf_iterator<char>());
-    auto              ds = incplot::Parser::parse(std::string_view(input));
+    auto              ds = incplot::parsers::Parser::parse(std::string_view(input));
 
 
     for (auto const &dpctr : incplot::CL_Args::get_dpCtorStruct(ap, argc, argv)) {

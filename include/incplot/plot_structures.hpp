@@ -1,6 +1,5 @@
 #pragma once
 
-#include "incplot/datastore.hpp"
 #include <limits>
 #include <ranges>
 #include <string>
