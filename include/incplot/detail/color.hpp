@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ranges>
 #include <array>
 #include <string>
 

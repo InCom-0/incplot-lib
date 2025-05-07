@@ -4,6 +4,7 @@
 
 #include <incplot.hpp>
 
+extern template class incom::terminal_plot::PlotDrawer<incplot::var_plotTypes>;
 
 int main(int argc, char *argv[]) {
     using json = nlohmann::json;
@@ -46,6 +47,7 @@ int main(int argc, char *argv[]) {
                        " failed.\n");
             continue;
         }
+
 
         auto outExp = plotDrawer.value().validateAndDrawPlot();
 

@@ -3,6 +3,8 @@
 #include <argparse/argparse.hpp>
 #include <incplot/config.hpp>
 #include <incplot/desired_plot.hpp>
+#include <incplot/detail.hpp>
+#include <incplot/plot_structures.hpp>
 #include <optional>
 
 
@@ -11,34 +13,34 @@ namespace terminal_plot {
 
 struct CL_Args {
 
-    static constexpr std::vector<DesiredPlot::DP_CtorStruct> get_dpCtorStruct(argparse::ArgumentParser &out_ap,
+    static constexpr std::vector<DesiredPlot::DP_CtorStruct> get_dpCtorStruct(argparse::ArgumentParser &inout_ap,
                                                                               int argc, const char *const *argv) {
         try {
-            out_ap.parse_args(argc, argv);
+            inout_ap.parse_args(argc, argv);
         }
         catch (const std::exception &err) {
             std::cerr << err.what() << std::endl;
-            std::cerr << out_ap;
+            std::cerr << inout_ap;
             std::exit(1);
         }
         std::vector<DesiredPlot::DP_CtorStruct> res;
 
         auto addOne = [&](std::optional<std::string_view> const &&sv_opt) {
             res.push_back(DesiredPlot::DP_CtorStruct());
-            if (auto wdt = out_ap.present<int>("-w")) { res.back().tar_width = wdt.value(); }
-            if (auto hgt = out_ap.present<int>("-t")) { res.back().tar_height = hgt.value(); }
+            if (auto wdt = inout_ap.present<int>("-w")) { res.back().tar_width = wdt.value(); }
+            if (auto hgt = inout_ap.present<int>("-t")) { res.back().tar_height = hgt.value(); }
 
             res.back().plot_type_name = sv_opt;
-            if (auto optVal = out_ap.present<int>("-x")) { res.back().lts_colID = optVal.value(); }
-            if (auto optVal = out_ap.present<std::vector<int>>("-y")) {
+            if (auto optVal = inout_ap.present<int>("-x")) { res.back().lts_colID = optVal.value(); }
+            if (auto optVal = inout_ap.present<std::vector<int>>("-y")) {
                 res.back().v_colIDs = std::vector<size_t>(optVal.value().begin(), optVal.value().end());
             }
-            if (auto optVal = out_ap.present<int>("-c")) { res.back().c_colID = optVal.value(); }
+            if (auto optVal = inout_ap.present<int>("-c")) { res.back().c_colID = optVal.value(); }
         };
 
-        if (out_ap.get<bool>("-b")) { addOne(detail::TypeToString<plot_structures::BarV>()); }
-        if (out_ap.get<bool>("-s")) { addOne(detail::TypeToString<plot_structures::Scatter>()); }
-        if (out_ap.get<bool>("-l")) { addOne(detail::TypeToString<plot_structures::Multiline>()); }
+        if (inout_ap.get<bool>("-b")) { addOne(detail::TypeToString<plot_structures::BarV>()); }
+        if (inout_ap.get<bool>("-s")) { addOne(detail::TypeToString<plot_structures::Scatter>()); }
+        if (inout_ap.get<bool>("-l")) { addOne(detail::TypeToString<plot_structures::Multiline>()); }
         if (res.empty()) { addOne(std::nullopt); }
 
         return res;
