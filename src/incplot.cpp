@@ -30,6 +30,10 @@ template class PlotDrawer<var_plotTypes>;
 
 auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer> {
+
+    // This is a map of default constructed 'plot_structures' inside an std::variant
+    // Pass the 'plot_structure' template types that should be used by the library
+    // This is the only place where one 'selects' these template types
     static const auto mp_names2Types =
         detail::generate_variantTypeMap<plot_structures::Base, plot_structures::BarV, plot_structures::BarH,
                                         plot_structures::Multiline, plot_structures::Scatter>();
