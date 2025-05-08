@@ -7,7 +7,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 add_library(incplot-lib STATIC)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
 
-target_sources(incplot-lib PRIVATE src/incplot.cpp src/desired_plot.cpp src/datastore.cpp src/color_mixer.cpp src/parser_inc.cpp src/args.cpp)
+target_sources(incplot-lib PRIVATE src/incplot.cpp src/desired_plot.cpp src/datastore.cpp src/color_mixer.cpp src/parser_inc.cpp src/args.cpp src/cross_platform.cpp)
 target_sources(incplot-lib
     PUBLIC
         FILE_SET pub_headers

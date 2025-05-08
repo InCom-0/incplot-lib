@@ -1,7 +1,7 @@
 
 #include <algorithm>
 #include <ranges>
-#include <incplot/color_mixer.hpp>
+#include <private/color_mixer.hpp>
 
 namespace incom {
 namespace terminal_plot {
