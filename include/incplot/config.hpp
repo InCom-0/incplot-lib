@@ -1,9 +1,8 @@
 #pragma once
 
 #include <array>
-#include <incplot/detail/color.hpp>
+#include <incplot/color.hpp>
 #include <string>
-
 
 namespace incom {
 namespace terminal_plot {

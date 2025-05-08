@@ -1,11 +1,13 @@
 #pragma once
 
+
 #if defined(_WIN64)
 #include <windows.h>
 
 #elif defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <unistd.h>
 
 #endif
 

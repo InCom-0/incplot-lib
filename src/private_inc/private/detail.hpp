@@ -6,8 +6,8 @@
 #include <type_traits>
 
 #include <incplot/color_mixer.hpp>
-#include <incplot/detail/concepts.hpp>
-#include <incplot/detail/misc.hpp>
+#include <private/concepts.hpp>
+#include <incplot/misc.hpp>
 #include <ww898/utf_converters.hpp>
 
 

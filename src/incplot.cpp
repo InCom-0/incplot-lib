@@ -1,7 +1,6 @@
 #include <incplot.hpp>
-#include <incplot/detail.hpp>
-#include <plot_structures_impl.hpp>
-
+#include <private/detail.hpp>
+#include <private/plot_structures_impl.hpp>
 
 
 namespace incom {
@@ -25,13 +24,17 @@ std::string PlotDrawer<PS_VAR>::drawPlot() const {
     return std::visit(ol, m_ps_var);
 }
 
+// Explicit instantiation definition
+// https://en.cppreference.com/w/cpp/language/class_template#Class_template_instantiation
 template class PlotDrawer<var_plotTypes>;
-
 
 auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer> {
+    static const auto mp_names2Types =
+        detail::generate_variantTypeMap<plot_structures::Base, plot_structures::BarV, plot_structures::BarH,
+                                        plot_structures::Multiline, plot_structures::Scatter>();
 
-    auto varCpy = var_plotTypes(plot_structures::Scatter{});
+    auto varCpy = mp_names2Types.at(dp.plot_type_name.value());
 
     auto ol = [&](auto &&var) -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer> {
         return std::move(var).build_self(dp, ds).and_then(

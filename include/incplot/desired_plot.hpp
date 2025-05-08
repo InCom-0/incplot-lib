@@ -5,14 +5,11 @@
 
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
-#include <incplot/detail/misc.hpp>
+#include <incplot/misc.hpp>
 
 
 namespace incom {
 namespace terminal_plot {
-
-
-// FORWARD DELCARATIONS --- END
 
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly

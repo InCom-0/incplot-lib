@@ -5,16 +5,16 @@
 
 namespace incom {
 namespace terminal_plot {
-
 namespace plot_structures {
 
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter
 // etc.)
 // Create your own 'plot structure' ie. type of plot by deriving from 'Base' class (or from other classes derived
-// from it) and overriding pure virtual functions. The types properly derived from 'Base' can then be used inside
-// 'PlotDrawer' inside std::variant<...>. The idea is to be able to easily customize and also possibly 'partially
-// customize' as needed You always have to make the 'Base' class a friend ... this enables really nice static
-// polymorphism coupled with 'deducing this' feature of C++23
+// from it). 'Shadow' the 'Compute_*' methods as needed as if you were overriding (but without override keyword). The
+// types properly derived from 'Base' can then be used inside 'PlotDrawer' inside std::variant<...>.
+// The idea is to be able to easily customize and also possibly 'partially customize' as needed.
+// You always have to make the 'Base' class a friend ... this enables really nice static compile-time polymorphism
+// coupled with 'deducing this' feature of C++23
 class Base {
 protected:
     // Descriptors - First thing to be computed.
@@ -72,8 +72,7 @@ public:
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
     // TODO: Implement 'valiate_self()' ... consider if it is even needed or if its not already done elsewhere
-    bool validate_self() const { return true; }
-
+    bool        validate_self() const { return true; }
     std::string build_plotAsString() const;
 
 private:
@@ -84,6 +83,8 @@ private:
     }
 
     // One needs to define all of these in a derived class.
+    // All 'Compute_*' methods are deleted in Base class on purpose to make code not compile if you don't provide
+    // implementation in some derived class
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> = delete;
 
@@ -134,35 +135,28 @@ private:
 class BarV : public Base {
     friend class Base;
 
+private:
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
     auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
-
     auto compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-        return self;
-    }
+        -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
-
     auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
     auto compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
-
     auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
 
-    // All corners are simply empty as default ... but can possibly be used for something later if overrided in
-    // derived
     auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
-
     auto compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
     auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -172,6 +166,7 @@ class BarV : public Base {
     auto compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
+
     auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
     auto compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -179,12 +174,14 @@ class BarV : public Base {
     auto compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
+
     auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
     auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
     auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
+
 
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
@@ -197,6 +194,7 @@ class BarH : public BarV {
 class Scatter : public BarV {
     friend class Base;
 
+private:
     auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
 
@@ -225,6 +223,7 @@ class Scatter : public BarV {
 class Multiline : public Scatter {
     friend class Base;
 
+private:
     auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
     // labels_vr are actually the legend here

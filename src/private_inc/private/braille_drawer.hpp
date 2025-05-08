@@ -1,6 +1,7 @@
 #pragma once
 
-#include <incplot/detail.hpp>
+#include <ranges>
+#include <private/detail.hpp>
 
 namespace incom {
 namespace terminal_plot {
@@ -32,9 +33,10 @@ private:
                               std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
                               std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
                               std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
-                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)}))) {};
+                              std::vector<size_t>(numOf_categories, 0uz),
+                              std::vector<size_t>(numOf_categories, 0uz)}))) {};
 
-    constexpr void compute_canvasColors() {
+    void compute_canvasColors() {
         ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor));
         for (size_t rowID = 0; rowID < m_pointsCountPerPos_perColor.size(); ++rowID) {
             for (size_t colID = 0; colID < m_pointsCountPerPos_perColor[rowID].size(); ++colID) {
@@ -45,7 +47,8 @@ private:
             }
         }
     }
-    constexpr std::vector<std::string> construct_outputPlotArea() {
+
+    std::vector<std::string> construct_outputPlotArea() {
         std::vector<std::string> res;
         // Gotta start rows from the back because axes cross bottom left and 'row 0' is top left
         for (int rowID = m_canvasBraille.size() - 1; rowID > -1; --rowID) {
@@ -62,11 +65,10 @@ private:
         }
         return res;
     }
-
-    static constexpr std::pair<std::vector<double>, std::vector<double>> construct_interpolatedLine(auto const &pointA,
-                                                                                                    auto const &pointB,
-                                                                                                    double      ySteps,
-                                                                                                    double xSteps) {
+    static std::pair<std::vector<double>, std::vector<double>> construct_interpolatedLine(auto const &pointA,
+                                                                                          auto const &pointB,
+                                                                                          double      ySteps,
+                                                                                          double      xSteps) {
         // Weird calculation of total steps on the interpolated line ... probably reinventing the wheel here
         // TODO: Poosibly refactor according to some best practice on this
         int const totalSteps = std::max(0.0, ((ySteps)*Config::y_interpolationMultiplier) - 1.0) +
@@ -85,10 +87,10 @@ private:
 public:
     template <typename X>
     requires std::is_arithmetic_v<typename X::value_type>
-    static constexpr std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
-                                                         auto                                      viewOfValVariants,
-                                                         std::optional<std::vector<size_t>> const &catIDs_vec,
-                                                         std::array<Color_CVTS, 6>                 colorPalette) {
+    static std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
+                                               auto                                      viewOfValVariants,
+                                               std::optional<std::vector<size_t>> const &catIDs_vec,
+                                               std::array<Color_CVTS, 6>                 colorPalette) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          catIDs_vec.has_value()
@@ -137,10 +139,10 @@ public:
         bd.compute_canvasColors();
         return bd.construct_outputPlotArea();
     }
+
     template <typename X>
-    static constexpr std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, X const &ts_values,
-                                                        auto                      viewOfValVariants,
-                                                        std::array<Color_CVTS, 6> colorPalette) {
+    static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, X const &ts_values,
+                                              auto viewOfValVariants, std::array<Color_CVTS, 6> colorPalette) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }), colorPalette);

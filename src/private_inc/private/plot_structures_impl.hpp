@@ -6,8 +6,8 @@
 #include <type_traits>
 #include <variant>
 
-#include <incplot/braille_drawer.hpp>
 #include <incplot/plot_structures.hpp>
+#include <private/braille_drawer.hpp>
 
 
 namespace incom {
@@ -71,7 +71,6 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
         .and_then(c_alhb)
         .and_then(c_ap);
 }
-
 inline size_t Base::compute_lengthOfSelf() const {
 
     size_t lngth = pad_top + pad_bottom;
@@ -115,7 +114,6 @@ inline size_t Base::compute_lengthOfSelf() const {
                                      : 0;
     return lngth;
 }
-
 inline std::string Base::build_plotAsString() const {
     std::string result;
     result.reserve(compute_lengthOfSelf());
@@ -205,6 +203,7 @@ inline std::string Base::build_plotAsString() const {
     for (int i = 0; i < pad_bottom; ++i) { result.push_back('\n'); }
     return result;
 }
+// ### END BASE ###
 
 // BAR V
 auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -343,6 +342,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
 
     return self;
 }
+
 auto BarV::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
     if (self.axisName_verLeft_bool) {
@@ -358,6 +358,11 @@ auto BarV::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStor
 
     return self;
 }
+auto BarV::compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
+    return self;
+}
+
 auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -392,12 +397,12 @@ auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore 
 
     return (self);
 }
-
 auto BarV::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
     for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
     return self;
 }
+
 auto BarV::compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
@@ -506,6 +511,7 @@ auto BarV::compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStor
     return self;
 }
 
+
 auto BarV::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
     self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
@@ -519,6 +525,7 @@ auto BarV::compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore 
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
     return self;
 }
+
 
 auto BarV::compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
@@ -624,8 +631,10 @@ auto BarV::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore 
     else { computePA(ds.llCols.at(valColTypeRef.second)); }
     return self;
 }
+// ### END BAR V ###
 
 // BAR H
+// ### END BAR H ###
 
 // SCATTER
 auto Scatter::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -787,7 +796,6 @@ auto Scatter::compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataS
     self.axisName_horBottom = detail::trim2Size_leadingEnding(ds.colNames.at(dp.labelTS_colID.value()), self.areaWidth);
     return self;
 }
-
 auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -829,7 +837,6 @@ auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataSto
 
     return self;
 }
-
 auto Scatter::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -877,6 +884,9 @@ auto Scatter::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataSto
 
     return self;
 }
+
+// ### END SCATTER ###
+
 
 // MULTILINE
 
@@ -983,7 +993,6 @@ auto Multiline::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataSto
     return self;
 }
 
-
 auto Multiline::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
     auto computeLabels = [&](double const &minV, double const &maxV) -> void {
@@ -1023,7 +1032,6 @@ auto Multiline::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataS
 
     return self;
 }
-
 auto Multiline::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
@@ -1049,6 +1057,7 @@ auto Multiline::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataS
     return self;
 }
 
+// ### END MULTILINE ###
 
 } // namespace plot_structures
 } // namespace terminal_plot

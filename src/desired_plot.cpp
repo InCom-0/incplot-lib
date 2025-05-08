@@ -1,10 +1,11 @@
 #include <algorithm>
+#include <limits>
 #include <ranges>
+#include <utility>
 
-#include <incplot/plot_structures.hpp>
 #include <incplot/desired_plot.hpp>
-#include <incplot/detail/concepts.hpp>
-
+#include <incplot/plot_structures.hpp>
+#include <private/concepts.hpp>
 
 
 namespace incom {
@@ -49,7 +50,7 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::compute_colAssessments(
 
         auto const firstVal          = vec.at(0);
         size_t     firstValOccurence = 1;
-        size_t     sequenceLength    = SIZE_MAX;
+        size_t     sequenceLength    = std::numeric_limits<size_t>::max();
 
         dp.m_colAssessments.back().is_sameRepeatingSubsequences_whole = false;
         size_t i_hlpr                                                 = 1;

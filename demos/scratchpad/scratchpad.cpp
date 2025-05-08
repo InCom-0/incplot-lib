@@ -7,7 +7,6 @@
 extern template class incom::terminal_plot::PlotDrawer<incplot::var_plotTypes>;
 
 int main(int argc, char *argv[]) {
-    using json = nlohmann::json;
 
     // NOT RUNNING IN CONSOLE TERMINAL
     if (not incplot::detail::is_inTerminal()) {
@@ -32,6 +31,7 @@ int main(int argc, char *argv[]) {
 
     for (auto const &dpctr : incplot::CL_Args::get_dpCtorStruct(ap, argc, argv)) {
         auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds.value());
+
 
         if (not dp_autoGuessed.has_value()) {
             std::print("{0}{1}{2}", "Autoguessing of 'DesiresPlot' parameters for: ",
