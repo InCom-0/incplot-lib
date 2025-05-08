@@ -7,7 +7,17 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 add_library(incplot-lib STATIC)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
 
-target_sources(incplot-lib PRIVATE src/incplot.cpp src/desired_plot.cpp src/datastore.cpp src/color_mixer.cpp src/parser_inc.cpp src/args.cpp src/cross_platform.cpp)
+set(INCPLOT_LIB_SRC
+    incplot.cpp
+    desired_plot.cpp
+    datastore.cpp
+    color_mixer.cpp
+    parser_inc.cpp
+    args.cpp
+    cross_platform.cpp)
+list(TRANSFORM INCPLOT_LIB_SRC PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/src/)
+
+target_sources(incplot-lib PRIVATE ${INCPLOT_LIB_SRC})
 target_sources(incplot-lib
     PUBLIC
         FILE_SET pub_headers
@@ -25,12 +35,15 @@ target_compile_features(incplot-lib PUBLIC cxx_std_23)
 
 
 include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
-target_link_libraries(incplot-lib PUBLIC
+target_link_libraries(incplot-lib PRIVATE
     nlohmann_json::nlohmann_json
     csv2::csv2
+    utf-cpp::utf-cpp)
+
+target_link_libraries(incplot-lib PUBLIC
     argparse::argparse
-    utf-cpp::utf-cpp
     magic_enum::magic_enum)
+
 
 
 option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})

@@ -1,7 +1,6 @@
 #include <print>
 #include <string>
 
-#include <csv2/reader.hpp>
 #include <incplot.hpp>
 #include <string_view>
 
