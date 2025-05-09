@@ -21,8 +21,8 @@ struct DataStore {
     using vec_pr_strVarVec_t = std::vector<
         std::pair<std::string, std::variant<std::vector<std::string>, std::vector<double>, std::vector<long long>>>>;
     using vec_colVar_t = std::vector<
-        std::variant<std::reference_wrapper<std::vector<std::string>>, std::reference_wrapper<std::vector<long long>>,
-                     std::reference_wrapper<std::vector<double>>>>;
+        std::variant<std::reference_wrapper<std::vector<std::string>>, std::reference_wrapper<std::vector<double>>,
+                     std::reference_wrapper<std::vector<long long>>>>;
 
     // Data descriptors
     std::vector<std::string>                    colNames;

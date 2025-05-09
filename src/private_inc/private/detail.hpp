@@ -2,18 +2,20 @@
 
 #include <cmath>
 #include <format>
+#include <functional>
 #include <iterator>
 #include <type_traits>
 
+#include <incplot/misc.hpp>
 #include <private/color_mixer.hpp>
 #include <private/concepts.hpp>
-#include <incplot/misc.hpp>
 #include <ww898/utf_converters.hpp>
 
 
 namespace incom {
 namespace terminal_plot {
 namespace detail {
+
 constexpr inline std::string convert_u32u8(std::u32string &str) {
     using namespace ww898::utf;
     std::string res;

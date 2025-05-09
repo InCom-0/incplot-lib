@@ -1,5 +1,6 @@
 #pragma once
 
+#include "private/detail.hpp"
 #include <limits>
 #include <ranges>
 #include <string>

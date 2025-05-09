@@ -46,7 +46,8 @@ static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
     return true;
 }
 
-
+// 'Trims' a string_view by removing 'new line' and/or '[space]' characters from the end of it
+// This is useful in order to sort of 'standardize' structure of input
 std::string_view Parser::get_trimmedSV(std::string_view const &sv) {
     return std::string_view(
         sv.begin(), sv.end() - (std::ranges::find_if_not(sv.rbegin(), sv.rend(),
