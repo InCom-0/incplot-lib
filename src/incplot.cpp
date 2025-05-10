@@ -36,10 +36,10 @@ auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer> {
 
     // This is a map of default constructed 'plot_structures' inside an std::variant
-    // Pass the 'plot_structure' template types that should be used by the library
-    // This strange incantation make a lambda with 'index_sequence' and immediatelly invokes it
+    // This strange incantation makes a lambda with 'index_sequence' and immediatelly invokes it to generate the
+    // variantTypeMap with the right types inside it based on var_plotTypes defined elsewhere
     static const auto mp_names2Types = std::invoke(
-        []<typename T, T... ints>(std::integer_sequence<T, ints...> int_seq) {
+        []<typename T, T... ints>(std::integer_sequence<T, ints...>) {
             return detail::generate_variantTypeMap<plot_structures::Base,
                                                    std::variant_alternative_t<ints, var_plotTypes>...>();
         },

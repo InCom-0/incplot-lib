@@ -45,7 +45,7 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct() {
 void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
     out_ap.add_description(
         "Draw coloured plots using unicode symbols inside terminal.\n\nAutomatically infers what to display and "
-        "how based on the shape of the data piped in.\nPipe in data in JSON Lines (or NDJSON) format. All "
+        "how based on the shape of the data piped in.\nPipe in data in JSON, JSON Lines, NDJSON, CSV or TSV formats. All "
         "arguments "
         "are optional");
 
