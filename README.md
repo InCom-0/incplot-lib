@@ -19,7 +19,7 @@ Naturally though, it can potentially be used for other things as well
 * Compiles with GCC 14.2+ and Clang 20.1.3+ on Windows (through MSYS2), Linux and MacOS
 * Doesn't (yet) compile with MSVC (presumably because of some as of yet missing C++23 feature implementation)
 * Uses flexible design patterns combining both classic OOP and functional programming features of C++23 (ie. monadic operations)
-* Combines class inheritance, 'builder pattern', 'deducing this' from C++23 and std::expected and its monadic operations from C++23 into one design pattern that is easy to change/refactor/add to, that is way less error prone, has great error handling and stellar performance characteristics through compile-time polymorphism ... mostly seen in 'plot_structures_impl.hpp'
+* Combines classic inheritance, 'builder pattern', 'deducing this' from C++23 and std::expected and its monadic operations from C++23 into one design pattern that is easy to change/refactor/add to, that is way less error prone, has great error handling and stellar performance characteristics through compile-time polymorphism ... mostly seen in 'plot_structures_impl.hpp'
 * Generally doesn't use pointer semantics anywhere (unmanaged or managed)
 
 ## External libraries used ##

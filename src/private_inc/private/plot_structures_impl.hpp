@@ -833,7 +833,7 @@ auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataSto
         self.label_horBottom.append(Config::term_setDefault);
     };
 
-    auto [minV, maxV] = detail::compute_minMaxMulti(std::vector{ds.vec_colVariants.at(dp.values_colIDs.front())});
+    auto [minV, maxV] = detail::compute_minMaxMulti(std::vector{ds.vec_colVariants.at(dp.labelTS_colID.value())});
     computeLabels(minV, maxV);
 
     return self;
