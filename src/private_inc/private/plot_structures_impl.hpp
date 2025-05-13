@@ -815,11 +815,13 @@ auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataSto
 
         // Construct the tick labels
         for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
-            while (placedChars < (i * (fillerSize + 1) + fillerSize)) {
+            tempStr = detail::format_toMax5length((minV - stepSize) + ((i * (fillerSize + 1) + fillerSize) * stepSize));
+
+            while (placedChars < (i * (fillerSize + 1) + fillerSize + (tempStr.size() < 3) - (tempStr.size() > 4))) {
                 self.label_horBottom.push_back(Config::space);
                 placedChars++;
             }
-            tempStr = detail::format_toMax5length((minV - stepSize) + ((i * (fillerSize + 1) + fillerSize) * stepSize));
+
             self.label_horBottom.append(tempStr);
             placedChars += detail::strlen_utf8(tempStr);
         }
@@ -891,97 +893,6 @@ auto Scatter::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataSto
 
 // MULTILINE
 
-auto Multiline::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-
-    auto getValLabels = [&](double const &minVal, double const &maxVal, size_t areaLength, size_t const &labelsWidth,
-                            size_t const padRight, size_t const padLeft) {
-        auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
-        std::string filler(labelsWidth, Config::space);
-        auto        stepSize = ((maxVal - minVal) / ((4 * areaLength) - 1)) * 4;
-
-        // Construct with 'left padding' in place
-        std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
-
-        // Value label of 'zero point'
-        res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal - stepSize), labelsWidth));
-
-        for (int id = 0; id < self.axis_verLeftSteps; ++id) {
-            for (int fillID = 0; fillID < fillerLength; ++fillID) {
-                res.at(id * (fillerLength + 1) + fillID + 1).append(filler);
-            }
-            // Value label at the current position
-            res.at((id + 1) * (fillerLength + 1))
-                .append(detail::trim2Size_leading(
-                    detail::format_toMax5length((minVal - stepSize) + (stepSize * (id + 1) * (fillerLength + 1))),
-                    labelsWidth));
-        }
-
-        // Filler up to 'max point'
-        for (int i = self.axis_verLeftSteps * (fillerLength + 1) + 1; i < res.size() - 1; ++i) {
-            res.at(i).append(filler);
-        }
-
-        // Value label of 'max point'
-        res.back().append(detail::trim2Size_leading(detail::format_toMax5length(maxVal + (stepSize / 4)), labelsWidth));
-        for (auto &line : res) {
-            for (int i = 0; i < padRight; ++i) { line.push_back(Config::space); }
-        }
-        std::ranges::reverse(res);
-        return res;
-    };
-
-    auto yValCols_fv =
-        std::views::filter(std::views::enumerate(ds.vec_colVariants),
-                           [&](auto const &pr) {
-                               return (std::ranges::find(dp.values_colIDs, std::get<0>(pr)) != dp.values_colIDs.end());
-                           }) |
-        std::views::transform([](auto const &pr2) { return std::get<1>(pr2); });
-
-    auto [minV, maxV] = detail::compute_minMaxMulti(yValCols_fv);
-    self.labels_verLeft =
-        getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
-
-    return (self);
-}
-// labels_vr are actually the legend here
-auto Multiline::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-
-    // Categories are specified by column names
-    if (dp.values_colIDs.size() > 1) {
-        // horTop axis line
-        self.labels_verRight.push_back(
-            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
-
-        for (size_t lineID = 0; lineID < self.areaHeight; ++lineID) {
-            if (lineID < dp.values_colIDs.size()) {
-                self.labels_verRight.push_back(
-                    std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(ds.colNames.at(dp.values_colIDs.at(lineID)),
-                                                         self.labels_verRightWidth))
-                        .append(Config::term_setDefault));
-            }
-            else {
-                self.labels_verRight.push_back(
-                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
-            }
-        }
-        // horBottom axis line
-        self.labels_verRight.push_back(
-            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
-    }
-
-    // If no categories then all VR labels are empty strings
-    else {
-        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
-    }
-
-
-    return self;
-}
-
 auto Multiline::compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
     self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
@@ -994,45 +905,6 @@ auto Multiline::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataSto
     return self;
 }
 
-auto Multiline::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
-    auto computeLabels = [&](double const &minV, double const &maxV) -> void {
-        size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
-        auto         stepSize    = ((maxV - minV) / ((2 * self.areaWidth) - 1)) * 2;
-        size_t       placedChars = 0;
-
-        self.label_horBottom.append(Config::color_Axes);
-
-        // Construct the [0:0] point label (minV - stepsize to make the first label one below the minV)
-        std::string tempStr = detail::format_toMax5length(minV - stepSize);
-        self.label_horBottom.append(tempStr);
-        placedChars += detail::strlen_utf8(tempStr);
-
-        // Construct the tick labels
-        for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
-            while (placedChars < (i * (fillerSize + 1) + fillerSize)) {
-                self.label_horBottom.push_back(Config::space);
-                placedChars++;
-            }
-            tempStr = detail::format_toMax5length((minV - stepSize) + ((i + 1) * (fillerSize + 1) * stepSize));
-            self.label_horBottom.append(tempStr);
-            placedChars += detail::strlen_utf8(tempStr);
-        }
-
-        // Construct the [0:end] point label
-        tempStr = detail::format_toMax5length(maxV + (stepSize / 2));
-        for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
-            self.label_horBottom.push_back(Config::space);
-        }
-        self.label_horBottom.append(tempStr);
-        self.label_horBottom.append(Config::term_setDefault);
-    };
-
-    auto [minV, maxV] = detail::compute_minMaxMulti(std::vector{ds.vec_colVariants.at(dp.labelTS_colID.value())});
-    computeLabels(minV, maxV);
-
-    return self;
-}
 auto Multiline::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer> {
 
