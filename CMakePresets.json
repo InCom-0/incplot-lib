@@ -8,10 +8,7 @@
             "inherits": [
                 "gcc_DBG",
                 "InComs"
-            ],
-            "cacheVariables": {
-                "CMAKE_EXE_LINKER_FLAGS": "-Wl,-Bstatic,--whole-archive -Wl,-Bdynamic,--no-whole-archive"
-            }
+            ]
         },
         {
             "name": "InComs gcc REL",
@@ -32,10 +29,7 @@
             "inherits": [
                 "clang_DBG",
                 "InComs"
-            ],
-            "cacheVariables": {
-                "CMAKE_EXE_LINKER_FLAGS": "-Wl,-Bstatic,--whole-archive -Wl,-Bdynamic,--no-whole-archive"
-            }
+            ]
         },
         {
             "name": "InComs clang REL",
