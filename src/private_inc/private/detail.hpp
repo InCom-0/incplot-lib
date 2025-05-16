@@ -216,9 +216,8 @@ requires std::is_arithmetic_v<std::decay_t<T>>
 constexpr inline std::pair<double, std::optional<std::string>> rebase_2_SIPrefix(T &&value) {
     if (value == 0) { return {0, ""}; }
     else {
-        T   absVal = value < 0 ? (-value) : value;
-        int target = absVal >= 1 ? (std::log10(absVal) / 3) : (std::log10(absVal) / 3) - 1;
-        return {value / std::pow(1000, target), Config::si_prefixes.at(target + 10)};
+        int target = std::log10(std::abs(value)) / 3;
+        return {value / std::pow(1000, target), Config::si_prefixes.at(target + 10 - (std::abs(value) < 1 ? 1 : 0))};
     }
 }
 

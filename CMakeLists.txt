@@ -50,3 +50,8 @@ option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
 if(INCPLOT_BUILD_DEMOS)
     add_subdirectory(demos)
 endif()
+
+option(INCPLOT_BUILD_TESTS "Build test executables" ${PROJECT_IS_TOP_LEVEL})
+if(INCPLOT_BUILD_TESTS)
+    add_subdirectory(test)
+endif()

@@ -2,20 +2,18 @@
     "version": 8,
     "configurePresets": [
         {
-            "name": "InComs gcc DBG",
-            "displayName": "InCom's gcc DBG",
+            "name": "MSYS2 UCRT gcc DBG",
             "hidden": false,
             "inherits": [
-                "gcc_DBG",
+                "gcc DBG",
                 "InComs"
             ]
         },
         {
-            "name": "InComs gcc REL",
-            "displayName": "InCom's gcc REL",
+            "name": "MSYS2 UCRT gcc REL",
             "hidden": false,
             "inherits": [
-                "gcc_REL",
+                "gcc REL",
                 "InComs"
             ],
             "cacheVariables": {
@@ -23,51 +21,7 @@
             }
         },
         {
-            "name": "InComs clang DBG",
-            "displayName": "InCom's clang DBG",
-            "hidden": false,
-            "inherits": [
-                "clang_DBG",
-                "InComs"
-            ]
-        },
-        {
-            "name": "InComs clang REL",
-            "displayName": "InCom's clang REL",
-            "hidden": false,
-            "inherits": [
-                "clang_REL",
-                "InComs"
-            ],
-            "cacheVariables": {
-                "CMAKE_EXE_LINKER_FLAGS": "-static-libgcc -static-libstdc++ -Wl,-Bstatic,--whole-archive -lwinpthread -Wl,-Bdynamic,--no-whole-archive"
-            }
-        },
-        {
-            "name": "MSVC_DBG",
-            "displayName": "MSVC DBG",
-            "hidden": false,
-            "inherits": [
-                "_common"
-            ],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Debug"
-            }
-        },
-        {
-            "name": "MSVC_REL",
-            "displayName": "MSVC REL",
-            "hidden": false,
-            "inherits": [
-                "_common"
-            ],
-            "cacheVariables": {
-                "CMAKE_BUILD_TYPE": "Release"
-            }
-        },
-        {
-            "name": "gcc_DBG",
-            "displayName": "gcc DBG",
+            "name": "gcc DBG",
             "hidden": false,
             "inherits": [
                 "_common",
@@ -78,8 +32,7 @@
             }
         },
         {
-            "name": "gcc_REL",
-            "displayName": "gcc REL",
+            "name": "gcc REL",
             "hidden": false,
             "inherits": [
                 "_common",
@@ -90,8 +43,7 @@
             }
         },
         {
-            "name": "clang_DBG",
-            "displayName": "clang DBG",
+            "name": "clang DBG",
             "hidden": false,
             "inherits": [
                 "_common",
@@ -102,8 +54,7 @@
             }
         },
         {
-            "name": "clang_REL",
-            "displayName": "clang REL",
+            "name": "clang REL",
             "hidden": false,
             "inherits": [
                 "_common",
