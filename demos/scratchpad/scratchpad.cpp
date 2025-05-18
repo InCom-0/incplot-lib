@@ -4,8 +4,6 @@
 
 #include <incplot.hpp>
 
-extern template class incom::terminal_plot::PlotDrawer<incplot::var_plotTypes>;
-
 int main(int argc, char *argv[]) {
 
     // NOT RUNNING IN CONSOLE TERMINAL

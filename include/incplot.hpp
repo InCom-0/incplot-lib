@@ -19,10 +19,14 @@ class PlotDrawer {
 private:
     PS_VAR m_ps_var;
 
-public:
     // CONSTRUCTION
+    // Is private on purpose, gotta go through make_plotDrawer
     constexpr PlotDrawer() {};
     PlotDrawer(auto ps_var) : m_ps_var(std::move(ps_var)) {}
+
+public:
+    friend auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer>;
 
     // MAIN METHODS
     bool        validate_self() const;

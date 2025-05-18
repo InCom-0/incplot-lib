@@ -7,7 +7,8 @@
 
 int main(int argc, char *argv[]) {
 
-    std::string irisTSV_2025(R"({"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
+    std::string irisTSV_2025(
+        R"({"sepal_length":5.1,"sepal_width":3.5,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
 {"sepal_length":4.9,"sepal_width":3,"petal_length":1.4,"petal_width":0.2,"species":"Iris-setosa"}
 {"sepal_length":4.7,"sepal_width":3.2,"petal_length":1.3,"petal_width":0.2,"species":"Iris-setosa"}
 {"sepal_length":4.6,"sepal_width":3.1,"petal_length":1.5,"petal_width":0.2,"species":"Iris-setosa"}
@@ -261,10 +262,10 @@ int main(int argc, char *argv[]) {
 "100",1970,740)");
 
 
-    auto dpCtor_Structs              = incplot::CL_Args::get_dpCtorStruct();
+    auto dpCtor_Structs                   = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     dpCtor_Structs.front().plot_type_name = "Scatter";
-    dpCtor_Structs.front().tar_width = 60;
+    dpCtor_Structs.front().tar_width      = 60;
     // dpCtor_Structs.front().v_colIDs = {0};
 
     auto ds = incplot::parsers::Parser::parse(std::string_view(nileCSV));
@@ -296,8 +297,6 @@ int main(int argc, char *argv[]) {
             continue;
         }
         std::print("{}\n", outExp.value());
-
-        
     }
 
     return 0;
