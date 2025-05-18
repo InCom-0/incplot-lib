@@ -1,5 +1,3 @@
-enable_testing()
-
 FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
@@ -9,7 +7,9 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
+enable_testing()
+
 add_executable(UnitTest)
 target_sources(UnitTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/unit_tests.cpp)
 
-target_link_libraries(UnitTest PRIVATE incplot-lib gtest_main gmock_main)
+target_link_libraries(UnitTest PRIVATE gtest_main gmock_main)

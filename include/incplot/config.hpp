@@ -1,8 +1,9 @@
 #pragma once
 
-#include <array>
 #include <incplot/color.hpp>
+#include <array>
 #include <string>
+
 
 namespace incom {
 namespace terminal_plot {
@@ -29,9 +30,10 @@ public:
     static constexpr std::string areaCorner_bl_barV = "└";
 
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
-    static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{U'⡀', U'⢀', U'⠄', U'⠠', U'⠂', U'⠐', U'⠁', U'⠈'};
-    static constexpr char32_t                               braille_blank = U'⠀';
-    static constexpr char                                   space         = ' ';
+    static constexpr std::array<std::array<char32_t, 2>, 4> braille_map{
+        {{U'⡀', U'⢀'}, {U'⠄', U'⠠'}, {U'⠂', U'⠐'}, {U'⠁', U'⠈'}}};
+    static constexpr char32_t braille_blank = U'⠀';
+    static constexpr char     space         = ' ';
 
     static constexpr std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
     static constexpr std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
@@ -55,8 +57,8 @@ public:
     static constexpr std::string color_Vals5 = TermColors::get_basicColor(color_Vals5_enum);
     static constexpr std::string color_Vals6 = TermColors::get_basicColor(color_Vals6_enum);
 
-    static constexpr std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{19u,  161u, 14u, 0u, 55u,
-                                                                                 218u, 197u, 15u, 31u};
+    static constexpr std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{
+        {{19u, 161u, 14u}, {0u, 55u, 218u}, {197u, 15u, 31u}}};
 
     static constexpr std::array<unsigned int, 3> colors_blackRaw{12, 12, 12};
     static constexpr double                      colors_scaleDistanceFromBlack = 0.55;

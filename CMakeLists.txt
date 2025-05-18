@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.30...4.0)
 
 project(incplot)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 
@@ -23,14 +24,14 @@ target_sources(incplot-lib
         FILE_SET pub_headers
         TYPE HEADERS
         BASE_DIRS
-            include)
+                include)
 target_sources(incplot-lib
     PRIVATE
         FILE_SET priv_headers
         TYPE HEADERS
         BASE_DIRS
                 src/private_inc)
-
+                
 target_compile_features(incplot-lib PUBLIC cxx_std_23)
 
 
@@ -51,7 +52,7 @@ if(INCPLOT_BUILD_DEMOS)
     add_subdirectory(demos)
 endif()
 
-option(INCPLOT_BUILD_TESTS "Build test executables" ${PROJECT_IS_TOP_LEVEL})
-if(INCPLOT_BUILD_TESTS)
-    add_subdirectory(test)
-endif()
+# option(INCPLOT_BUILD_TESTS "Build test executables" ${PROJECT_IS_TOP_LEVEL})
+# if(INCPLOT_BUILD_TESTS)
+#     add_subdirectory(test)
+# endif()

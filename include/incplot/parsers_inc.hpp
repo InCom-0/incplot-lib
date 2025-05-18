@@ -50,7 +50,6 @@ class Parser {
     // TYPE ALIAS
     using parser_return_t = std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser>;
 
-
     // HLPRS
     static std::string_view get_trimmedSV(std::string_view const &sv);
 
@@ -64,7 +63,7 @@ class Parser {
     // COMPOSITION METHODS
     // TODO: Maybe make this public for later use?
     static std::expected<input_t, Unexp_parser> assess_inputType(std::string_view const &sv);
-    static parser_return_t dispatch_toParsers(input_t const &inp_t, std::string_view const &sv);
+    static parser_return_t                      dispatch_toParsers(input_t const &inp_t, std::string_view const &sv);
 
     // PARSE USING RANAV::CSV2
     static parser_return_t parse_usingCSV2(auto &&csv2Reader, std::string_view const trimmed);
