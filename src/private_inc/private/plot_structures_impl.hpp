@@ -752,11 +752,11 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
         for (size_t lineID = 0; lineID < self.areaHeight; ++lineID) {
-            if (lineID < (dp.values_colIDs.size() - 1)) {
+            if (lineID < (dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
                         .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(ds.colNames.at(dp.values_colIDs.at(lineID + 1)),
+                        .append(detail::trim2Size_ending(ds.colNames.at(dp.values_colIDs.at(lineID)),
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
