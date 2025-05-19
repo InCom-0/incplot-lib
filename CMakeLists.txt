@@ -24,13 +24,13 @@ target_sources(incplot-lib
         FILE_SET pub_headers
         TYPE HEADERS
         BASE_DIRS
-                include)
+                include/L2)
 target_sources(incplot-lib
     PRIVATE
         FILE_SET priv_headers
         TYPE HEADERS
         BASE_DIRS
-                src/private_inc)
+                src/private_inc/)
                 
 target_compile_features(incplot-lib PUBLIC cxx_std_23)
 
@@ -52,7 +52,7 @@ if(INCPLOT_BUILD_DEMOS)
     add_subdirectory(demos)
 endif()
 
-# option(INCPLOT_BUILD_TESTS "Build test executables" ${PROJECT_IS_TOP_LEVEL})
-# if(INCPLOT_BUILD_TESTS)
-#     add_subdirectory(test)
-# endif()
+option(INCPLOT_BUILD_TESTS "Build test executables" ${PROJECT_IS_TOP_LEVEL})
+if(INCPLOT_BUILD_TESTS)
+    add_subdirectory(test)
+endif()
