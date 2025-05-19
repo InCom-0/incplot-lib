@@ -233,6 +233,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     // VERTICAL RIGHT LABELS SIZE
     // Will be used as 'legend' for some types of Plots
     if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+        // catCol is specified meaning the legend will be uniqued values from that column
         if (dp.cat_colID.has_value()) {
             typename decltype(ds.vec_colVariants)::value_type cat_values =
                 std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.vec_colVariants), [&](auto const &a) {
@@ -256,10 +257,11 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
                 std::ranges::max(std::views::transform(catIDs_vec, [](auto const &a) { return a.size(); }));
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
-        else if (dp.values_colIDs.size() > 2) {
+        // Else if more than one YvalCols, legend will be column names of those YvalCols
+        else if (dp.values_colIDs.size() > 1) {
             size_t maxSize = 0;
-            for (size_t id_indirect = 1; id_indirect < dp.values_colIDs.size(); ++id_indirect) {
-                maxSize = std::max(maxSize, ds.colNames.at(dp.values_colIDs.at(id_indirect)).size());
+            for (auto const &colID : dp.values_colIDs) {
+                maxSize = std::max(maxSize, ds.colNames.at(colID).size());
             }
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
@@ -268,8 +270,8 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
         if (dp.values_colIDs.size() > 1) {
             size_t maxSize = 0;
-            for (size_t id_indirect = 0; id_indirect < dp.values_colIDs.size(); ++id_indirect) {
-                maxSize = std::max(maxSize, ds.colNames.at(dp.values_colIDs.at(id_indirect)).size());
+            for (auto const &colID : dp.values_colIDs) {
+                maxSize = std::max(maxSize, ds.colNames.at(colID).size());
             }
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
@@ -296,7 +298,9 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
                      (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
                      self.labels_verRightWidth - (Config::axis_verName_width_vl * self.axisName_verRight_bool) -
                      self.pad_right;
-    if (self.areaWidth < Config::min_areaWidth) { return std::unexpected(Unexp_plotDrawer::areaWidth_insufficient); }
+    if (self.areaWidth < Config::min_areaWidth) {
+        return std::unexpected(Unexp_plotDrawer::C_DSC_areaWidth_insufficient);
+    }
 
     // Labels and axis name bottom
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {} // TODO: Proper assessment for Multiline
@@ -320,12 +324,13 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
         else { self.areaHeight = self.areaWidth / 3; }
     }
     else {
-        self.areaHeight =
-            std::max(1ll, static_cast<long long>(dp.targetHeight.value()) - self.pad_top - self.axisName_horTop_bool -
-                              self.labels_horTop_bool - 2ll - self.labels_horBottom_bool -
-                              self.axisName_horBottom_bool - self.pad_bottom);
+        self.areaHeight = static_cast<long long>(dp.targetHeight.value()) - self.pad_top - self.axisName_horTop_bool -
+                          self.labels_horTop_bool - 2ll - self.labels_horBottom_bool - self.axisName_horBottom_bool -
+                          self.pad_bottom;
     }
-    if (self.areaHeight < Config::min_areaHeight) { return std::unexpected(Unexp_plotDrawer::areaHeight_insufficient); }
+    if (self.areaHeight < Config::min_areaHeight) {
+        return std::unexpected(Unexp_plotDrawer::C_DSC_areaHeight_insufficient);
+    }
 
     // Axes steps
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {

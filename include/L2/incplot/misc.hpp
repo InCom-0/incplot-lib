@@ -29,12 +29,10 @@ enum class Unexp_plotSpecs {
     GZS_heightTooSmall
 };
 enum class Unexp_plotDrawer {
-    plotStructureInvalid,
-    barVplot_tooWide,
-    catColAndMultipleYValCols,
-    areaWidth_insufficient,
-    areaHeight_insufficient,
-    unknownEerror
+    C_DSC_areaWidth_insufficient,
+    C_DSC_areaHeight_insufficient,
+    C_DSC_,
+    V_PD_nonspecificError,
 };
 // UNEXPECTED AND OTHER SIMILAR ENUMS --- END
 } // namespace terminal_plot

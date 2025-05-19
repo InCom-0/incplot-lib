@@ -18,7 +18,7 @@ bool PlotDrawer<PS_VAR>::validate_self() const {
 template <typename PS_VAR>
 std::expected<std::string, Unexp_plotDrawer> PlotDrawer<PS_VAR>::validateAndDrawPlot() const {
     // TODO: Add some validation before drawing
-    if (validate_self() == false) { return std::unexpected(Unexp_plotDrawer::plotStructureInvalid); }
+    if (validate_self() == false) { return std::unexpected(Unexp_plotDrawer::V_PD_nonspecificError); }
     else { return drawPlot(); }
 }
 template <typename PS_VAR>
