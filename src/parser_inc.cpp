@@ -51,7 +51,7 @@ static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
 std::string_view Parser::get_trimmedSV(std::string_view const &sv) {
     return std::string_view(
         sv.begin(), sv.end() - (std::ranges::find_if_not(sv.rbegin(), sv.rend(),
-                                                         [](auto &&chr) { return (chr == '\n' || chr == ' '); }) -
+                                                         [](auto &&chr) { return (chr == '\n' || chr == ' ' || chr == '\r'); }) -
                                 sv.rbegin()));
 }
 

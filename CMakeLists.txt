@@ -24,7 +24,7 @@ target_sources(incplot-lib
         FILE_SET pub_headers
         TYPE HEADERS
         BASE_DIRS
-                include/L2)
+                include/L2/)
 target_sources(incplot-lib
     PRIVATE
         FILE_SET priv_headers
