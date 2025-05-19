@@ -24,21 +24,21 @@ class Parser {
         TSV
     };
     enum class Unexp_parser {
-        malformatted_array_like,
-        braceCountDoesntMatch,
-        braceCountDoesntMatchNLcount,
-        parsedNDJSONisEmpty,
-        JSONObjectsNotOfSameSize,
-        valueTypeInsideJSONdoesntMatch,
-        keyNameInsideJSONdoesntMatch,
-        JSON_empty,
+        JSON_malformattedArrayLike,
+        JSON_objectsNotOfSameSize,
+        JSON_valueTypeDoesntMatch,
+        JSON_keyNameDoesntMatch,
+        JSON_isEmpty,
         JSON_topLevelEleNotArrayOrObject,
-        JSONunhandledType,
-        ndjsonNotFlat,
+        JSON_unhandledType,
+        NDJSON_braceCountDoesntMatch,
+        NDJSON_braceCountDoesntMatchNLcount,
+        NDJSON_isEmpty,
+        NDJSON_isNotFlat,
         CSV_containsZeroNewLineChars,
         CSV_headerHasMoreItemsThanDataRow,
         CSV_headerHasLessItemsThanDataRow,
-        CSV_cellTypeIsDifferentThanExpected,
+        CSV_valueTypeDoesntMatch,
     };
 
     enum class csvCellType {

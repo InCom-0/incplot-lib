@@ -6,3 +6,7 @@
 TEST(aaa, A1) {
     EXPECT_EQ(true, true);
 }
+
+TEST(aaa, A2) {
+    EXPECT_EQ(true, true);
+}

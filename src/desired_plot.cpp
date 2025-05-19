@@ -109,15 +109,15 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::transform_namedColsInto
                                                                                     DataStore const &ds) {
     if (dp.labelTS_colName.has_value()) {
         auto it = std::ranges::find(ds.colNames, dp.labelTS_colName.value());
-        if (it == ds.colNames.end()) { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
+        if (it == ds.colNames.end()) { return std::unexpected(Unexp_plotSpecs::TNCII_colByNameNotExist); }
         else if (not dp.labelTS_colID.has_value()) { dp.labelTS_colID = it - ds.colNames.begin(); }
         else if ((it - ds.colNames.begin()) == dp.labelTS_colID.value()) { dp.labelTS_colName = std::nullopt; }
-        else { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
+        else { return std::unexpected(Unexp_plotSpecs::TNCII_colByNameNotExist); }
     }
 
     for (auto const &v_colName : dp.values_colNames) {
         auto it = std::ranges::find(ds.colNames, v_colName);
-        if (it == ds.colNames.end()) { return std::unexpected(Unexp_plotSpecs::namesIntoIDs_label); }
+        if (it == ds.colNames.end()) { return std::unexpected(Unexp_plotSpecs::TNCII_colByNameNotExist); }
 
         auto it2 = std::ranges::find(dp.values_colIDs, it - ds.colNames.begin());
         if (it2 == dp.values_colIDs.end()) { dp.values_colIDs.push_back(it2 - dp.values_colIDs.begin()); }
@@ -153,14 +153,14 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_plotType(DesiredP
 
     // ACTUAL DEICISIOM MAKING
     // Can't plot anything without at least 1 value column
-    if (useableValCols_count == 0) { return std::unexpected(Unexp_plotSpecs::valCols); }
+    if (useableValCols_count == 0) { return std::unexpected(Unexp_plotSpecs::GPT_zeroUseableValueColumns); }
 
     // labelTS_colID was specified
     else if (dp.labelTS_colID.has_value()) {
         if (ds.colTypes.at(dp.labelTS_colID.value()).first == parsedVal_t::string_like) {
             if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
             // More than 1 value cols is impossible with labelTS col being string
-            else { return std::unexpected(Unexp_plotSpecs::plotType); }
+            else { return std::unexpected(Unexp_plotSpecs::GPT_xValTypeStringWhileMoreThan1YvalCols); }
         }
         else {
             // If labelTSCol is value then select based on whether its is 'timeSeriesLike' or not
@@ -187,45 +187,46 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_plotType(DesiredP
 }
 std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
     if (dp.labelTS_colID.has_value()) { return dp; }
-    else {
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            for (auto const &fvItem :
-                 std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
-                     return std::get<1>(ca).is_timeSeriesLikeIndex &&
+
+    if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+        for (auto const &fvItem : std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
+                 return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                        std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+             })) {
+
+            dp.labelTS_colID = std::get<0>(fvItem);
+            return dp;
+        }
+        // If there are none (therefore none of the for loops execute at all) then return unexpected
+        return std::unexpected(Unexp_plotSpecs::GTSC_noTimeSeriesLikeColumnForMultiline);
+    }
+    else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+        for (auto const &fvItem : std::views::filter(
+                 std::views::enumerate(std::views::zip(ds.colTypes, dp.m_colAssessments)), [&](auto const &ca) {
+                     return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
+                            (std::get<0>(std::get<1>(ca)).first != parsedVal_t::string_like) &&
                             std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
                  })) {
 
-                dp.labelTS_colID = std::get<0>(fvItem);
-                return dp;
-            }
+            dp.labelTS_colID = std::get<0>(fvItem);
+            return dp;
         }
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-            for (auto const &fvItem : std::views::filter(
-                     std::views::enumerate(std::views::zip(ds.colTypes, dp.m_colAssessments)), [&](auto const &ca) {
-                         return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
-                                (std::get<0>(std::get<1>(ca)).first != parsedVal_t::string_like) &&
-                                std::ranges::none_of(dp.values_colIDs,
-                                                     [&](auto const &a) { return a == std::get<0>(ca); });
-                     })) {
-
-                dp.labelTS_colID = std::get<0>(fvItem);
-                return dp;
-            }
-        }
-
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-            for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.colTypes), [](auto const &ct) {
-                     return std::get<1>(ct).first == parsedVal_t::string_like;
-                 })) {
-                dp.labelTS_colID = std::get<0>(fvItem);
-                return dp;
-            }
-        }
-
         // If there are none (therefore none of the for loops execute at all) then return unexpected
-        return std::unexpected(Unexp_plotSpecs::TScol);
+        return std::unexpected(Unexp_plotSpecs::GTSC_noUnusedXvalColumnForScatter);
     }
-    std::unreachable();
+
+    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+        for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.colTypes), [](auto const &ct) {
+                 return std::get<1>(ct).first == parsedVal_t::string_like;
+             })) {
+            dp.labelTS_colID = std::get<0>(fvItem);
+            return dp;
+        }
+        // If there are none (therefore none of the for loops execute at all) then return unexpected
+        return std::unexpected(Unexp_plotSpecs::GTSC_noStringLikeColumnForLabelsForBarV);
+    }
+
+    return std::unexpected(Unexp_plotSpecs::GTSC_unreachableCodeReached);
 }
 std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_catCol(DesiredPlot &&dp, DataStore const &ds) {
     auto useableCatCols_tpl = std::views::filter(
@@ -236,11 +237,11 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_catCol(DesiredPlo
     size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
     // BAR PLOTS
     if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarV>()) {
-        if (dp.cat_colID.has_value()) { return std::unexpected(Unexp_plotSpecs::catCol); }
+        if (dp.cat_colID.has_value()) { return std::unexpected(Unexp_plotSpecs::GCC_cantSpecifyCategoryForBarV); }
         else { return dp; }
     }
     else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarH>()) {
-        if (useableCatCols_tpl_sz == 0) { return std::unexpected(Unexp_plotSpecs::catCol); }
+        if (useableCatCols_tpl_sz == 0) { return std::unexpected(Unexp_plotSpecs::GCC_noSuitableCatColForBarH); }
         else if (dp.cat_colID.has_value()) {
             // If the existing catColID can be found in useable CatCols then all OK.
             if (std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
@@ -248,7 +249,7 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_catCol(DesiredPlo
                 }) != useableCatCols_tpl.end()) {
                 return dp;
             }
-            else { return std::unexpected(Unexp_plotSpecs::catCol); }
+            else { return std::unexpected(Unexp_plotSpecs::GCC_specifiedCatColCantBeUsedAsCatCol); }
         }
         else {
             // The first catCol available is taken to be the category
@@ -259,16 +260,25 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_catCol(DesiredPlo
     // SCATTER PLOT
     else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Scatter>()) {
         if (dp.cat_colID.has_value()) {
-            if (useableCatCols_tpl_sz == 0) { return std::unexpected(Unexp_plotSpecs::catCol); }
+            if (useableCatCols_tpl_sz == 0) {
+                return std::unexpected(Unexp_plotSpecs::GCC_specifiedCatColCantBeUsedAsCatCol);
+            }
             bool calColID_found = std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
                                       return std::get<0>(tpl) == dp.cat_colID.value();
                                   }) != useableCatCols_tpl.end();
-            // If the existing catColID can be found in useable CatCols then all OK.
-            if (calColID_found && dp.values_colIDs.size() <= Config::max_numOfValCols) { return dp; }
-            else { return std::unexpected(Unexp_plotSpecs::catCol); }
+
+            // If the existing catColID cant be found then its wrong
+            if (not calColID_found) { return std::unexpected(Unexp_plotSpecs::GCC_specifiedCatColCantBeUsedAsCatCol); }
+
+            // TODO: Fix this somehow the logic seems wrong mixing a different case here?
+            if (dp.values_colIDs.size() > 1) {
+                return std::unexpected(Unexp_plotSpecs::GCC_cantSelectCatColAndMultipleYCols);
+            }
+            else { return dp; }
         }
         else {
-            if (dp.values_colIDs.size() <= Config::max_numOfValCols && useableCatCols_tpl_sz > 0) {
+            // Possibly add catCol if at most 1 yVal cols and suitable catCol is available
+            if (dp.values_colIDs.size() <= 1 && useableCatCols_tpl_sz > 0) {
                 dp.cat_colID = std::get<0>(useableCatCols_tpl.front());
             }
             return dp;
@@ -277,20 +287,9 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_catCol(DesiredPlo
     // MULTILINE PLOT
     else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Multiline>()) {
         if (dp.cat_colID.has_value()) {
-            if (useableCatCols_tpl_sz == 0) { return std::unexpected(Unexp_plotSpecs::catCol); }
-            bool calColID_found = std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
-                                      return std::get<0>(tpl) == dp.cat_colID.value();
-                                  }) != useableCatCols_tpl.end();
-            // If the existing catColID can be found in useable CatCols then all OK.
-            if (calColID_found && dp.values_colIDs.size() <= (Config::max_numOfValCols - 1)) { return dp; }
-            else { return std::unexpected(Unexp_plotSpecs::catCol); }
+            return std::unexpected(Unexp_plotSpecs::GCC_categoryColumnIsNotAllowedForMultiline);
         }
-        else {
-            if (dp.values_colIDs.size() <= (Config::max_numOfValCols - 1) && useableCatCols_tpl_sz > 0) {
-                dp.cat_colID = std::get<0>(useableCatCols_tpl.front());
-            }
-            return dp;
-        }
+        else { return dp; }
     }
 
     return dp;
@@ -311,9 +310,9 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_valueCols(Desired
 
     // Check if selected cols are actually useable
     for (auto const &selColID : dp.values_colIDs) {
-        if (std::ranges::find_if(useableValCols_tpl, [&](auto const &tpl) { return true; }) ==
+        if (std::ranges::find_if(useableValCols_tpl, [&](auto const &tpl) { return std::get<0>(tpl) == selColID; }) ==
             useableValCols_tpl.end()) {
-            return std::unexpected(Unexp_plotSpecs::selectedUnuseableCols);
+            return std::unexpected(Unexp_plotSpecs::GVC_selectYvalColIsUnuseable);
         }
     }
 
@@ -325,7 +324,7 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_valueCols(Desired
                 }
             }
             // Cannot find another one
-            return std::unexpected(Unexp_plotSpecs::guessValCols);
+            return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols);
         };
         while (dp.values_colIDs.size() < minAllowed) {
             auto expID = getAnotherValColID();
@@ -342,27 +341,27 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_valueCols(Desired
 
     // BAR PLOTS
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-        if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
-        else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+        if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV); }
+        else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
     }
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-        if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::valCols); }
-        else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+        if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarH); }
+        else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
     }
 
     // SCATTER PLOT
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-        if (dp.values_colIDs.size() > Config::max_numOfValCols) { return std::unexpected(Unexp_plotSpecs::valCols); }
+        if (dp.values_colIDs.size() > Config::max_numOfValCols) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols); }
         else if (dp.cat_colID.has_value()) {
             if (dp.values_colIDs.size() <= 1) {
-                if (not addValColsUntil(1, 1).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+                if (not addValColsUntil(1, 1).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
             }
-            else { return std::unexpected(Unexp_plotSpecs::valCols); }
+            else { return std::unexpected(Unexp_plotSpecs::GVC_cantSelectCatColAndMultipleYCols); }
         }
         else {
             if (dp.values_colIDs.size() < 1) {
                 if (not addValColsUntil(1, Config::max_numOfValCols).has_value()) {
-                    return std::unexpected(Unexp_plotSpecs::guessValCols);
+                    return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols);
                 }
             }
         }
@@ -370,9 +369,9 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_valueCols(Desired
 
     // MULTILINE PLOT
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-        if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::valCols); }
+        if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThanAllowedOfYvalColsForMultiline); }
         else if (dp.values_colIDs.size() == 0) {
-            if (not addValColsUntil(1, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::guessValCols); }
+            if (not addValColsUntil(1, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
         }
     }
 
@@ -382,8 +381,11 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_sizes(DesiredPlot
 
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) { dp.targetWidth = 64; }
-    else if (dp.targetWidth.value() < 24 || dp.targetWidth.value() > 256) {
-        return std::unexpected(Unexp_plotSpecs::tarWidth);
+    else if (dp.targetWidth.value() < 24) {
+        return std::unexpected(Unexp_plotSpecs::GZS_widthTooSmall);
+    }
+    else if (dp.targetWidth.value() > 256) {
+        return std::unexpected(Unexp_plotSpecs::GZS_widthTooLarge);
     }
 
     // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
@@ -396,7 +398,7 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_sizes(DesiredPlot
 
     // Impossible to print with height <5 under all circumstances
     if (dp.targetHeight.has_value() && dp.targetHeight.value() < 5) {
-        return std::unexpected(Unexp_plotSpecs::tarWidth);
+        return std::unexpected(Unexp_plotSpecs::GZS_heightTooSmall);
     }
     return dp;
 }

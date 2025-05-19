@@ -164,21 +164,21 @@ std::expected<Parser::input_t, Parser::Unexp_parser> Parser::assess_inputType(st
     // JSON / NDJSON
     if (sv.front() == '[') {
         if (sv.back() == ']') { return input_t::JSON; }
-        else { return std::unexpected(Unexp_parser::malformatted_array_like); }
+        else { return std::unexpected(Unexp_parser::JSON_malformattedArrayLike); }
     }
-    else if (sv.back() == ']') { return std::unexpected(Unexp_parser::malformatted_array_like); }
+    else if (sv.back() == ']') { return std::unexpected(Unexp_parser::JSON_malformattedArrayLike); }
     else if (begBrcCount == endBrcCount && begBrcCount == 1) {
 
         if (std::get<0>(count_symbols) != std::get<1>(count_symbols)) {
-            return std::unexpected(Unexp_parser::braceCountDoesntMatch);
+            return std::unexpected(Unexp_parser::NDJSON_braceCountDoesntMatch);
         }
         else if (std::get<0>(count_symbols) != (std::get<2>(count_symbols) + 1)) {
-            return std::unexpected(Unexp_parser::braceCountDoesntMatchNLcount);
+            return std::unexpected(Unexp_parser::NDJSON_braceCountDoesntMatchNLcount);
         }
         else { return input_t::NDJSON; }
     }
     else if (begBrcCount == endBrcCount && begBrcCount > 1) { return input_t::JSON; }
-    else { return std::unexpected(Unexp_parser::ndjsonNotFlat); }
+    else { return std::unexpected(Unexp_parser::NDJSON_isNotFlat); }
 }
 
 Parser::parser_return_t Parser::dispatch_toParsers(input_t const &inp_t, std::string_view const &sv) {
@@ -207,7 +207,7 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
 
     DataStore::vec_pr_strVarVec_t res;
     std::vector<csvCellType>      cellTypes;
-    if (csv2Reader.rows() < 1) { return std::unexpected(Unexp_parser::JSON_empty); }
+    if (csv2Reader.rows() < 1) { return std::unexpected(Unexp_parser::JSON_isEmpty); }
 
     // Set US locale for use in parsing CSV
     std::string orig_loc = std::setlocale(LC_ALL, nullptr);
@@ -264,7 +264,7 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
             // However if trying to parse 'something which looks like long long' into double ... then that's fine
             if (assess_cellType(cell) != cellTypes[i] &&
                 (not((assess_cellType(cell) == csvCellType::ll_like) && cellTypes[i] == csvCellType::double_like))) {
-                return std::unexpected(Unexp_parser::CSV_cellTypeIsDifferentThanExpected);
+                return std::unexpected(Unexp_parser::CSV_valueTypeDoesntMatch);
             }
 
             auto vis = [&](auto &variVec) -> void {
@@ -326,7 +326,7 @@ Parser::parser_return_t Parser::parse_NDJSON(std::string_view const &trimmed) {
         parsed.push_back(std::move(oneLineJson));
     }
 
-    if (parsed.size() == 0) { return std::unexpected(Unexp_parser::parsedNDJSONisEmpty); }
+    if (parsed.size() == 0) { return std::unexpected(Unexp_parser::NDJSON_isEmpty); }
 
 
     // Construct 'vec_pr_strVarVec_t' based on the first line
@@ -351,13 +351,13 @@ Parser::parser_return_t Parser::parse_NDJSON(std::string_view const &trimmed) {
     }
 
     for (auto const &parsedLine : parsed) {
-        if (parsedLine.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
+        if (parsedLine.size() != res.size()) { return std::unexpected(Unexp_parser::JSON_objectsNotOfSameSize); }
         for (int i = 0; auto const &[key, val] : parsedLine.items()) {
-            if (key != res[i].first) { return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch); }
+            if (key != res[i].first) { return std::unexpected(Unexp_parser::JSON_keyNameDoesntMatch); }
             // TODO: Problem with type checking different NDJSON lines
             else if (val.type() != temp_firstLineTypes[i] &&
                      (val.type() == NLMjson::value_t::string || temp_firstLineTypes[i] == NLMjson::value_t::string)) {
-                return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
             }
             else {
                 switch (res[i].second.index()) {
@@ -386,9 +386,9 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
     }
 
     // UNEXP CHECKS
-    if (wholeJson.empty()) { return std::unexpected(Unexp_parser::JSON_empty); }
+    if (wholeJson.empty()) { return std::unexpected(Unexp_parser::JSON_isEmpty); }
     if (not wholeJson.is_structured()) { return std::unexpected(Unexp_parser::JSON_topLevelEleNotArrayOrObject); }
-    if (wholeJson.items().begin().value().empty()) { return std::unexpected(Unexp_parser::JSON_empty); }
+    if (wholeJson.items().begin().value().empty()) { return std::unexpected(Unexp_parser::JSON_isEmpty); }
 
     // The 'second level' is structured
     if (wholeJson.items().begin().value().is_structured()) {
@@ -425,16 +425,16 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
         }
 
         for (auto const &[key_l1, val_l1] : wholeJson.items()) {
-            if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
+            if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSON_objectsNotOfSameSize); }
 
             for (int i = 0; auto const &[key, val] : val_l1.items()) {
                 // CHECKS
                 // Check keys are the same and valTypes are the same on (flattened) 3rd level
-                if (key != res[i].first) { return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch); }
+                if (key != res[i].first) { return std::unexpected(Unexp_parser::JSON_keyNameDoesntMatch); }
                 // TODO: Problem with type checking different NDJSON lines
                 else if (val.type() != temp_firstLineTypes[i] && (val.type() == NLMjson::value_t::string ||
                                                                   temp_firstLineTypes[i] == NLMjson::value_t::string)) {
-                    return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                    return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
                 }
                 // 'CORRECT' PATH
                 else {
@@ -451,7 +451,7 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
         for (auto &oneItem : std::views::drop(wholeJson, 1)) {
             // If any JSON type on 'second level' doesn't match the type of the first record
             if (oneItem.type() != wholeJson.items().begin().value().type()) {
-                return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
             }
         }
 
@@ -473,23 +473,23 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
                 res.push_back(std::make_pair(
                     key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
             }
-            else { return std::unexpected(Unexp_parser::JSONunhandledType); }
+            else { return std::unexpected(Unexp_parser::JSON_unhandledType); }
             temp_firstLineTypes.push_back(val.type());
         }
 
         auto &resFront = res.at(0);
         for (auto const &[key_l1, val_l1] : wholeJson.items()) {
-            if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSONObjectsNotOfSameSize); }
+            if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSON_objectsNotOfSameSize); }
 
             // CHECKS
             // Check keys are the same and valTypes are the same on (flattened) 3rd level
             if (wholeJson.is_object()) {
-                if (key_l1 != resFront.first) { return std::unexpected(Unexp_parser::keyNameInsideJSONdoesntMatch); }
+                if (key_l1 != resFront.first) { return std::unexpected(Unexp_parser::JSON_keyNameDoesntMatch); }
             }
 
             // TODO: Problem with type checking different NDJSON lines
             else if (val_l1.type() != wholeJson.at(0).type()) {
-                return std::unexpected(Unexp_parser::valueTypeInsideJSONdoesntMatch);
+                return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
             }
 
             // 'CORRECT' PATH
