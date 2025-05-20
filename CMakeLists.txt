@@ -14,8 +14,7 @@ set(INCPLOT_LIB_SRC
     datastore.cpp
     color_mixer.cpp
     parser_inc.cpp
-    args.cpp
-    cross_platform.cpp)
+    args.cpp)
 list(TRANSFORM INCPLOT_LIB_SRC PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 target_sources(incplot-lib PRIVATE ${INCPLOT_LIB_SRC})
