@@ -417,30 +417,7 @@ int main(int argc, char *argv[]) {
 
 
     for (auto const &dpctr : dpCtor_Structs) {
-        auto dp_autoGuessed = incplot::DesiredPlot(dpctr).guess_missingParams(ds.value());
-        if (not dp_autoGuessed.has_value()) {
-            std::print("{0}{1}{2}", "Autoguessing of 'DesiresPlot' parameters for: ",
-                       dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
-                       " failed.\n");
-            continue;
-        }
-
-        auto plotDrawer = incplot::make_plotDrawer(dp_autoGuessed.value(), ds.value());
-        if (not plotDrawer.has_value()) {
-            std::print("{0}{1}{2}", "Creating 'Plot Structure' for: ",
-                       dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
-                       " failed.\n");
-            continue;
-        }
-
-        auto outExp = plotDrawer.value().validateAndDrawPlot();
-        if (not outExp.has_value()) {
-            std::print("{0}{1}{2}", "Invalid plot structure for: ",
-                       dpctr.plot_type_name.has_value() ? dpctr.plot_type_name.value() : "[Unspecified plot type]",
-                       ".\n");
-            continue;
-        }
-        std::print("{}\n", outExp.value());
+        std::print("{}\n", incplot::make_plot_collapseUnExp(dpctr, std::string_view(flightsJSON)));
     }
 
     return 0;

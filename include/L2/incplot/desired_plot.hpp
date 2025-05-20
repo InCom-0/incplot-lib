@@ -26,7 +26,7 @@ private:
         bool is_timeSeriesLikeIndex;
     };
 
-    std::vector<ColumnParams> m_colAssessments;
+    std::vector<ColumnParams> m_colAssessments = {};
 
     // BUILDING METHODS
     static std::expected<DesiredPlot, Unexp_plotSpecs> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds);
