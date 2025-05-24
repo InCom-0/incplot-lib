@@ -5,8 +5,8 @@
 #include <incplot.hpp>
 #include <private/detail.hpp>
 #include <private/plot_structures_impl.hpp>
-#include <magic_enum/magic_enum.hpp>
 
+#include <magic_enum/magic_enum.hpp>
 
 namespace incom {
 namespace terminal_plot {
@@ -71,6 +71,12 @@ std::expected<std::string, std::string> make_plot(DesiredPlot::DP_CtorStruct con
                         dp_ctrs.plot_type_name.has_value() ? dp_ctrs.plot_type_name.value() : "[Unspecified plot type]",
                         " failed.", "Error given: ", magic_enum::enum_name(dp_autoGuessed.error())));
     }
+
+
+
+    auto m_mp = [&](incom::terminal_plot::DesiredPlot &&dp) {
+        return incom::terminal_plot::make_plotDrawer(std::forward<decltype(dp)>(dp), ds.value());
+    };
 
     auto pd = incom::terminal_plot::make_plotDrawer(dp_autoGuessed.value(), ds.value());
     if (not pd.has_value()) {

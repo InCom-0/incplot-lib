@@ -6,7 +6,6 @@
 #include <iterator>
 #include <type_traits>
 
-#include <incplot/misc.hpp>
 #include <private/color_mixer.hpp>
 #include <private/concepts.hpp>
 #include <ww898/utf_converters.hpp>
@@ -16,13 +15,22 @@ namespace incom {
 namespace terminal_plot {
 namespace detail {
 
+// Auto 'bind_back', for some reason I couldn't manage to get std::bind_back to work ... this works fine :-)
+// Returns a lambda (closure) which invokes an 'F' passed in as first argument with the last 'size_of(Ts)' arguments bound
+// to 'ts' Used extensively as a helper for monadic operations on std::expected and std::optional
+// Contrained 'on the inside' so it shouldn't be possible to misuse
+constexpr inline auto bind_back = []<typename F, typename... Ts>(F &&fn, Ts &&...ts) {
+    return [&](auto &&...firstArgs) -> auto
+           requires std::is_invocable_v<F, decltype(firstArgs)..., Ts...>
+    { return std::invoke(fn, std::forward<decltype(firstArgs)>(firstArgs)..., std::forward<decltype(ts)>(ts)...); };
+};
+
 constexpr inline std::string convert_u32u8(std::u32string &str) {
     using namespace ww898::utf;
     std::string res;
     convz<utf_selector_t<std::decay_t<decltype(str)>::value_type>, utf8>(str.data(), std::back_inserter(res));
     return res;
 }
-
 constexpr inline std::string convert_u32u8(std::u32string &&str) {
     return convert_u32u8(str);
 }

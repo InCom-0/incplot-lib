@@ -1,6 +1,7 @@
 #pragma once
 
 #include "private/detail.hpp"
+#include <functional>
 #include <limits>
 #include <ranges>
 #include <string>
@@ -21,56 +22,37 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
     // Can only build it from rvalue ...
     if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
+    namespace incp_d = incom::terminal_plot::detail;
     using expOfSelf_t = std::expected<std::remove_cvref_t<decltype(self)>, Unexp_plotDrawer>;
+    using self_t = std::remove_cvref_t<decltype(self)>;
 
-    auto c_dsc = [&](auto &&ps) -> expOfSelf_t { return ps.compute_descriptors(dp, ds); };
-    auto v_dsc = [&](auto &&ps) -> expOfSelf_t { return ps.validate_descriptors(dp, ds); };
+    return incp_d::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds)(std::move(self))
+        .and_then(incp_d::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
 
-    auto c_anvl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_vl(dp, ds); };
-    auto c_anvr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_vr(dp, ds); };
+        .and_then(incp_d::bind_back(&self_t::template compute_axisName_vl<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_axisName_vr<self_t>, dp, ds))
 
-    auto c_lvl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_vl(dp, ds); };
-    auto c_lvr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_vr(dp, ds); };
+        .and_then(incp_d::bind_back(&self_t::template compute_labels_vl<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_labels_vr<self_t>, dp, ds))
 
-    auto c_avl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_vl(dp, ds); };
-    auto c_avr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_vr(dp, ds); };
+        .and_then(incp_d::bind_back(&self_t::template compute_axis_vl<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_axis_vr<self_t>, dp, ds))
 
-    auto c_ctl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_tl(dp, ds); };
-    auto c_cbl = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_bl(dp, ds); };
-    auto c_cbr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_br(dp, ds); };
-    auto c_ctr = [&](auto &&ps) -> expOfSelf_t { return ps.compute_corner_tr(dp, ds); };
-    auto c_ac  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_areaCorners(dp, ds); };
+        .and_then(incp_d::bind_back(&self_t::template compute_corner_tl<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_corner_bl<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_corner_br<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_corner_tr<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_areaCorners<self_t>, dp, ds))
 
-    auto c_aht  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_ht(dp, ds); };
-    auto c_anht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_ht(dp, ds); };
-    auto c_alht = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_ht(dp, ds); };
+        .and_then(incp_d::bind_back(&self_t::template compute_axis_ht<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_axisName_ht<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_labels_ht<self_t>, dp, ds))
 
-    auto c_ahb  = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axis_hb(dp, ds); };
-    auto c_anhb = [&](auto &&ps) -> expOfSelf_t { return ps.compute_axisName_hb(dp, ds); };
-    auto c_alhb = [&](auto &&ps) -> expOfSelf_t { return ps.compute_labels_hb(dp, ds); };
+        .and_then(incp_d::bind_back(&self_t::template compute_axis_hb<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_axisName_hb<self_t>, dp, ds))
+        .and_then(incp_d::bind_back(&self_t::template compute_labels_hb<self_t>, dp, ds))
 
-    auto c_ap = [&](auto &&ps) -> expOfSelf_t { return ps.compute_plot_area(dp, ds); };
-
-    return c_dsc(std::move(self))
-        .and_then(v_dsc)
-        .and_then(c_anvl)
-        .and_then(c_anvr)
-        .and_then(c_lvl)
-        .and_then(c_lvr)
-        .and_then(c_avl)
-        .and_then(c_avr)
-        .and_then(c_ctl)
-        .and_then(c_cbl)
-        .and_then(c_cbr)
-        .and_then(c_ctr)
-        .and_then(c_ac)
-        .and_then(c_aht)
-        .and_then(c_anht)
-        .and_then(c_alht)
-        .and_then(c_ahb)
-        .and_then(c_anhb)
-        .and_then(c_alhb)
-        .and_then(c_ap);
+        .and_then(incp_d::bind_back(&self_t::template compute_plot_area<self_t>, dp, ds));
 }
 inline size_t Base::compute_lengthOfSelf() const {
 
@@ -260,9 +242,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
         // Else if more than one YvalCols, legend will be column names of those YvalCols
         else if (dp.values_colIDs.size() > 1) {
             size_t maxSize = 0;
-            for (auto const &colID : dp.values_colIDs) {
-                maxSize = std::max(maxSize, ds.colNames.at(colID).size());
-            }
+            for (auto const &colID : dp.values_colIDs) { maxSize = std::max(maxSize, ds.colNames.at(colID).size()); }
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
         else { self.labels_verRightWidth = 0; }
@@ -270,9 +250,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
         if (dp.values_colIDs.size() > 1) {
             size_t maxSize = 0;
-            for (auto const &colID : dp.values_colIDs) {
-                maxSize = std::max(maxSize, ds.colNames.at(colID).size());
-            }
+            for (auto const &colID : dp.values_colIDs) { maxSize = std::max(maxSize, ds.colNames.at(colID).size()); }
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
     }

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <functional>
 #include <limits>
 #include <ranges>
 #include <utility>
@@ -6,6 +7,7 @@
 #include <incplot/desired_plot.hpp>
 #include <incplot/plot_structures.hpp>
 #include <private/concepts.hpp>
+#include <private/detail.hpp>
 
 
 namespace incom {
@@ -341,20 +343,32 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_valueCols(Desired
 
     // BAR PLOTS
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-        if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV); }
-        else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
+        if (dp.values_colIDs.size() > 1) {
+            return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV);
+        }
+        else if (not addValColsUntil(1).has_value()) {
+            return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols);
+        }
     }
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-        if (dp.values_colIDs.size() > 1) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarH); }
-        else if (not addValColsUntil(1).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
+        if (dp.values_colIDs.size() > 1) {
+            return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarH);
+        }
+        else if (not addValColsUntil(1).has_value()) {
+            return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols);
+        }
     }
 
     // SCATTER PLOT
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
-        if (dp.values_colIDs.size() > Config::max_numOfValCols) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols); }
+        if (dp.values_colIDs.size() > Config::max_numOfValCols) {
+            return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols);
+        }
         else if (dp.cat_colID.has_value()) {
             if (dp.values_colIDs.size() <= 1) {
-                if (not addValColsUntil(1, 1).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
+                if (not addValColsUntil(1, 1).has_value()) {
+                    return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols);
+                }
             }
             else { return std::unexpected(Unexp_plotSpecs::GVC_cantSelectCatColAndMultipleYCols); }
         }
@@ -369,9 +383,13 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_valueCols(Desired
 
     // MULTILINE PLOT
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-        if (dp.values_colIDs.size() > 3) { return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThanAllowedOfYvalColsForMultiline); }
+        if (dp.values_colIDs.size() > 3) {
+            return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThanAllowedOfYvalColsForMultiline);
+        }
         else if (dp.values_colIDs.size() == 0) {
-            if (not addValColsUntil(1, 3).has_value()) { return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols); }
+            if (not addValColsUntil(1, 3).has_value()) {
+                return std::unexpected(Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols);
+            }
         }
     }
 
@@ -381,12 +399,8 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_sizes(DesiredPlot
 
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) { dp.targetWidth = 64; }
-    else if (dp.targetWidth.value() < 24) {
-        return std::unexpected(Unexp_plotSpecs::GZS_widthTooSmall);
-    }
-    else if (dp.targetWidth.value() > 256) {
-        return std::unexpected(Unexp_plotSpecs::GZS_widthTooLarge);
-    }
+    else if (dp.targetWidth.value() < 24) { return std::unexpected(Unexp_plotSpecs::GZS_widthTooSmall); }
+    else if (dp.targetWidth.value() > 256) { return std::unexpected(Unexp_plotSpecs::GZS_widthTooLarge); }
 
     // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
     if (not dp.targetHeight.has_value()) {
@@ -412,43 +426,21 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_TFfeatures(Desire
 }
 std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_missingParams(this DesiredPlot &&self,
                                                                              DataStore const   &ds) {
-    // TODO: Could use std::bind for these ... had some trouble with that ... maybe return to it later.
-    // Still can't quite figure it out ...  std::bind_back doesn't seem to cooperate with and_then ...
-
-    auto tnciids = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-        return DesiredPlot::transform_namedColsIntoIDs(std::forward<decltype(dp)>(dp), ds);
-    };
-    auto gpt = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-        return DesiredPlot::guess_plotType(std::forward<decltype(dp)>(dp), ds);
-    };
-    auto gtsc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-        return DesiredPlot::guess_TSCol(std::forward<decltype(dp)>(dp), ds);
-    };
-    auto gcc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-        return DesiredPlot::guess_catCol(std::forward<decltype(dp)>(dp), ds);
-    };
-    auto gvc = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-        return DesiredPlot::guess_valueCols(std::forward<decltype(dp)>(dp), ds);
-    };
-    auto gsz = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-        return DesiredPlot::guess_sizes(std::forward<decltype(dp)>(dp), ds);
-    };
-    auto gtff = [&](DesiredPlot &&dp) -> std::expected<DesiredPlot, Unexp_plotSpecs> {
-        return DesiredPlot::guess_TFfeatures(std::forward<decltype(dp)>(dp), ds);
-    };
-
+    namespace incp_d = incom::terminal_plot::detail;
+    
+    // Uses custom 'bind_back' to return the right callable form for and_then to use.
     // Guesses the missing 'desired parameters' and returns a DesiredPlot with those filled in
     // Variation on a 'builder pattern'
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
     return DesiredPlot::compute_colAssessments(std::forward<decltype(self)>(self), ds)
-        .and_then(tnciids)
-        .and_then(gpt)
-        .and_then(gtsc)
-        .and_then(gcc)
-        .and_then(gvc)
-        .and_then(gsz)
-        .and_then(gtff);
+        .and_then(incp_d::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
+        .and_then(incp_d::bind_back(DesiredPlot::guess_plotType, ds))
+        .and_then(incp_d::bind_back(DesiredPlot::guess_TSCol, ds))
+        .and_then(incp_d::bind_back(DesiredPlot::guess_catCol, ds))
+        .and_then(incp_d::bind_back(DesiredPlot::guess_valueCols, ds))
+        .and_then(incp_d::bind_back(DesiredPlot::guess_sizes, ds))
+        .and_then(incp_d::bind_back(DesiredPlot::guess_TFfeatures, ds));
 }
 
 

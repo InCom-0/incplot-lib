@@ -5,7 +5,7 @@
 
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
-#include <incplot/misc.hpp>
+#include <incplot/err.hpp>
 
 
 namespace incom {

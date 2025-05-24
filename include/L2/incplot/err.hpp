@@ -3,9 +3,9 @@
 namespace incom {
 namespace terminal_plot {
 
-// UNEXPECTED AND OTHER SIMILAR ENUMS
 enum class Unexp_plotSpecs {
-    TNCII_colByNameNotExist,
+    // No value '0'
+    TNCII_colByNameNotExist = 1,
     GPT_zeroUseableValueColumns,
     GPT_xValTypeStringWhileMoreThan1YvalCols,
     GTSC_noTimeSeriesLikeColumnForMultiline,
@@ -29,11 +29,13 @@ enum class Unexp_plotSpecs {
     GZS_heightTooSmall
 };
 enum class Unexp_plotDrawer {
-    C_DSC_areaWidth_insufficient,
+    // No value '0'
+    C_DSC_areaWidth_insufficient = 1,
     C_DSC_areaHeight_insufficient,
     C_DSC_,
     V_PD_nonspecificError,
 };
-// UNEXPECTED AND OTHER SIMILAR ENUMS --- END
 } // namespace terminal_plot
 } // namespace incom
+
+

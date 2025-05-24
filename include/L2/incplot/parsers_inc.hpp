@@ -24,7 +24,7 @@ class Parser {
         TSV
     };
     enum class Unexp_parser {
-        JSON_malformattedArrayLike,
+        JSON_malformattedArrayLike = 1,
         JSON_objectsNotOfSameSize,
         JSON_valueTypeDoesntMatch,
         JSON_keyNameDoesntMatch,
