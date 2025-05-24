@@ -16,10 +16,11 @@ namespace terminal_plot {
 namespace detail {
 
 // Auto 'bind_back', for some reason I couldn't manage to get std::bind_back to work ... this works fine :-)
-// Returns a lambda (closure) which invokes an 'F' passed in as first argument with the last 'size_of(Ts)' arguments bound
-// to 'ts' Used extensively as a helper for monadic operations on std::expected and std::optional
-// Contrained 'on the inside' so it shouldn't be possible to misuse
-constexpr inline auto bind_back = []<typename F, typename... Ts>(F &&fn, Ts &&...ts) {
+// Returns a lambda (closure) which invokes an 'F' passed in as first argument with the last 'size_of(Ts)' arguments
+// bound to 'ts' Used extensively as a helper for monadic operations on std::expected and std::optional Contrained 'on
+// the inside' so it shouldn't be possible to misuse
+template <typename F, typename... Ts>
+constexpr inline auto bind_back(F &&fn, Ts &&...ts) {
     return [&](auto &&...firstArgs) -> auto
            requires std::is_invocable_v<F, decltype(firstArgs)..., Ts...>
     { return std::invoke(fn, std::forward<decltype(firstArgs)>(firstArgs)..., std::forward<decltype(ts)>(ts)...); };
