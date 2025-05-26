@@ -383,7 +383,7 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_valueCols(Desired
 
     // MULTILINE PLOT
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-        if (dp.values_colIDs.size() > 3) {
+        if (dp.values_colIDs.size() > Config::max_maxNumOfLinesInMultiline) {
             return std::unexpected(Unexp_plotSpecs::GVC_selectedMoreThanAllowedOfYvalColsForMultiline);
         }
         else if (dp.values_colIDs.size() == 0) {
@@ -399,8 +399,12 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_sizes(DesiredPlot
 
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) { dp.targetWidth = 64; }
-    else if (dp.targetWidth.value() < 24) { return std::unexpected(Unexp_plotSpecs::GZS_widthTooSmall); }
-    else if (dp.targetWidth.value() > 256) { return std::unexpected(Unexp_plotSpecs::GZS_widthTooLarge); }
+    else if (dp.targetWidth.value() < Config::min_plotWidth) {
+        return std::unexpected(Unexp_plotSpecs::GZS_widthTooSmall);
+    }
+    else if (dp.targetWidth.value() > Config::max_plotWidth) {
+        return std::unexpected(Unexp_plotSpecs::GZS_widthTooLarge);
+    }
 
     // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
     if (not dp.targetHeight.has_value()) {
@@ -411,7 +415,7 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_sizes(DesiredPlot
     }
 
     // Impossible to print with height <5 under all circumstances
-    if (dp.targetHeight.has_value() && dp.targetHeight.value() < 5) {
+    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
         return std::unexpected(Unexp_plotSpecs::GZS_heightTooSmall);
     }
     return dp;
@@ -427,7 +431,7 @@ std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_TFfeatures(Desire
 std::expected<DesiredPlot, Unexp_plotSpecs> DesiredPlot::guess_missingParams(this DesiredPlot &&self,
                                                                              DataStore const   &ds) {
     namespace incp_d = incom::terminal_plot::detail;
-    
+
     // Uses custom 'bind_back' to return the right callable form for and_then to use.
     // Guesses the missing 'desired parameters' and returns a DesiredPlot with those filled in
     // Variation on a 'builder pattern'

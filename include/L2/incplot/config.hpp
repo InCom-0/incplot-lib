@@ -1,7 +1,7 @@
 #pragma once
 
-#include <incplot/color.hpp>
 #include <array>
+#include <incplot/color.hpp>
 #include <string>
 
 
@@ -69,6 +69,11 @@ public:
 
     // OTHER PLOT SETTINGS
 
+    static constexpr size_t min_plotWidth = 24uz;
+    static constexpr size_t max_plotWidth = 256uz;
+
+    static constexpr size_t min_plotHeight = 5uz;
+
     static constexpr std::string noLabel = "[no label]";
 
     static constexpr size_t max_sizeOfValueLabels = 5uz;
@@ -76,8 +81,9 @@ public:
     static constexpr size_t min_areaWidth  = 8uz;
     static constexpr size_t min_areaHeight = 1uz;
 
-    static constexpr size_t max_numOfValCols       = 3uz;
-    static constexpr size_t max_maxNumOfCategories = 3uz;
+    static constexpr size_t max_numOfValCols             = 3uz;
+    static constexpr size_t max_maxNumOfCategories       = 3uz;
+    static constexpr size_t max_maxNumOfLinesInMultiline = 3uz;
 
     static constexpr size_t axisLabels_maxLength_vl = 16uz;
     static constexpr size_t axisLabels_maxLength_vr = 16uz;

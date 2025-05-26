@@ -1,4 +1,3 @@
-#include "incerr.hpp"
 #include <functional>
 #include <utility>
 #include <variant>
@@ -68,9 +67,9 @@ std::expected<std::string, std::string> make_plot(DesiredPlot::DP_CtorStruct con
     auto dp_autoGuessed = incom::terminal_plot::DesiredPlot(dp_ctrs).guess_missingParams(ds.value());
     if (not dp_autoGuessed.has_value()) {
         return std::unexpected(
-            std::format("{0}{1}{2}\n{3}{4}", "Autoguessing of 'DesiresPlot' parameters for: ",
+            std::format("{0}{1}{2}\n{3}", "Autoguessing of 'DesiresPlot' parameters for: ",
                         dp_ctrs.plot_type_name.has_value() ? dp_ctrs.plot_type_name.value() : "[Unspecified plot type]",
-                        " failed.", "Error given: ", incom::error::incerr_code::make_incerr_code(dp_autoGuessed.error()).message()));
+                        " failed.",  incom::error::incerr_code::make_std_ec(dp_autoGuessed.error()).message()));
     }
 
 
