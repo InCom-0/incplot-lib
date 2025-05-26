@@ -1,3 +1,4 @@
+#include "incerr.hpp"
 #include <functional>
 #include <utility>
 #include <variant>
@@ -69,7 +70,7 @@ std::expected<std::string, std::string> make_plot(DesiredPlot::DP_CtorStruct con
         return std::unexpected(
             std::format("{0}{1}{2}\n{3}{4}", "Autoguessing of 'DesiresPlot' parameters for: ",
                         dp_ctrs.plot_type_name.has_value() ? dp_ctrs.plot_type_name.value() : "[Unspecified plot type]",
-                        " failed.", "Error given: ", magic_enum::enum_name(dp_autoGuessed.error())));
+                        " failed.", "Error given: ", incom::error::incerr_code::make_incerr_code(dp_autoGuessed.error()).message()));
     }
 
 

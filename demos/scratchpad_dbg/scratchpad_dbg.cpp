@@ -406,11 +406,11 @@ int main(int argc, char *argv[]) {
 {"period":143,"value":390,"value2":118}
 {"period":144,"value":432,"value2":112})");
 
-    auto dpCtor_Structs                   = incplot::CL_Args::get_dpCtorStruct();
+    auto dpCtor_Structs              = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     // dpCtor_Structs.front().plot_type_name = "Scatter";
-    dpCtor_Structs.front().tar_width      = 60;
-    // dpCtor_Structs.front().v_colIDs = {0};
+    dpCtor_Structs.front().tar_width = 60;
+    dpCtor_Structs.front().c_colID   = 2;
 
     auto ds = incplot::parsers::Parser::parse(std::string_view(flightsJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));
