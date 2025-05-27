@@ -1,5 +1,6 @@
 #pragma once
 
+#include "incerr.hpp"
 #include <expected>
 #include <optional>
 
@@ -29,16 +30,16 @@ private:
     std::vector<ColumnParams> m_colAssessments = {};
 
     // BUILDING METHODS
-    static std::expected<DesiredPlot, Unexp_plotSpecs> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds);
 
-    static std::expected<DesiredPlot, Unexp_plotSpecs> transform_namedColsIntoIDs(DesiredPlot    &&dp,
+    static std::expected<DesiredPlot, incerr::incerr_code> transform_namedColsIntoIDs(DesiredPlot    &&dp,
                                                                                   DataStore const &ds);
-    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_plotType(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TSCol(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_catCol(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_valueCols(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_sizes(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, Unexp_plotSpecs> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> guess_plotType(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> guess_TSCol(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> guess_catCol(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> guess_valueCols(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> guess_sizes(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds);
 
 
 public:
@@ -97,7 +98,7 @@ public:
           cat_colName(dp_struct.c_colName) {}
 
     // Create a new copy and guess_missingParams on it.
-    std::expected<DesiredPlot, Unexp_plotSpecs> build_guessedParamsCPY(this DesiredPlot &self, DataStore const &ds) {
+    std::expected<DesiredPlot, incerr::incerr_code> build_guessedParamsCPY(this DesiredPlot &self, DataStore const &ds) {
         return DesiredPlot(self).guess_missingParams(ds);
     }
 
@@ -105,7 +106,7 @@ public:
     // Variation on a 'builder pattern'
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
-    std::expected<DesiredPlot, Unexp_plotSpecs> guess_missingParams(this DesiredPlot &&self, DataStore const &ds);
+    std::expected<DesiredPlot, incerr::incerr_code> guess_missingParams(this DesiredPlot &&self, DataStore const &ds);
 };
 
 

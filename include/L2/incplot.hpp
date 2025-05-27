@@ -13,6 +13,9 @@ namespace terminal_plot {
 using var_plotTypes =
     std::variant<plot_structures::BarV, plot_structures::BarH, plot_structures::Multiline, plot_structures::Scatter>;
 
+using incerr_c = incerr::incerr_code;
+using enum Unexp_plotDrawer;
+
 template <typename PS_VAR>
 class PlotDrawer {
 private:
@@ -25,22 +28,22 @@ private:
 
 public:
     friend auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer>;
+        -> std::expected<PlotDrawer<var_plotTypes>, incerr_c>;
 
     // MAIN METHODS
     bool        validate_self() const;
     std::string drawPlot() const;
 
-    std::expected<std::string, Unexp_plotDrawer> validateAndDrawPlot() const;
+    std::expected<std::string, incerr_c> validateAndDrawPlot() const;
 };
 
 auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer>;
+    -> std::expected<PlotDrawer<var_plotTypes>, incerr_c>;
 
 // MAIN SIMPLIFIED INTERFACE OF THE LIBRARY
-std::expected<std::string, std::string> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs,
+std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs,
                                                   std::string_view                  inputData);
-std::expected<std::string, std::string> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs,
+std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs,
                                                   std::string_view                   inputData);
 
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData);

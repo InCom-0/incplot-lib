@@ -1,4 +1,6 @@
+#include <format>
 #include <functional>
+#include <string>
 #include <utility>
 #include <variant>
 
@@ -11,6 +13,10 @@
 namespace incom {
 namespace terminal_plot {
 
+using incerr_c = incerr::incerr_code;
+using enum Unexp_plotDrawer;
+
+
 template <typename PS_VAR>
 bool PlotDrawer<PS_VAR>::validate_self() const {
     auto validate = [&](auto &&var) -> bool { return var.validate_self(); };
@@ -18,9 +24,9 @@ bool PlotDrawer<PS_VAR>::validate_self() const {
 }
 
 template <typename PS_VAR>
-std::expected<std::string, Unexp_plotDrawer> PlotDrawer<PS_VAR>::validateAndDrawPlot() const {
+std::expected<std::string, incerr_c> PlotDrawer<PS_VAR>::validateAndDrawPlot() const {
     // TODO: Add some validation before drawing
-    if (validate_self() == false) { return std::unexpected(Unexp_plotDrawer::V_PD_nonspecificError); }
+    if (validate_self() == false) { return std::unexpected(incerr_c::make(V_PD_nonspecificError)); }
     else { return drawPlot(); }
 }
 template <typename PS_VAR>
@@ -33,8 +39,7 @@ std::string PlotDrawer<PS_VAR>::drawPlot() const {
 // https://en.cppreference.com/w/cpp/language/class_template#Class_template_instantiation
 template class PlotDrawer<var_plotTypes>;
 
-auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer> {
+auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds) -> std::expected<PlotDrawer<var_plotTypes>, incerr_c> {
 
     // This is a map of default constructed 'plot_structures' inside an std::variant
     // This strange incantation makes a lambda with 'index_sequence' and immediatelly invokes it to generate the
@@ -48,63 +53,39 @@ auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
 
     auto varCpy = mp_names2Types.at(dp.plot_type_name.value());
 
-    auto ol = [&](auto &&var) -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer> {
-        return std::move(var).build_self(dp, ds).and_then(
-            [](auto &&ps) -> std::expected<PlotDrawer<var_plotTypes>, Unexp_plotDrawer> {
-                return PlotDrawer<var_plotTypes>(ps);
-            });
+    auto ol = [&](auto &&var) -> std::expected<PlotDrawer<var_plotTypes>, incerr_c> {
+        return std::move(var).build_self(dp, ds).transform(
+            [](auto &&ps) -> PlotDrawer<var_plotTypes> { return PlotDrawer<var_plotTypes>(ps); });
     };
     return std::visit(ol, varCpy);
 }
 
 // MAIN SIMPLIFIED INTERFACE OF THE LIBRARY
-std::expected<std::string, std::string> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs,
-                                                  std::string_view                  inputData) {
+std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData) {
 
-    auto ds = incom::terminal_plot::parsers::Parser::parse(inputData);
-    if (not ds.has_value()) { return std::unexpected(std::string(magic_enum::enum_name(ds.error()))); }
+    namespace incp_d = incom::terminal_plot::detail;
+    using namespace incom::terminal_plot;
 
-    auto dp_autoGuessed = incom::terminal_plot::DesiredPlot(dp_ctrs).guess_missingParams(ds.value());
-    if (not dp_autoGuessed.has_value()) {
-        return std::unexpected(
-            std::format("{0}{1}{2}\n{3}", "Autoguessing of 'DesiresPlot' parameters for: ",
-                        dp_ctrs.plot_type_name.has_value() ? dp_ctrs.plot_type_name.value() : "[Unspecified plot type]",
-                        " failed.",  incom::error::incerr_code::make_std_ec(dp_autoGuessed.error()).message()));
-    }
+    auto ds = parsers::Parser::parse(inputData);
+    if (not ds.has_value()) { return std::unexpected(ds.error()); }
 
-
-
-    auto m_mp = [&](incom::terminal_plot::DesiredPlot &&dp) {
-        return incom::terminal_plot::make_plotDrawer(std::forward<decltype(dp)>(dp), ds.value());
-    };
-
-    auto pd = incom::terminal_plot::make_plotDrawer(dp_autoGuessed.value(), ds.value());
-    if (not pd.has_value()) {
-        return std::unexpected(
-            std::format("{0}{1}{2}\n{3}{4}", "Creating 'Plot Structure' for: ",
-                        dp_ctrs.plot_type_name.has_value() ? dp_ctrs.plot_type_name.value() : "[Unspecified plot type]",
-                        " failed.", "Error given: ", std::string(magic_enum::enum_name(pd.error()))));
-    }
-
-    auto outExp = pd.value().validateAndDrawPlot();
-    if (not outExp.has_value()) {
-        return std::unexpected(
-            std::format("{0}{1}\n{2}{3}", "Invalid plot structure for: ",
-                        dp_ctrs.plot_type_name.has_value() ? dp_ctrs.plot_type_name.value() : "[Unspecified plot type]",
-                        "Error given: ", std::string(magic_enum::enum_name(outExp.error()))));
-    }
-
-    return std::format("{}", outExp.value());
+    return DesiredPlot(dp_ctrs)
+        .guess_missingParams(ds.value())
+        .and_then(incp_d::bind_back(make_plotDrawer, ds.value()))
+        .and_then([](auto &&pd) { return pd.validateAndDrawPlot(); });
 }
-std::expected<std::string, std::string> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs,
-                                                  std::string_view                   inputData) {
+
+std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData) {
     return make_plot(dp_ctrs, inputData);
 }
 
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData) {
     auto res = make_plot(dp_ctrs, inputData);
     if (res.has_value()) { return res.value(); }
-    else { return res.error(); }
+    else {
+        return std::format("{}{}\n\n{}", "Error encoutered. Category of the error: "sv, res.error().category().name(),
+                           res.error().message());
+    }
 }
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData) {
     return make_plot_collapseUnExp(dp_ctrs, inputData);

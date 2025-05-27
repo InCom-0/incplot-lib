@@ -1,5 +1,3 @@
-#include <incplot/parsers_inc.hpp>
-
 #include <algorithm>
 #include <cerrno>
 #include <concepts>
@@ -15,6 +13,8 @@
 #include <csv2/reader.hpp>
 #include <nlohmann/json.hpp>
 
+#include <incplot/parsers_inc.hpp>
+
 namespace incom {
 namespace terminal_plot {
 // Encapsulates parsing of the input into DataStore
@@ -23,7 +23,9 @@ namespace terminal_plot {
 // TODO: Would it be possible to cleave he parser from the library so that it is easier to customize later?
 // TODO: How would one do the above in a reasonable manner?
 namespace parsers {
-using NLMjson = nlohmann::ordered_json;
+using NLMjson  = nlohmann::ordered_json;
+using incerr_c = incerr::incerr_code;
+using enum Unexp_parser;
 
 static bool validate_jsonSameness(NLMjson const &json_A, NLMjson const &json_B) {
     if (json_A.size() != json_B.size()) { return false; }
@@ -50,13 +52,14 @@ static bool validate_jsonSameness(std::vector<NLMjson> const &jsonVec) {
 // This is useful in order to sort of 'standardize' structure of input
 std::string_view Parser::get_trimmedSV(std::string_view const &sv) {
     return std::string_view(
-        sv.begin(), sv.end() - (std::ranges::find_if_not(sv.rbegin(), sv.rend(),
-                                                         [](auto &&chr) { return (chr == '\n' || chr == ' ' || chr == '\r'); }) -
-                                sv.rbegin()));
+        sv.begin(),
+        sv.end() - (std::ranges::find_if_not(sv.rbegin(), sv.rend(),
+                                             [](auto &&chr) { return (chr == '\n' || chr == ' ' || chr == '\r'); }) -
+                    sv.rbegin()));
 }
 
 
-Parser::csvCellType Parser::assess_cellType(auto const &csvCell) {
+csvCellType Parser::assess_cellType(auto const &csvCell) {
     std::string_view rv    = csvCell.read_view();
     const char      *first = rv.data();
     char            *next{};
@@ -122,7 +125,7 @@ std::string Parser::conv_cellToString(auto const &csvCell) {
 
 
 // COMPOSITION METHODS
-std::expected<Parser::input_t, Parser::Unexp_parser> Parser::assess_inputType(std::string_view const &sv) {
+std::expected<input_t, incerr_c> Parser::assess_inputType(std::string_view const &sv) {
     size_t begBrcCount = 0, endBrcCount = 0;
     for (auto it = sv.begin(); it != sv.end(); ++it) {
         if (*it == '{') { begBrcCount++; }
@@ -146,7 +149,7 @@ std::expected<Parser::input_t, Parser::Unexp_parser> Parser::assess_inputType(st
             return accu;
         });
 
-    if (std::get<2>(count_symbols) == 0) { return std::unexpected(Unexp_parser::CSV_containsZeroNewLineChars); }
+    if (std::get<2>(count_symbols) == 0) { return std::unexpected(incerr_c::make(CSV_containsZeroNewLineChars)); }
 
     // CSV / TSV?
     if ((std::get<3>(count_symbols) != 0) && (std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
@@ -164,21 +167,21 @@ std::expected<Parser::input_t, Parser::Unexp_parser> Parser::assess_inputType(st
     // JSON / NDJSON
     if (sv.front() == '[') {
         if (sv.back() == ']') { return input_t::JSON; }
-        else { return std::unexpected(Unexp_parser::JSON_malformattedArrayLike); }
+        else { return std::unexpected(incerr_c::make(JSON_malformattedArrayLike)); }
     }
-    else if (sv.back() == ']') { return std::unexpected(Unexp_parser::JSON_malformattedArrayLike); }
+    else if (sv.back() == ']') { return std::unexpected(incerr_c::make(JSON_malformattedArrayLike)); }
     else if (begBrcCount == endBrcCount && begBrcCount == 1) {
 
         if (std::get<0>(count_symbols) != std::get<1>(count_symbols)) {
-            return std::unexpected(Unexp_parser::NDJSON_braceCountDoesntMatch);
+            return std::unexpected(incerr_c::make(NDJSON_braceCountDoesntMatch));
         }
         else if (std::get<0>(count_symbols) != (std::get<2>(count_symbols) + 1)) {
-            return std::unexpected(Unexp_parser::NDJSON_braceCountDoesntMatchNLcount);
+            return std::unexpected(incerr_c::make(NDJSON_braceCountDoesntMatchNLcount));
         }
         else { return input_t::NDJSON; }
     }
     else if (begBrcCount == endBrcCount && begBrcCount > 1) { return input_t::JSON; }
-    else { return std::unexpected(Unexp_parser::NDJSON_isNotFlat); }
+    else { return std::unexpected(incerr_c::make(NDJSON_isNotFlat)); }
 }
 
 Parser::parser_return_t Parser::dispatch_toParsers(input_t const &inp_t, std::string_view const &sv) {
@@ -207,7 +210,7 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
 
     DataStore::vec_pr_strVarVec_t res;
     std::vector<csvCellType>      cellTypes;
-    if (csv2Reader.rows() < 1) { return std::unexpected(Unexp_parser::JSON_isEmpty); }
+    if (csv2Reader.rows() < 1) { return std::unexpected(incerr_c::make(JSON_isEmpty)); }
 
     // Set US locale for use in parsing CSV
     std::string orig_loc = std::setlocale(LC_ALL, nullptr);
@@ -221,7 +224,7 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
 
         for (auto const &firstRow : csv2Reader) {
             for (auto const &cell : firstRow) {
-                if (not(id < hdr_sz)) { return std::unexpected(Unexp_parser::CSV_headerHasLessItemsThanDataRow); }
+                if (not(id < hdr_sz)) { return std::unexpected(incerr_c::make(CSV_headerHasLessItemsThanDataRow)); }
 
                 switch (assess_cellType(cell)) {
                     case csvCellType::double_like:
@@ -249,7 +252,7 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
                 id++;
                 ++headerItem;
             }
-            if (id != hdr_sz) { return std::unexpected(Unexp_parser::CSV_headerHasMoreItemsThanDataRow); }
+            if (id != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
             // Taking just the first row
             // TODO: This is wierd ... need to look into what I am doing wrong
             break;
@@ -259,12 +262,12 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
     for (auto const &row : csv2Reader) {
         size_t i = 0;
         for (auto const &cell : row) {
-            if (not(i < hdr_sz)) { return std::unexpected(Unexp_parser::CSV_headerHasLessItemsThanDataRow); }
+            if (not(i < hdr_sz)) { return std::unexpected(incerr_c::make(CSV_headerHasLessItemsThanDataRow)); }
             // Error when not the same type
             // However if trying to parse 'something which looks like long long' into double ... then that's fine
             if (assess_cellType(cell) != cellTypes[i] &&
                 (not((assess_cellType(cell) == csvCellType::ll_like) && cellTypes[i] == csvCellType::double_like))) {
-                return std::unexpected(Unexp_parser::CSV_valueTypeDoesntMatch);
+                return std::unexpected(incerr_c::make(CSV_valueTypeDoesntMatch));
             }
 
             auto vis = [&](auto &variVec) -> void {
@@ -285,7 +288,7 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
             std::visit(vis, res.at(i).second);
             ++i;
         }
-        if (i != hdr_sz) { return std::unexpected(Unexp_parser::CSV_headerHasMoreItemsThanDataRow); }
+        if (i != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
     }
 
     // Restore original locale so that we 'clean up' after ourselves
@@ -297,7 +300,7 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
 
 // MAIN INTENDED INTERFACE METHOD
 // Dispatches the string_view to the right parser and constructs DataStore
-std::expected<DataStore, Parser::Unexp_parser> Parser::parse(std::string_view const sv) {
+std::expected<DataStore, incerr_c> Parser::parse(std::string_view const sv) {
     std::string_view const trimmed = get_trimmedSV(sv);
 
     auto d_tprsrs = [&](auto const &&inp_t) { return dispatch_toParsers(inp_t, trimmed); };
@@ -326,7 +329,7 @@ Parser::parser_return_t Parser::parse_NDJSON(std::string_view const &trimmed) {
         parsed.push_back(std::move(oneLineJson));
     }
 
-    if (parsed.size() == 0) { return std::unexpected(Unexp_parser::NDJSON_isEmpty); }
+    if (parsed.size() == 0) { return std::unexpected(incerr_c::make(NDJSON_isEmpty)); }
 
 
     // Construct 'vec_pr_strVarVec_t' based on the first line
@@ -351,13 +354,13 @@ Parser::parser_return_t Parser::parse_NDJSON(std::string_view const &trimmed) {
     }
 
     for (auto const &parsedLine : parsed) {
-        if (parsedLine.size() != res.size()) { return std::unexpected(Unexp_parser::JSON_objectsNotOfSameSize); }
+        if (parsedLine.size() != res.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
         for (int i = 0; auto const &[key, val] : parsedLine.items()) {
-            if (key != res[i].first) { return std::unexpected(Unexp_parser::JSON_keyNameDoesntMatch); }
+            if (key != res[i].first) { return std::unexpected(incerr_c::make((JSON_keyNameDoesntMatch))); }
             // TODO: Problem with type checking different NDJSON lines
             else if (val.type() != temp_firstLineTypes[i] &&
                      (val.type() == NLMjson::value_t::string || temp_firstLineTypes[i] == NLMjson::value_t::string)) {
-                return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
+                return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
             else {
                 switch (res[i].second.index()) {
@@ -386,9 +389,9 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
     }
 
     // UNEXP CHECKS
-    if (wholeJson.empty()) { return std::unexpected(Unexp_parser::JSON_isEmpty); }
-    if (not wholeJson.is_structured()) { return std::unexpected(Unexp_parser::JSON_topLevelEleNotArrayOrObject); }
-    if (wholeJson.items().begin().value().empty()) { return std::unexpected(Unexp_parser::JSON_isEmpty); }
+    if (wholeJson.empty()) { return std::unexpected(incerr_c::make(JSON_isEmpty)); }
+    if (not wholeJson.is_structured()) { return std::unexpected(incerr_c::make(JSON_topLevelEleNotArrayOrObject)); }
+    if (wholeJson.items().begin().value().empty()) { return std::unexpected(incerr_c::make(JSON_isEmpty)); }
 
     // The 'second level' is structured
     if (wholeJson.items().begin().value().is_structured()) {
@@ -425,16 +428,16 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
         }
 
         for (auto const &[key_l1, val_l1] : wholeJson.items()) {
-            if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSON_objectsNotOfSameSize); }
+            if (val_l1.size() != res.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
 
             for (int i = 0; auto const &[key, val] : val_l1.items()) {
                 // CHECKS
                 // Check keys are the same and valTypes are the same on (flattened) 3rd level
-                if (key != res[i].first) { return std::unexpected(Unexp_parser::JSON_keyNameDoesntMatch); }
+                if (key != res[i].first) { return std::unexpected(incerr_c::make(JSON_keyNameDoesntMatch)); }
                 // TODO: Problem with type checking different NDJSON lines
                 else if (val.type() != temp_firstLineTypes[i] && (val.type() == NLMjson::value_t::string ||
                                                                   temp_firstLineTypes[i] == NLMjson::value_t::string)) {
-                    return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
+                    return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
                 }
                 // 'CORRECT' PATH
                 else {
@@ -451,7 +454,7 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
         for (auto &oneItem : std::views::drop(wholeJson, 1)) {
             // If any JSON type on 'second level' doesn't match the type of the first record
             if (oneItem.type() != wholeJson.items().begin().value().type()) {
-                return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
+                return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
         }
 
@@ -473,23 +476,23 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
                 res.push_back(std::make_pair(
                     key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
             }
-            else { return std::unexpected(Unexp_parser::JSON_unhandledType); }
+            else { return std::unexpected(incerr_c::make(JSON_unhandledType)); }
             temp_firstLineTypes.push_back(val.type());
         }
 
         auto &resFront = res.at(0);
         for (auto const &[key_l1, val_l1] : wholeJson.items()) {
-            if (val_l1.size() != res.size()) { return std::unexpected(Unexp_parser::JSON_objectsNotOfSameSize); }
+            if (val_l1.size() != res.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
 
             // CHECKS
             // Check keys are the same and valTypes are the same on (flattened) 3rd level
             if (wholeJson.is_object()) {
-                if (key_l1 != resFront.first) { return std::unexpected(Unexp_parser::JSON_keyNameDoesntMatch); }
+                if (key_l1 != resFront.first) { return std::unexpected(incerr_c::make(JSON_keyNameDoesntMatch)); }
             }
 
             // TODO: Problem with type checking different NDJSON lines
             else if (val_l1.type() != wholeJson.at(0).type()) {
-                return std::unexpected(Unexp_parser::JSON_valueTypeDoesntMatch);
+                return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
 
             // 'CORRECT' PATH

@@ -46,6 +46,24 @@ enum class Unexp_plotDrawer {
     C_DSC_,
     V_PD_nonspecificError,
 };
+enum class Unexp_parser {
+    // No value '0'
+    JSON_malformattedArrayLike = 1,
+    JSON_objectsNotOfSameSize,
+    JSON_valueTypeDoesntMatch,
+    JSON_keyNameDoesntMatch,
+    JSON_isEmpty,
+    JSON_topLevelEleNotArrayOrObject,
+    JSON_unhandledType,
+    NDJSON_braceCountDoesntMatch,
+    NDJSON_braceCountDoesntMatchNLcount,
+    NDJSON_isEmpty,
+    NDJSON_isNotFlat,
+    CSV_containsZeroNewLineChars,
+    CSV_headerHasMoreItemsThanDataRow,
+    CSV_headerHasLessItemsThanDataRow,
+    CSV_valueTypeDoesntMatch,
+};
 
 inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
     switch (e) {
@@ -150,6 +168,7 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e) {
 
 INCERR_REGISTER(incom::terminal_plot::Unexp_plotSpecs, incom::terminal_plot);
 INCERR_REGISTER(incom::terminal_plot::Unexp_plotDrawer, incom::terminal_plot);
+INCERR_REGISTER(incom::terminal_plot::Unexp_parser, incom::terminal_plot);
 
 #undef INCERR_REGISTER
 

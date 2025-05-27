@@ -4,6 +4,7 @@
 #include <string_view>
 
 #include <incplot/datastore.hpp>
+#include <incplot/err.hpp>
 
 
 namespace incom {
@@ -15,40 +16,26 @@ namespace terminal_plot {
 // TODO: Would it be possible to cleave he parser from the library so that it is easier to customize later?
 // TODO: How would one do the above in a reasonable manner?
 namespace parsers {
-class Parser {
-    // ENUMS
-    enum class input_t {
-        NDJSON,
-        JSON,
-        CSV,
-        TSV
-    };
-    enum class Unexp_parser {
-        JSON_malformattedArrayLike = 1,
-        JSON_objectsNotOfSameSize,
-        JSON_valueTypeDoesntMatch,
-        JSON_keyNameDoesntMatch,
-        JSON_isEmpty,
-        JSON_topLevelEleNotArrayOrObject,
-        JSON_unhandledType,
-        NDJSON_braceCountDoesntMatch,
-        NDJSON_braceCountDoesntMatchNLcount,
-        NDJSON_isEmpty,
-        NDJSON_isNotFlat,
-        CSV_containsZeroNewLineChars,
-        CSV_headerHasMoreItemsThanDataRow,
-        CSV_headerHasLessItemsThanDataRow,
-        CSV_valueTypeDoesntMatch,
-    };
 
-    enum class csvCellType {
-        double_like,
-        ll_like,
-        string_like
-    };
+using incerr_c = incerr::incerr_code;
+
+// ENUMS
+enum class input_t {
+    NDJSON,
+    JSON,
+    CSV,
+    TSV
+};
+enum class csvCellType {
+    double_like,
+    ll_like,
+    string_like
+};
+
+class Parser {
 
     // TYPE ALIAS
-    using parser_return_t = std::expected<DataStore::vec_pr_strVarVec_t, Unexp_parser>;
+    using parser_return_t = std::expected<DataStore::vec_pr_strVarVec_t, incerr_c>;
 
     // HLPRS
     static std::string_view get_trimmedSV(std::string_view const &sv);
@@ -62,7 +49,7 @@ class Parser {
 
     // COMPOSITION METHODS
     // TODO: Maybe make this public for later use?
-    static std::expected<input_t, Unexp_parser> assess_inputType(std::string_view const &sv);
+    static std::expected<input_t, incerr_c> assess_inputType(std::string_view const &sv);
     static parser_return_t                      dispatch_toParsers(input_t const &inp_t, std::string_view const &sv);
 
     // PARSE USING RANAV::CSV2
@@ -71,7 +58,7 @@ class Parser {
 public:
     // MAIN INTENDED INTERFACE METHOD
     // Dispatches the string_view to the right parser and constructs DataStore
-    static std::expected<DataStore, Unexp_parser> parse(std::string_view const sv);
+    static std::expected<DataStore, incerr_c> parse(std::string_view const sv);
 
     // JSON AND NDJSON
     static parser_return_t parse_NDJSON(std::string_view const &trimmed);
