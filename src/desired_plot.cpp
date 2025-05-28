@@ -293,8 +293,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
     // MULTILINE PLOT
     else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Multiline>()) {
         if (dp.cat_colID.has_value()) {
-            auto arrr = incerr_c::make(GCC_categoryColumnIsNotAllowedForMultiline);
-            return std::unexpected(incerr_c::make(GCC_categoryColumnIsNotAllowedForMultiline));
+            return std::unexpected(incerr_c::make(GCC_categoryColumnIsNotAllowedForMultiline, "Custom Test"sv));
         }
         else { return dp; }
     }
@@ -348,13 +347,17 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
 
     // BAR PLOTS
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-        if (dp.values_colIDs.size() > 1) { return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV)); }
+        if (dp.values_colIDs.size() > 1) {
+            return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV));
+        }
         else if (not addValColsUntil(1).has_value()) {
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
-        if (dp.values_colIDs.size() > 1) { return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarH)); }
+        if (dp.values_colIDs.size() > 1) {
+            return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarH));
+        }
         else if (not addValColsUntil(1).has_value()) {
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
@@ -400,8 +403,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(Desired
 
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) { dp.targetWidth = 64; }
-    else if (dp.targetWidth.value() < Config::min_plotWidth) { return std::unexpected(incerr_c::make(GZS_widthTooSmall)); }
-    else if (dp.targetWidth.value() > Config::max_plotWidth) { return std::unexpected(incerr_c::make(GZS_widthTooLarge)); }
+    else if (dp.targetWidth.value() < Config::min_plotWidth) {
+        return std::unexpected(incerr_c::make(GZS_widthTooSmall));
+    }
+    else if (dp.targetWidth.value() > Config::max_plotWidth) {
+        return std::unexpected(incerr_c::make(GZS_widthTooLarge));
+    }
 
     // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
     if (not dp.targetHeight.has_value()) {

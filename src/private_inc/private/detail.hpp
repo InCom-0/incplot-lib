@@ -16,7 +16,7 @@ namespace terminal_plot {
 namespace detail {
 
 // Auto 'bind_back', for some reason I couldn't manage to get std::bind_back to work ... this works fine :-)
-// Returns a lambda (closure) which invokes an 'F' passed in as first argument with the last 'size_of(Ts)' arguments
+// Returns a lambda (closure) which invokes 'fn' passed in as first argument with the last 'size_of(Ts)' arguments
 // bound to 'ts' Used extensively as a helper for monadic operations on std::expected and std::optional Contrained 'on
 // the inside' so it shouldn't be possible to misuse
 template <typename F, typename... Ts>

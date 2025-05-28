@@ -83,8 +83,11 @@ std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, s
     auto res = make_plot(dp_ctrs, inputData);
     if (res.has_value()) { return res.value(); }
     else {
-        return std::format("{}{}\n\n{}", "Error encoutered. Category of the error: "sv, res.error().category().name(),
-                           res.error().message());
+        return std::format("{}{}\n\n{}\n{}{}", "Error encoutered. Error category is: "sv, res.error().category().name(),
+                           "Likely cause: "sv, res.error().message(),
+                           res.error().get_customMessage() == ""
+                               ? ""
+                               : std::string("\n\nAdditional context:\n").append(res.error().get_customMessage()));
     }
 }
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData) {
