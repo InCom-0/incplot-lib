@@ -14,7 +14,7 @@ using incerr_c = incerr::incerr_code;
 // etc.)
 // Create your own 'plot structure' ie. type of plot by deriving from 'Base' class (or from other classes derived
 // from it). 'Shadow' the 'Compute_*' methods as needed as if you were overriding (but without override keyword). The
-// types properly derived from 'Base' can then be used inside 'PlotDrawer' inside std::variant<...>.
+// types properly derived from 'Base' can then be used inside std::variant<...>.
 // The idea is to be able to easily customize and also possibly 'partially customize' as needed.
 // You always have to make the 'Base' class a friend ... this enables really nice static compile-time polymorphism
 // coupled with 'deducing this' feature of C++23

@@ -16,39 +16,15 @@ using var_plotTypes =
 using incerr_c = incerr::incerr_code;
 using enum Unexp_plotDrawer;
 
-template <typename PS_VAR>
-class PlotDrawer {
-private:
-    PS_VAR m_ps_var;
-
-    // CONSTRUCTION
-    // Is private on purpose, gotta go through make_plotDrawer
-    constexpr PlotDrawer() {};
-    PlotDrawer(auto ps_var) : m_ps_var(std::move(ps_var)) {}
-
-public:
-    friend auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<PlotDrawer<var_plotTypes>, incerr_c>;
-
-    // MAIN METHODS
-    bool        validate_self() const;
-    std::string drawPlot() const;
-
-    std::expected<std::string, incerr_c> validateAndDrawPlot() const;
-};
-
-auto make_plotDrawer(DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<PlotDrawer<var_plotTypes>, incerr_c>;
-
 // MAIN SIMPLIFIED INTERFACE OF THE LIBRARY
-std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs,
-                                                  std::string_view                  inputData);
-std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs,
-                                                  std::string_view                   inputData);
+
+std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData);
+std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData);
 
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData);
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData);
 
+std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &dp, DataStore const &ds);
 
 } // namespace terminal_plot
 } // namespace incom

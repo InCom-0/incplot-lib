@@ -24,8 +24,9 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
     if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
     namespace incp_d  = incom::terminal_plot::detail;
-    using expOfSelf_t = std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
     using self_t      = std::remove_cvref_t<decltype(self)>;
+    using expOfSelf_t = std::expected<self_t, incerr_c>;
+    
 
     return incp_d::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds)(std::move(self))
         .and_then(incp_d::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
