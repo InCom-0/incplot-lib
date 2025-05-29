@@ -401,18 +401,16 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
 
-
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) {
         // Is unknown ... defaulting to Config specified width
-        if (not dp.availableWidth.has_value()) { dp.targetWidth = Config::default_plotWidth; }
-
+        if (not dp.availableWidth.has_value()) { dp.targetWidth = Config::default_targetWidth; }
         // Is known ... using it after scaling down a little
         else { dp.targetWidth = dp.availableWidth.value() * Config::scale_availablePlotWidth; }
     }
-    else if (dp.targetWidth.value() < Config::min_plotWidth) {
-        return std::unexpected(incerr_c::make(GZS_widthTooSmall));
-    }
+
+    // Check for unreasonable width sizes
+    if (dp.targetWidth.value() < Config::min_plotWidth) { return std::unexpected(incerr_c::make(GZS_widthTooSmall)); }
     else if (dp.targetWidth.value() > Config::max_plotWidth) {
         return std::unexpected(incerr_c::make(GZS_widthTooLarge));
     }
