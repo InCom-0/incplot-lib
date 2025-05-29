@@ -26,7 +26,7 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
     namespace incp_d  = incom::terminal_plot::detail;
     using self_t      = std::remove_cvref_t<decltype(self)>;
     using expOfSelf_t = std::expected<self_t, incerr_c>;
-    
+
 
     return incp_d::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds)(std::move(self))
         .and_then(incp_d::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
@@ -276,7 +276,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     // Plot area width (-2 is for the 2 vertical axes positions)
     self.areaWidth = dp.targetWidth.value() - self.pad_left -
                      (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
-                     self.labels_verRightWidth - (Config::axis_verName_width_vl * self.axisName_verRight_bool) -
+                     self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
                      self.pad_right;
     if (self.areaWidth < Config::min_areaWidth) {
         return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
@@ -299,9 +299,24 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     }
     else if (not dp.targetHeight.has_value()) {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-            self.areaHeight = self.areaWidth / 6;
+            //
+            if (not dp.availableWidth.has_value() || not dp.availableHeight.has_value()) {
+                self.areaHeight = self.areaWidth / 6;
+            }
+            else {
+                self.areaHeight =
+                    self.areaWidth * (static_cast<double>(dp.availableHeight.value()) / dp.availableWidth.value());
+            }
         }
-        else { self.areaHeight = self.areaWidth / 3; }
+        else {
+            if (not dp.availableWidth.has_value() || not dp.availableHeight.has_value()) {
+                self.areaHeight = self.areaWidth / 3;
+            }
+            else {
+                self.areaHeight =
+                    self.areaWidth * (static_cast<double>(dp.availableHeight.value()) / dp.availableWidth.value());
+            }
+        }
     }
     else {
         self.areaHeight = static_cast<long long>(dp.targetHeight.value()) - self.pad_top - self.axisName_horTop_bool -

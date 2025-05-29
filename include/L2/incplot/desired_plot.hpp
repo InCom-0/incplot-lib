@@ -1,6 +1,5 @@
 #pragma once
 
-#include "incerr.hpp"
 #include <expected>
 #include <optional>
 
@@ -30,10 +29,11 @@ private:
     std::vector<ColumnParams> m_colAssessments = {};
 
     // BUILDING METHODS
-    static std::expected<DesiredPlot, incerr::incerr_code> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr::incerr_code> compute_colAssessments(DesiredPlot    &&dp,
+                                                                                  DataStore const &ds);
 
     static std::expected<DesiredPlot, incerr::incerr_code> transform_namedColsIntoIDs(DesiredPlot    &&dp,
-                                                                                  DataStore const &ds);
+                                                                                      DataStore const &ds);
     static std::expected<DesiredPlot, incerr::incerr_code> guess_plotType(DesiredPlot &&dp, DataStore const &ds);
     static std::expected<DesiredPlot, incerr::incerr_code> guess_TSCol(DesiredPlot &&dp, DataStore const &ds);
     static std::expected<DesiredPlot, incerr::incerr_code> guess_catCol(DesiredPlot &&dp, DataStore const &ds);
@@ -60,6 +60,9 @@ public:
     std::optional<size_t> targetHeight;
     std::optional<size_t> targetWidth;
 
+    std::optional<size_t> availableWidth;
+    std::optional<size_t> availableHeight;
+
     std::array<Color_CVTS, 6> color_basePalette;
 
     std::optional<bool> valAxesNames_bool;
@@ -79,9 +82,11 @@ public:
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
             Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
-        std::optional<std::string> lts_colName = std::nullopt;
-        std::vector<std::string>   v_colNames  = {};
-        std::optional<std::string> c_colName   = std::nullopt;
+        std::optional<std::string> lts_colName     = std::nullopt;
+        std::vector<std::string>   v_colNames      = {};
+        std::optional<std::string> c_colName       = std::nullopt;
+        std::optional<size_t>      availableWidth  = std::nullopt;
+        std::optional<size_t>      availableHeight = std::nullopt;
     };
 
     DesiredPlot(DP_CtorStruct &&dp_struct)
@@ -89,16 +94,19 @@ public:
           plot_type_name(std::move(dp_struct.plot_type_name)), labelTS_colID(std::move(dp_struct.lts_colID)),
           values_colIDs(std::move(dp_struct.v_colIDs)), cat_colID(std::move(dp_struct.c_colID)),
           color_basePalette(std::move(dp_struct.colors)), labelTS_colName(std::move(dp_struct.lts_colName)),
-          values_colNames(std::move(dp_struct.v_colNames)), cat_colName(std::move(dp_struct.c_colName)) {}
+          values_colNames(std::move(dp_struct.v_colNames)), cat_colName(std::move(dp_struct.c_colName)),
+          availableWidth(std::move(dp_struct.availableWidth)), availableHeight(std::move(dp_struct.availableHeight)) {}
     DesiredPlot(DP_CtorStruct const &dp_struct)
         : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
           plot_type_name(dp_struct.plot_type_name), labelTS_colID(dp_struct.lts_colID),
           values_colIDs(dp_struct.v_colIDs), cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors),
           labelTS_colName(dp_struct.lts_colName), values_colNames(dp_struct.v_colNames),
-          cat_colName(dp_struct.c_colName) {}
+          cat_colName(dp_struct.c_colName), availableWidth(dp_struct.availableWidth),
+          availableHeight(dp_struct.availableHeight) {}
 
     // Create a new copy and guess_missingParams on it.
-    std::expected<DesiredPlot, incerr::incerr_code> build_guessedParamsCPY(this DesiredPlot &self, DataStore const &ds) {
+    std::expected<DesiredPlot, incerr::incerr_code> build_guessedParamsCPY(this DesiredPlot &self,
+                                                                           DataStore const  &ds) {
         return DesiredPlot(self).guess_missingParams(ds);
     }
 
