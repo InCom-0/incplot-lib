@@ -33,6 +33,11 @@ target_sources(incplot-lib
                 
 target_compile_features(incplot-lib PUBLIC cxx_std_23)
 
+if(MINGW AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
+    target_link_options(incplot-lib PUBLIC -static -static-libgcc -static-libstdc++)
+endif()
+
+
 
 include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
 target_link_libraries(incplot-lib PRIVATE
