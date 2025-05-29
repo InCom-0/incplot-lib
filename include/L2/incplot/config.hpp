@@ -71,6 +71,7 @@ public:
 
     static constexpr size_t min_plotWidth = 24uz;
     static constexpr size_t max_plotWidth = 256uz;
+    static constexpr size_t default_plotWidth = 64uz;
 
     static constexpr size_t min_plotHeight = 5uz;
 

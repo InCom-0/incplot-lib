@@ -1,3 +1,4 @@
+#include "incplot/config.hpp"
 #include <algorithm>
 #include <functional>
 #include <limits>
@@ -402,7 +403,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
 
     // Width always need to be provided, otherwise the whole thing doesn't work
-    if (not dp.targetWidth.has_value()) { dp.targetWidth = 64; }
+    if (not dp.targetWidth.has_value()) { dp.targetWidth = Config::default_plotWidth; }
     else if (dp.targetWidth.value() < Config::min_plotWidth) {
         return std::unexpected(incerr_c::make(GZS_widthTooSmall));
     }
