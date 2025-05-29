@@ -45,12 +45,14 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const 
 
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData) {
     auto res = make_plot(dp_ctrs, inputData);
-    return res.value_or(
-        std::format("{}{}\n\n{}\n{}{}", "Error encoutered. Error category is: "sv, res.error().category().name(),
-                    "Likely cause: "sv, res.error().message(),
-                    res.error().get_customMessage() == ""
-                        ? ""
-                        : std::string("\n\nAdditional context:\n").append(res.error().get_customMessage())));
+    if (res.has_value()) { return res.value(); }
+    else {
+        return std::format("{}{}\n\n{}\n{}{}", "Error encoutered. Error category is: "sv, res.error().category().name(),
+                           "Likely cause: "sv, res.error().message(),
+                           res.error().get_customMessage() == ""
+                               ? ""
+                               : std::string("\n\nAdditional context:\n").append(res.error().get_customMessage()));
+    }
 }
 std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData) {
     return make_plot_collapseUnExp(dp_ctrs, inputData);
