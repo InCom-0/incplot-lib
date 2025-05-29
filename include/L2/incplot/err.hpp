@@ -147,7 +147,6 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
             static const std::string GZS_wtl_r =
                 std::format("The user cannot specify a width of more than: {}", Config::max_plotWidth);
             return std::string_view(GZS_wtl_r);
-            ;
         case Unexp_plotSpecs::GZS_heightTooSmall:
             static const std::string GZS_hts_r =
                 std::format("The user cannot specify a height of less than: {}", Config::max_plotWidth);
