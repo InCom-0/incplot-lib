@@ -1,9 +1,7 @@
 name: publish
 
 on:
-  push:
-    tags:
-      - v999
+  workflow_dispatch:
 
 jobs:
   setup:
