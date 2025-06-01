@@ -24,3 +24,54 @@ jobs:
         id: build
         run: |
           printf "build_type=Release\n" >> $GITHUB_OUTPUT
+
+
+
+  # Based on https://github.com/msys2/setup-msys2/blob/main/examples/cmake.yml
+  Windows-MSYS:
+    needs: setup
+    name: ${{ matrix.icon }} windows (${{matrix.build-type}}, ${{matrix.compiler}}, ${{ matrix.target }}, ${{ needs.setup.outputs.build_type }})
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+
+        icon: ['🟦']
+        sys: [ucrt64]
+        runs-on: ["windows-2025"]
+        compiler: ["gcc"]
+        build-type: ["REL"]
+        target : ["incplot_scratchpad"]
+        cmake-override: [""]
+        include:
+          - compiler: "gcc"
+            add-to-pacboy: ""
+
+    
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v4
+
+    - name: '${{ matrix.icon }} Setup MSYS2'
+      uses: msys2/setup-msys2@v2.27.0
+      with:
+        msystem: ${{matrix.sys}}
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          toolchain:p
+          ${{matrix.add-to-pacboy}}
+          cmake:p
+          ninja:p
+
+    - name: 'Configure'
+      run: cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
+
+    - name: '🚧 Build'
+      run: cmake --build build --target ${{matrix.target}}
