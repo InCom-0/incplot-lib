@@ -1,0 +1,28 @@
+name: publish
+
+on:
+  push:
+    tags:
+      - v999
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      build_type: ${{ steps.build.outputs.build_type }}
+    steps:
+      # Nightly uses RelWithDebInfo while stable uses Release (which disables
+      # asserts). This helps get better debug info from people brave enough to
+      # use the nightly builds.
+      # - if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name != 'nightly')
+      #  run: |
+      #    echo 'CMAKE_BUILD_TYPE=Release' >> $GITHUB_ENV
+      #    echo 'APPIMAGE_TAG=latest' >> $GITHUB_ENV
+      #- if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag_name == 'nightly')
+      #  run: |
+      #    echo 'CMAKE_BUILD_TYPE=RelWithDebInfo' >> $GITHUB_ENV
+      #    echo 'APPIMAGE_TAG=nightly' >> $GITHUB_ENV
+      - name: Export build information
+        id: build
+        run: |
+          printf "build_type=Release\n" >> $GITHUB_OUTPUT
