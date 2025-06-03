@@ -178,7 +178,7 @@ jobs:
         compiler: ["gcc"]
         compiler-ver: ["14"]
         build-type: ["Release", "Debug"]
-        target : ["incplot"]
+        target : ["all"]
 
         include:
           - runs-on: macos-14
