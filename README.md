@@ -27,4 +27,4 @@ Naturally though, it can potentially be used for other things as well
 * [csv2](https://github.com/p-ranav/csv2)
 * [argparse](https://github.com/p-ranav/argparse)
 * [utf-cpp](https://github.com/ww898/utf-cpp)
-* [magic_enum](https://github.com/Neargye/magic_enum)
+* [incerr](https://github.com/InCom-0/incerr)
