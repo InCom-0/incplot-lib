@@ -43,32 +43,35 @@ private:
 
 
 public:
-    std::optional<std::string> plot_type_name;
+    std::optional<std::string> plot_type_name = std::nullopt;
 
     // Category column ID
-    std::optional<size_t>      cat_colID; // ID in colTypes
-    std::optional<std::string> cat_colName;
+    std::optional<size_t>      cat_colID   = std::nullopt; // ID in colTypes
+    std::optional<std::string> cat_colName = std::nullopt;
 
     // Label for use in timeseries
-    std::optional<size_t>      labelTS_colID; // ID in colTypes
-    std::optional<std::string> labelTS_colName;
+    std::optional<size_t>      labelTS_colID   = std::nullopt; // ID in colTypes
+    std::optional<std::string> labelTS_colName = std::nullopt;
 
     // TODO: Make both 'values_' into std::optional as well to keep the logic the same for all here
-    std::vector<size_t>      values_colIDs; // IDs in colTypes
-    std::vector<std::string> values_colNames;
+    std::vector<size_t>      values_colIDs   = {}; // IDs in colTypes
+    std::vector<std::string> values_colNames = {};
 
-    std::optional<size_t> targetHeight;
-    std::optional<size_t> targetWidth;
+    std::optional<size_t> targetHeight = std::nullopt;
+    std::optional<size_t> targetWidth  = std::nullopt;
 
-    std::optional<size_t> availableWidth;
-    std::optional<size_t> availableHeight;
+    std::optional<size_t> availableWidth  = std::nullopt;
+    std::optional<size_t> availableHeight = std::nullopt;
 
-    std::array<Color_CVTS, 6> color_basePalette;
+    std::array<Color_CVTS, 6> color_basePalette = {
+        Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
+        Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
+    };
 
-    std::optional<bool> valAxesNames_bool;
-    std::optional<bool> valAxesLabels_bool;
-    std::optional<bool> valAutoFormat_bool;
-    std::optional<bool> legend_bool;
+    std::optional<bool> valAxesNames_bool  = std::nullopt;
+    std::optional<bool> valAxesLabels_bool = std::nullopt;
+    std::optional<bool> valAutoFormat_bool = std::nullopt;
+    std::optional<bool> legend_bool        = std::nullopt;
 
     // TODO: Provide some compile time programmatic way to set the default sizes here
     struct DP_CtorStruct {
