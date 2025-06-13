@@ -10,6 +10,6 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(UnitTest)
-target_sources(UnitTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/unit_tests.cpp)
+target_sources(UnitTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests.cpp)
 
-target_link_libraries(UnitTest PRIVATE gtest_main gmock_main)
+target_link_libraries(UnitTest PRIVATE incplot-lib gtest_main gmock_main)
