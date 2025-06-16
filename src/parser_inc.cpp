@@ -1,7 +1,10 @@
+#include "incplot/datastore.hpp"
+#include "private/detail.hpp"
 #include <algorithm>
 #include <cerrno>
 #include <concepts>
 #include <cstddef>
+#include <functional>
 #include <print>
 
 #include <ranges>
@@ -303,10 +306,8 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
 std::expected<DataStore, incerr_c> Parser::parse(std::string_view const sv) {
     std::string_view const trimmed = get_trimmedSV(sv);
 
-    auto d_tprsrs = [&](auto const &&inp_t) { return dispatch_toParsers(inp_t, trimmed); };
-    auto c_dstr   = [&](auto const &&data) { return DataStore(data); };
-
-    return assess_inputType(trimmed).and_then(d_tprsrs).transform(c_dstr);
+    auto c_dstr = [](auto const &&data) { return DataStore(data); };
+    return assess_inputType(trimmed).and_then(detail::bind_back(dispatch_toParsers, trimmed)).transform(c_dstr);
 }
 
 // JSON AND NDJSON

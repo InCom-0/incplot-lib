@@ -32,7 +32,7 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const 
     // 3) Generate plotAsString from the plot_structure variant created in step 2
     return DesiredPlot(dp_ctrs)
         .guess_missingParams(ds.value())
-        .and_then(incp_d::bind_back(build_plot_structure, ds.value()))
+        .and_then(std::bind_back(build_plot_structure, ds.value()))
         .transform([](auto &&ps_var) {
             auto const ol_set = [&](auto &&ps) -> std::string { return ps.build_plotAsString(); };
             return std::visit(ol_set, ps_var);

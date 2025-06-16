@@ -6904,6 +6904,8 @@ int main(int argc, char *argv[]) {
 {"fixed_acidity":5.5,"volatile_acidity":0.29,"citric_acid":0.3,"residual_sugar":1.1,"chlorides":0.022000000000000002,"free_sulfur_dioxide":20.0,"total_sulfur_dioxide":110.0,"density":0.98869,"pH":3.34,"sulphates":0.38,"alcohol":12.8,"quality":7,"color":"white"}
 {"fixed_acidity":6.0,"volatile_acidity":0.21,"citric_acid":0.38,"residual_sugar":0.8,"chlorides":0.02,"free_sulfur_dioxide":22.0,"total_sulfur_dioxide":98.0,"density":0.98941,"pH":3.26,"sulphates":0.32,"alcohol":11.8,"quality":6,"color":"white"})");
 
+    std::string badJSON(R"(_NKFLA""FASDKLFASK__fds"||")");
+
     auto dpCtor_Structs                    = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     // dpCtor_Structs.front().plot_type_name = "Scatter";

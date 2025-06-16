@@ -440,21 +440,19 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TFfeatures(De
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams(this DesiredPlot &&self,
                                                                                  DataStore const   &ds) {
-    namespace incp_d = incom::terminal_plot::detail;
-
     // Uses custom 'bind_back' to return the right callable form for and_then to use.
     // Guesses the missing 'desired parameters' and returns a DesiredPlot with those filled in
     // Variation on a 'builder pattern'
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
     return DesiredPlot::compute_colAssessments(std::forward<decltype(self)>(self), ds)
-        .and_then(incp_d::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
-        .and_then(incp_d::bind_back(DesiredPlot::guess_plotType, ds))
-        .and_then(incp_d::bind_back(DesiredPlot::guess_TSCol, ds))
-        .and_then(incp_d::bind_back(DesiredPlot::guess_catCol, ds))
-        .and_then(incp_d::bind_back(DesiredPlot::guess_valueCols, ds))
-        .and_then(incp_d::bind_back(DesiredPlot::guess_sizes, ds))
-        .and_then(incp_d::bind_back(DesiredPlot::guess_TFfeatures, ds));
+        .and_then( std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
+        .and_then(std::bind_back(DesiredPlot::guess_plotType, ds))
+        .and_then(std::bind_back(DesiredPlot::guess_TSCol, ds))
+        .and_then(std::bind_back(DesiredPlot::guess_catCol, ds))
+        .and_then(std::bind_back(DesiredPlot::guess_valueCols, ds))
+        .and_then(std::bind_back(DesiredPlot::guess_sizes, ds))
+        .and_then(std::bind_back(DesiredPlot::guess_TFfeatures, ds));
 }
 
 

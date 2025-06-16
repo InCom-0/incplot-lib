@@ -23,38 +23,37 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
     // Can only build it from rvalue ...
     if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
-    namespace incp_d  = incom::terminal_plot::detail;
     using self_t      = std::remove_cvref_t<decltype(self)>;
     using expOfSelf_t = std::expected<self_t, incerr_c>;
 
 
-    return incp_d::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds)(std::move(self))
-        .and_then(incp_d::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
+    return std::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds)(std::move(self))
+        .and_then(std::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
 
-        .and_then(incp_d::bind_back(&self_t::template compute_axisName_vl<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_axisName_vr<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axisName_vl<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axisName_vr<self_t>, dp, ds))
 
-        .and_then(incp_d::bind_back(&self_t::template compute_labels_vl<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_labels_vr<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_labels_vl<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_labels_vr<self_t>, dp, ds))
 
-        .and_then(incp_d::bind_back(&self_t::template compute_axis_vl<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_axis_vr<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axis_vl<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axis_vr<self_t>, dp, ds))
 
-        .and_then(incp_d::bind_back(&self_t::template compute_corner_tl<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_corner_bl<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_corner_br<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_corner_tr<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_areaCorners<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_corner_tl<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_corner_bl<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_corner_br<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_corner_tr<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_areaCorners<self_t>, dp, ds))
 
-        .and_then(incp_d::bind_back(&self_t::template compute_axis_ht<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_axisName_ht<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_labels_ht<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axis_ht<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axisName_ht<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_labels_ht<self_t>, dp, ds))
 
-        .and_then(incp_d::bind_back(&self_t::template compute_axis_hb<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_axisName_hb<self_t>, dp, ds))
-        .and_then(incp_d::bind_back(&self_t::template compute_labels_hb<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axis_hb<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_axisName_hb<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_labels_hb<self_t>, dp, ds))
 
-        .and_then(incp_d::bind_back(&self_t::template compute_plot_area<self_t>, dp, ds));
+        .and_then(std::bind_back(&self_t::template compute_plot_area<self_t>, dp, ds));
 }
 inline size_t Base::compute_lengthOfSelf() const {
 
