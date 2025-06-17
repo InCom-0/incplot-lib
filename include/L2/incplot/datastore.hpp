@@ -44,6 +44,16 @@ struct DataStore {
     // Pair first = name of the column, Pair second = values in that column
     DataStore(vec_pr_strVarVec_t const &vecOfDataVecs);
 
+    // COMPARISON
+    bool operator==(const DataStore& other) const {
+        if (colNames != other.colNames) { return false; }
+        if (colTypes != other.colTypes) { return false; }
+        if (stringCols != other.stringCols) { return false; }
+        if (llCols != other.llCols) { return false; }
+        if (doubleCols != other.doubleCols) { return false; }
+        return true;
+    }
+
     // APPENDING
     void append_data(vec_pr_strVarVec_t const &vecOfDataVecs);
 

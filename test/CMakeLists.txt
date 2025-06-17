@@ -12,4 +12,11 @@ enable_testing()
 add_executable(UnitTest)
 target_sources(UnitTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/tests.cpp)
 
-target_link_libraries(UnitTest PRIVATE incplot-lib gtest_main gmock_main)
+target_sources(UnitTest
+    PUBLIC
+        FILE_SET priv_headers
+        TYPE HEADERS
+        BASE_DIRS
+                inc/)
+
+target_link_libraries(UnitTest PRIVATE incplot-lib gtest_main gmock_main "-lstdc++exp")

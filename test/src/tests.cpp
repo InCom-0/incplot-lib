@@ -1,86 +1,75 @@
+
 #include <algorithm>
+#include <cstddef>
 #include <functional>
 #include <gtest/gtest.h>
-#include <incplot.hpp>
-#include <optional>
-#include <string_view>
+#include <tests.hpp>
+#include <tuple>
 #include <type_traits>
+#include <vector>
 
-#define TEST_DF "../../test/data"
-
-
-namespace incom::terminal_plot::testing {
-struct DataSetFN {
-    std::optional<std::string_view> csv    = std::nullopt;
-    std::optional<std::string_view> tsv    = std::nullopt;
-    std::optional<std::string_view> json   = std::nullopt;
-    std::optional<std::string_view> ndjson = std::nullopt;
-
-    template <typename F>
-    auto apply_overAllPairs(const F fn) const -> std::vector<std::invoke_result_t<F, std::string_view, std::string_view>> {
-        std::vector<std::invoke_result_t<F, std::string_view, std::string_view>> res;
-        if (csv.has_value()) {
-            if (tsv.has_value()) { res.push_back(fn(csv.value(), tsv.value())); }
-            if (json.has_value()) { res.push_back(fn(csv.value(), json.value())); }
-            if (ndjson.has_value()) { res.push_back(fn(csv.value(), ndjson.value())); }
-        }
-        if (tsv.has_value()) {
-            if (json.has_value()) { res.push_back(fn(tsv.value(), json.value())); }
-            if (ndjson.has_value()) { res.push_back(fn(tsv.value(), ndjson.value())); }
-        }
-        if (json.has_value()) {
-            if (ndjson.has_value()) { res.push_back(fn(json.value(), ndjson.value())); }
-        }
-        return res;
-    }
-
-    template <typename F>
-    auto apply_overEach(F f) const -> std::vector<std::invoke_result_t<F, std::string_view>> {
-        std::vector<std::invoke_result_t<F, std::string_view>> res;
-        if (csv.has_value()) { res.push_back(F(csv.value())); }
-        if (tsv.has_value()) { res.push_back(F(tsv.value())); }
-        if (json.has_value()) { res.push_back(F(json.value())); }
-        if (ndjson.has_value()) { res.push_back(F(ndjson.value())); }
-        return res;
-    }
-};
-
-using namespace std::literals;
-struct DataSets {
-    static constexpr DataSetFN flights{TEST_DF "/flights/flights_data.csv"sv, TEST_DF "/flights/flights_data.tsv"sv,
-                                       TEST_DF "/flights/flights_data.json"sv,
-                                       TEST_DF "/flights/flights_data.ndjson"sv};
-    static constexpr DataSetFN nile{TEST_DF "/nile/nile_data.csv"sv, TEST_DF "/nile/nile_data.tsv"sv,
-                                    TEST_DF "/nile/nile_data.json"sv, TEST_DF "/nile/nile_data.ndjson"sv};
-    static constexpr DataSetFN penguins{
-        TEST_DF "/penguins/penguins_data.csv"sv, TEST_DF "/penguins/penguins_data.tsv"sv,
-        TEST_DF "/penguins/penguins_data.json"sv, TEST_DF "/penguins/penguins_data.ndjson"sv};
-    static constexpr DataSetFN wine_quality{
-        TEST_DF "/wine_quality/wine_quality_data.csv"sv, TEST_DF "/wine_quality/wine_quality_data.tsv"sv,
-        TEST_DF "/wine_quality/wine_quality_data.json"sv, TEST_DF "/wine_quality/wine_quality_data.ndjson"sv};
-};
-} // namespace incom::terminal_plot::testing
 
 using namespace incom::terminal_plot::testing;
-
-class ParserTest : public testing::Test {
-
-protected:
-    const std::vector<std::reference_wrapper<const DataSetFN>> allDataSets;
-    ParserTest() : allDataSets{DataSets::flights, DataSets::nile, DataSets::penguins, DataSets::wine_quality} {};
-};
+namespace incplot = incom::terminal_plot;
 
 
-TEST_F(ParserTest, identical_by_file_type) {
+TEST(ParserTest, identical_by_file_type) {
+    auto allDataSets =
+        get_dataSets<DataSets_FN::flights, DataSets_FN::nile, DataSets_FN::penguins, DataSets_FN::wine_quality>();
 
-    auto const compare_parsedSameness = [](std::string_view toParse_A, std::string_view toParse_B) -> bool { return true; };
+    using parsed_t = std::expected<incplot::DataStore, incplot::incerr_c>;
+    std::vector<std::tuple<parsed_t, parsed_t, parsed_t, parsed_t>> vOftpl_ds;
+    std::vector<std::vector<incplot::DataStore>>                    vOfv_ds;
 
-    for (DataSetFN const &ref : allDataSets) {
-        std::ranges::all_of(ref.apply_overAllPairs(compare_parsedSameness), [](auto &&item) { return item == true; });
-
-
-        EXPECT_TRUE(true);
+    for (auto &DS_sv : allDataSets) {
+        vOfv_ds.push_back(std::vector{incplot::parsers::Parser::parse(DS_sv.csv.value()).value(),
+                                      incplot::parsers::Parser::parse(DS_sv.tsv.value()).value(),
+                                      incplot::parsers::Parser::parse(DS_sv.json.value()).value(),
+                                      incplot::parsers::Parser::parse(DS_sv.ndjson.value()).value()});
     }
+
+    size_t const combSz = 2;
+    using contVal_t     = std::remove_cvref_t<typename decltype(vOfv_ds)::value_type>::value_type;
+    using tuple_t       = _c_generateTuple<combSz, std::add_lvalue_reference_t<contVal_t>>::type;
+
+    auto cmp = [](tuple_t a) { return a == a; };
+
+
+    auto applyOnCom = []<typename T, typename CMP, size_t... I>(T const &container, CMP &fn,
+                                                                std::index_sequence<I...>) {
+        size_t            sz_cur = combSz;
+        std::vector<bool> res;
+
+
+        std::vector<std::reference_wrapper<contVal_t>> refStack;
+
+        auto recur = [&](this auto &self, int const startID) -> void {
+            if (sz_cur > 0) {
+                for (int i = startID; i < (container.size() - combSz + 1); i++) {
+                    refStack.push_back(container.at(i));
+                    sz_cur--;
+                    self(i + 1);
+                    sz_cur++;
+                    refStack.pop_back();
+                }
+            }
+            else {
+                tuple_t tt{refStack[I]...};
+                res.push_back(fn(tt));
+            }
+        };
+        recur(0);
+
+        return res;
+    };
+
+    auto dataConsistentInEachSet = std::ranges::all_of(vOfv_ds, [&](auto &&vOf_ds) {
+        return std::ranges::all_of(applyOnCom.template operator()<decltype(vOf_ds), decltype(cmp)>(
+                                       vOf_ds, cmp, std::make_index_sequence<2uz>{}),
+                                   [](auto &&bv) { return bv; });
+    });
+
+    EXPECT_TRUE(dataConsistentInEachSet);
 }
 
 TEST(aaa, A1) {

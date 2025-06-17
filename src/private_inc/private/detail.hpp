@@ -26,6 +26,7 @@ constexpr inline auto bind_back(F &&fn, Ts &&...ts) {
     { return std::invoke(fn, std::forward<decltype(firstArgs)>(firstArgs)..., std::forward<decltype(ts)>(ts)...); };
 };
 
+
 constexpr inline std::string convert_u32u8(std::u32string &str) {
     using namespace ww898::utf;
     std::string res;

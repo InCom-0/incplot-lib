@@ -1,10 +1,7 @@
-#include "incplot/datastore.hpp"
-#include "private/detail.hpp"
 #include <algorithm>
 #include <cerrno>
 #include <concepts>
 #include <cstddef>
-#include <functional>
 #include <print>
 
 #include <ranges>
@@ -270,6 +267,8 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
             // However if trying to parse 'something which looks like long long' into double ... then that's fine
             if (assess_cellType(cell) != cellTypes[i] &&
                 (not((assess_cellType(cell) == csvCellType::ll_like) && cellTypes[i] == csvCellType::double_like))) {
+                    // TODO: Finally fix the problem of 'mixed types' by pre-evaluating the whole data file
+                auto ct = assess_cellType(cell);
                 return std::unexpected(incerr_c::make(CSV_valueTypeDoesntMatch));
             }
 
@@ -307,7 +306,7 @@ std::expected<DataStore, incerr_c> Parser::parse(std::string_view const sv) {
     std::string_view const trimmed = get_trimmedSV(sv);
 
     auto c_dstr = [](auto const &&data) { return DataStore(data); };
-    return assess_inputType(trimmed).and_then(detail::bind_back(dispatch_toParsers, trimmed)).transform(c_dstr);
+    return assess_inputType(trimmed).and_then(std::bind_back(dispatch_toParsers, trimmed)).transform(c_dstr);
 }
 
 // JSON AND NDJSON
@@ -515,9 +514,11 @@ Parser::parser_return_t Parser::parse_CSV(std::string_view const sv_like) {
 }
 
 Parser::parser_return_t Parser::parse_TSV(std::string_view const sv_like) {
-    return parse_usingCSV2(csv2::Reader<csv2::delimiter<'\t'>, csv2::quote_character<'"'>,
-                                        csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
-                           sv_like);
+    auto res = parse_usingCSV2(csv2::Reader<csv2::delimiter<'\t'>, csv2::quote_character<'"'>,
+                                            csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
+                               sv_like);
+
+    return res;
 }
 
 } // namespace parsers
