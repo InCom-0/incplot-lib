@@ -8,6 +8,9 @@
 #include <type_traits>
 #include <vector>
 
+#include <kcomb.hpp>
+#include <print>
+
 
 using namespace incom::terminal_plot::testing;
 namespace incplot = incom::terminal_plot;
@@ -34,38 +37,39 @@ TEST(ParserTest, identical_by_file_type) {
 
     auto cmp = [](tuple_t a) { return a == a; };
 
+    auto k_comb_view = []<size_t COMB, typename C, typename Z>(C &container, Z &fn) {};
 
-    auto applyOnCom = []<typename T, typename CMP, size_t... I>(T const &container, CMP &fn,
-                                                                std::index_sequence<I...>) {
-        size_t            sz_cur = combSz;
-        std::vector<bool> res;
+    auto apply_onCombinations = []<size_t COMB, typename C, typename Z>(C &container, Z &fn) {
+        auto app = []<typename T, typename CMP, size_t... I>(T const &c2, CMP &cmp, std::index_sequence<I...>) {
+            size_t                                         sz_cur = combSz;
+            std::vector<int>                               res;
+            std::vector<std::reference_wrapper<contVal_t>> refStack;
 
-
-        std::vector<std::reference_wrapper<contVal_t>> refStack;
-
-        auto recur = [&](this auto &self, int const startID) -> void {
-            if (sz_cur > 0) {
-                for (int i = startID; i < (container.size() - combSz + 1); i++) {
-                    refStack.push_back(container.at(i));
-                    sz_cur--;
-                    self(i + 1);
-                    sz_cur++;
-                    refStack.pop_back();
+            auto recur = [&](this auto &self, int const startID) -> void {
+                if (sz_cur > 0) {
+                    for (int i = startID; i < (c2.size() - combSz + 1); i++) {
+                        refStack.push_back(c2.at(i));
+                        sz_cur--;
+                        self(i + 1);
+                        sz_cur++;
+                        refStack.pop_back();
+                    }
                 }
-            }
-            else {
-                tuple_t tt{refStack[I]...};
-                res.push_back(fn(tt));
-            }
+                else {
+                    auto tied = std::tie(refStack[I].get()...);
+                    res.push_back(cmp(tied));
+                }
+            };
+            recur(0);
+            return res;
         };
-        recur(0);
 
-        return res;
+        return app.template operator()<decltype(container), decltype(fn)>(container, fn,
+                                                                          std::make_index_sequence<COMB>{});
     };
 
     auto dataConsistentInEachSet = std::ranges::all_of(vOfv_ds, [&](auto &&vOf_ds) {
-        return std::ranges::all_of(applyOnCom.template operator()<decltype(vOf_ds), decltype(cmp)>(
-                                       vOf_ds, cmp, std::make_index_sequence<2uz>{}),
+        return std::ranges::all_of(apply_onCombinations.template operator()<2uz>(vOf_ds, cmp),
                                    [](auto &&bv) { return bv; });
     });
 
@@ -73,6 +77,12 @@ TEST(ParserTest, identical_by_file_type) {
 }
 
 TEST(aaa, A1) {
+
+    std::vector<int> vec{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+    for (auto const &[a, b] : incom::terminal_plot::testing::combinations_k<2>(vec)) { std::print("{} {}\n", a, b); }
+
+
     EXPECT_EQ(true, true);
 }
 
