@@ -19,4 +19,4 @@ target_sources(UnitTest
         BASE_DIRS
                 inc/)
 
-target_link_libraries(UnitTest PRIVATE incplot-lib gtest_main gmock_main "-lstdc++exp")
+target_link_libraries(UnitTest PRIVATE incplot-lib incstd::incstd gtest_main gmock_main "-lstdc++exp")

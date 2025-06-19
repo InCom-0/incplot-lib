@@ -15,6 +15,13 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(csv2)
 
 FetchContent_Declare(
+    incstd
+    GIT_REPOSITORY https://github.com/InCom-0/incstd
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(incstd)
+
+FetchContent_Declare(
     incerr
     GIT_REPOSITORY https://github.com/InCom-0/incerr
     GIT_TAG main

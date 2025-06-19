@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -50,20 +51,32 @@ struct DataSetSV {
 };
 
 struct DataSets_FN {
-    static constexpr DataSetSV flights{TEST_DF "/flights/flights_data.csv"sv, TEST_DF "/flights/flights_data.tsv"sv,
-                                       TEST_DF "/flights/flights_data.json"sv,
-                                       TEST_DF "/flights/flights_data.ndjson"sv};
+    using svArray = std::array<std::string_view, 4>;
+    static constexpr svArray flights{TEST_DF "/flights/flights_data.csv"sv, TEST_DF "/flights/flights_data.tsv"sv,
+                                     TEST_DF "/flights/flights_data.json"sv, TEST_DF "/flights/flights_data.ndjson"sv};
 
-    static constexpr DataSetSV nile{TEST_DF "/nile/nile_data.csv"sv, TEST_DF "/nile/nile_data.tsv"sv,
-                                    TEST_DF "/nile/nile_data.json"sv, TEST_DF "/nile/nile_data.ndjson"sv};
+    static constexpr svArray nile{TEST_DF "/nile/nile_data.csv"sv, TEST_DF "/nile/nile_data.tsv"sv,
+                                  TEST_DF "/nile/nile_data.json"sv, TEST_DF "/nile/nile_data.ndjson"sv};
 
-    static constexpr DataSetSV penguins{
-        TEST_DF "/penguins/penguins_data.csv"sv, TEST_DF "/penguins/penguins_data.tsv"sv,
-        TEST_DF "/penguins/penguins_data.json"sv, TEST_DF "/penguins/penguins_data.ndjson"sv};
-        
-    static constexpr DataSetSV wine_quality{
+    static constexpr svArray penguins{TEST_DF "/penguins/penguins_data.csv"sv, TEST_DF "/penguins/penguins_data.tsv"sv,
+                                      TEST_DF "/penguins/penguins_data.json"sv,
+                                      TEST_DF "/penguins/penguins_data.ndjson"sv};
+
+    static constexpr svArray wine_quality{
         TEST_DF "/wine_quality/wine_quality_data.csv"sv, TEST_DF "/wine_quality/wine_quality_data.tsv"sv,
         TEST_DF "/wine_quality/wine_quality_data.json"sv, TEST_DF "/wine_quality/wine_quality_data.ndjson"sv};
+};
+
+struct DataSets_FN_transposed {
+    using svArray = std::array<std::string_view, 4>;
+    static constexpr svArray csv{DataSets_FN::flights[0], DataSets_FN::nile[0],
+                                                         DataSets_FN::penguins[0], DataSets_FN::wine_quality[0]};
+    static constexpr svArray tsv{DataSets_FN::flights[1], DataSets_FN::nile[1],
+                                                         DataSets_FN::penguins[1], DataSets_FN::wine_quality[1]};
+    static constexpr svArray json{DataSets_FN::flights[2], DataSets_FN::nile[2],
+                                                         DataSets_FN::penguins[2], DataSets_FN::wine_quality[2]};
+    static constexpr svArray ndjson{DataSets_FN::flights[3], DataSets_FN::nile[3],
+                                                         DataSets_FN::penguins[3], DataSets_FN::wine_quality[3]};
 };
 
 
