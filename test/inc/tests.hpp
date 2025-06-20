@@ -2,7 +2,9 @@
 
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <incplot.hpp>
+#include <optional>
 #include <tests_config.hpp>
 #include <unordered_map>
 
@@ -36,6 +38,20 @@ inline static std::optional<std::string_view> get_data(std::string_view const &s
                 .insert({std::string(sv), std::string(std::istreambuf_iterator(ifs), std::istreambuf_iterator<char>())})
                 .first->second;
         }
+        else { return std::nullopt; }
+    };
+}
+
+
+inline static std::optional<std::reference_wrapper<DataStore>> get_DS(std::string_view const &sv) {
+    static std::unordered_map<std::string, DataStore> storageMP;
+    if (auto ele = storageMP.find(std::string(sv)); ele != storageMP.end()) { return ele->second; }
+    else {
+        auto data_sv = get_data(sv);
+        if (not data_sv.has_value()) { return std::nullopt; }
+        
+        auto newDS = incplot::parsers::Parser::parse(data_sv.value());
+        if (newDS.has_value()) { return storageMP.insert({std::string(sv), std::move(newDS.value())}).first->second; }
         else { return std::nullopt; }
     };
 }

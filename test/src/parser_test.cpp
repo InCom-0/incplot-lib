@@ -12,25 +12,25 @@ namespace incplot = incom::terminal_plot;
 TEST(ParserTest, parsing_csv) {
     auto sourceFileTypeSet{DataSets_FN_transposed::csv};
     auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
-    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return true; });
+    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
 TEST(ParserTest, parsing_tsv) {
     auto sourceFileTypeSet{DataSets_FN_transposed::tsv};
     auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
-    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return true; });
+    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
 TEST(ParserTest, parsing_json) {
     auto sourceFileTypeSet{DataSets_FN_transposed::json};
     auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
-    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return true; });
+    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
 TEST(ParserTest, parsing_ndjson) {
     auto sourceFileTypeSet{DataSets_FN_transposed::ndjson};
     auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
-    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return true; });
+    auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
 
@@ -65,14 +65,4 @@ TEST(ParserTest, identicalDS_regardlessOfFileType) {
     });
 
     EXPECT_TRUE(dataConsistentInEachSet);
-}
-
-TEST(aaa, A1) {
-
-
-    EXPECT_EQ(true, true);
-}
-
-TEST(aaa, A2) {
-    EXPECT_EQ(true, true);
 }

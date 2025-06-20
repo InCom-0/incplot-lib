@@ -26,6 +26,8 @@ private:
         bool is_timeSeriesLikeIndex;
     };
 
+
+public:
     std::vector<ColumnParams> m_colAssessments = {};
 
     // BUILDING METHODS
@@ -42,7 +44,6 @@ private:
     static std::expected<DesiredPlot, incerr::incerr_code> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds);
 
 
-public:
     std::optional<std::string> plot_type_name = std::nullopt;
 
     // Category column ID
