@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <ranges>
 #include <utility>
 
@@ -117,8 +118,9 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::transform_namedCols
         auto it = std::ranges::find(ds.colNames, dp.labelTS_colName.value());
         if (it == ds.colNames.end()) { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
         else if (not dp.labelTS_colID.has_value()) { dp.labelTS_colID = it - ds.colNames.begin(); }
-        else if ((it - ds.colNames.begin()) == dp.labelTS_colID.value()) { dp.labelTS_colName = std::nullopt; }
         else { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
+
+        dp.labelTS_colName = std::nullopt;
     }
 
     for (auto const &v_colName : dp.values_colNames) {
@@ -446,7 +448,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
     return DesiredPlot::compute_colAssessments(std::forward<decltype(self)>(self), ds)
-        .and_then( std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
+        .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
         .and_then(std::bind_back(DesiredPlot::guess_plotType, ds))
         .and_then(std::bind_back(DesiredPlot::guess_TSCol, ds))
         .and_then(std::bind_back(DesiredPlot::guess_catCol, ds))

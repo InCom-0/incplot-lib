@@ -43,7 +43,7 @@ inline static std::optional<std::string_view> get_data(std::string_view const &s
 }
 
 
-inline static std::optional<std::reference_wrapper<DataStore>> get_DS(std::string_view const &sv) {
+inline static std::optional<std::reference_wrapper<const DataStore>> get_DS(std::string_view const &sv) {
     static std::unordered_map<std::string, DataStore> storageMP;
     if (auto ele = storageMP.find(std::string(sv)); ele != storageMP.end()) { return ele->second; }
     else {
