@@ -303,6 +303,103 @@ TEST(DP_guess_TSCol, TSCol_wine_quality_impossible) {
 }
 
 
+TEST(DP_guess_catCol, TSCol_penguins_possible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 0);
+    EXPECT_EQ(dp.labelTS_colID.has_value(), true);
+    EXPECT_EQ(dp.labelTS_colID.value(), 2);
+    EXPECT_EQ(dp.cat_colID.has_value(), true);
+    EXPECT_EQ(dp.cat_colID.value(), 0);
+}
+TEST(DP_guess_catCol, TSCol_penguins_impossible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{0,1,6,7}};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 4);
+    EXPECT_EQ(dp.labelTS_colID.has_value(), true);
+    EXPECT_EQ(dp.labelTS_colID.value(), 2);
+    EXPECT_EQ(dp.cat_colID.has_value(), false);
+}
+
+TEST(DP_guess_catCol, TSCol_wine_quality_possible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 0);
+    EXPECT_EQ(dp.labelTS_colID.has_value(), true);
+    EXPECT_EQ(dp.labelTS_colID.value(), 0);
+    EXPECT_EQ(dp.cat_colID.has_value(), true);
+    EXPECT_EQ(dp.cat_colID.value(), 12);
+}
+TEST(DP_guess_catCol, TSCol_wine_quality_impossible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.lts_colID = 12};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 0);
+    EXPECT_EQ(dp.labelTS_colID.has_value(), true);
+    EXPECT_EQ(dp.labelTS_colID.value(), 12);
+    EXPECT_EQ(dp.cat_colID.has_value(), false);
+}
+
+
 TEST(DP_guess_plotTypes, plotTypeName_nile_default) {
     using enum incplot::Unexp_plotSpecs;
 
