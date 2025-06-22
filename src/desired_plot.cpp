@@ -128,10 +128,9 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::transform_namedCols
         if (it == ds.colNames.end()) { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
 
         auto it2 = std::ranges::find(dp.values_colIDs, it - ds.colNames.begin());
-        if (it2 == dp.values_colIDs.end()) { dp.values_colIDs.push_back(it2 - dp.values_colIDs.begin()); }
-
-        dp.values_colNames.clear();
+        if (it2 == dp.values_colIDs.end()) { dp.values_colIDs.push_back(it - ds.colNames.begin()); }
     }
+    dp.values_colNames.clear();
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(DesiredPlot &&dp, DataStore const &ds) {
@@ -198,7 +197,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
 
     if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
         for (auto const &fvItem : std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
-                 return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                 return std::get<1>(ca).is_timeSeriesLikeIndex && (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
                         std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
              })) {
 
@@ -211,7 +210,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
         for (auto const &fvItem : std::views::filter(
                  std::views::enumerate(std::views::zip(ds.colTypes, dp.m_colAssessments)), [&](auto const &ca) {
-                     return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
+                     return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) && (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
                             (std::get<0>(std::get<1>(ca)).first != parsedVal_t::string_like) &&
                             std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
                  })) {

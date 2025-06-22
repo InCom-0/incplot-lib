@@ -5,6 +5,7 @@
 #include <incstd.hpp>
 
 #include <tests.hpp>
+#include <vector>
 
 
 using namespace incom::terminal_plot::testing;
@@ -182,6 +183,123 @@ TEST(DP_transform_namedColsIntoIDs, TScol_nile_fake) {
     auto dp_res = incplot::DesiredPlot::transform_namedColsIntoIDs(dpctrs, ds.value());
     EXPECT_FALSE(dp_res.has_value());
     EXPECT_EQ(dp_res.error(), TNCII_colByNameNotExist);
+}
+
+TEST(DP_transform_namedColsIntoIDs, valCols_wine_quality_real) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{
+        .v_colNames{"fixed_acidity", "volatile_acidity", "citric_acid", "residual_sugar"}};
+
+    auto dp_res = incplot::DesiredPlot::transform_namedColsIntoIDs(dpctrs, ds.value());
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 4);
+
+    std::vector val_colIDS_exp{0uz, 1uz, 2uz, 3uz};
+    EXPECT_EQ(dp.values_colIDs, val_colIDS_exp);
+}
+TEST(DP_transform_namedColsIntoIDs, valCols_penguins_real) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colNames{"flipper_length_mm", "body_mass_g"}};
+
+    auto dp_res = incplot::DesiredPlot::transform_namedColsIntoIDs(dpctrs, ds.value());
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 2);
+
+    std::vector val_colIDS_exp{4uz, 5uz};
+    EXPECT_EQ(dp.values_colIDs, val_colIDS_exp);
+}
+
+
+TEST(DP_guess_TSCol, TSCol_penguins_possible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{4, 5}};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 2);
+    EXPECT_EQ(dp.labelTS_colID.has_value(), true);
+    EXPECT_EQ(dp.labelTS_colID.value(), 2);
+}
+TEST(DP_guess_TSCol, TSCol_penguins_impossible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{2, 3, 4, 5}, .c_colID = 7};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()));
+
+    EXPECT_FALSE(dp_res.has_value());
+    EXPECT_EQ(dp_res.error(), GTSC_noUnusedXvalColumnForScatter);
+}
+
+TEST(DP_guess_TSCol, TSCol_wine_quality_possible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{4, 5, 0}};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.values_colIDs.size(), 3);
+    EXPECT_EQ(dp.labelTS_colID.has_value(), true);
+    EXPECT_EQ(dp.labelTS_colID.value(), 1);
+}
+TEST(DP_guess_TSCol, TSCol_wine_quality_impossible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{std::from_range, std::views::iota(0uz, 12uz)}};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()));
+
+    EXPECT_FALSE(dp_res.has_value());
+    EXPECT_EQ(dp_res.error(), GTSC_noUnusedXvalColumnForScatter);
 }
 
 
