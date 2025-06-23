@@ -224,7 +224,7 @@ TEST(DP_transform_namedColsIntoIDs, valCols_penguins_real) {
 }
 
 
-TEST(DP_guess_TSCol, TSCol_penguins_possible) {
+TEST(DP_guess_TSCol, penguins_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
@@ -245,7 +245,7 @@ TEST(DP_guess_TSCol, TSCol_penguins_possible) {
     EXPECT_EQ(dp.labelTS_colID.has_value(), true);
     EXPECT_EQ(dp.labelTS_colID.value(), 2);
 }
-TEST(DP_guess_TSCol, TSCol_penguins_impossible) {
+TEST(DP_guess_TSCol, penguins_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
@@ -263,7 +263,7 @@ TEST(DP_guess_TSCol, TSCol_penguins_impossible) {
     EXPECT_EQ(dp_res.error(), GTSC_noUnusedXvalColumnForScatter);
 }
 
-TEST(DP_guess_TSCol, TSCol_wine_quality_possible) {
+TEST(DP_guess_TSCol, wine_quality_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
@@ -284,7 +284,7 @@ TEST(DP_guess_TSCol, TSCol_wine_quality_possible) {
     EXPECT_EQ(dp.labelTS_colID.has_value(), true);
     EXPECT_EQ(dp.labelTS_colID.value(), 1);
 }
-TEST(DP_guess_TSCol, TSCol_wine_quality_impossible) {
+TEST(DP_guess_TSCol, wine_quality_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
@@ -303,7 +303,7 @@ TEST(DP_guess_TSCol, TSCol_wine_quality_impossible) {
 }
 
 
-TEST(DP_guess_catCol, TSCol_penguins_possible) {
+TEST(DP_guess_catCol, penguins_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
@@ -327,14 +327,14 @@ TEST(DP_guess_catCol, TSCol_penguins_possible) {
     EXPECT_EQ(dp.cat_colID.has_value(), true);
     EXPECT_EQ(dp.cat_colID.value(), 0);
 }
-TEST(DP_guess_catCol, TSCol_penguins_impossible) {
+TEST(DP_guess_catCol, penguins_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
     auto ds = get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
-    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{0,1,6,7}};
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{0, 1, 6, 7}};
 
     auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
                       .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
@@ -351,7 +351,7 @@ TEST(DP_guess_catCol, TSCol_penguins_impossible) {
     EXPECT_EQ(dp.cat_colID.has_value(), false);
 }
 
-TEST(DP_guess_catCol, TSCol_wine_quality_possible) {
+TEST(DP_guess_catCol, wine_quality_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
@@ -375,7 +375,7 @@ TEST(DP_guess_catCol, TSCol_wine_quality_possible) {
     EXPECT_EQ(dp.cat_colID.has_value(), true);
     EXPECT_EQ(dp.cat_colID.value(), 12);
 }
-TEST(DP_guess_catCol, TSCol_wine_quality_impossible) {
+TEST(DP_guess_catCol, wine_quality_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
@@ -399,6 +399,159 @@ TEST(DP_guess_catCol, TSCol_wine_quality_impossible) {
     EXPECT_EQ(dp.cat_colID.has_value(), false);
 }
 
+
+TEST(DP_guess_valueCols, penguins_default) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_valueCols, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    std::vector exp_res{3uz};
+
+    EXPECT_EQ(dp.values_colIDs.size(), 1);
+    EXPECT_EQ(dp.values_colIDs, exp_res);
+}
+TEST(DP_guess_valueCols, wine_quality_default) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_valueCols, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    std::vector exp_res{1uz};
+
+    EXPECT_EQ(dp.values_colIDs.size(), 1);
+    EXPECT_EQ(dp.values_colIDs, exp_res);
+}
+
+
+TEST(DP_guess_sizes, penguins_default) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_sizes, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.targetWidth.has_value(), true);
+    EXPECT_EQ(dp.targetWidth.value(), 64uz);
+}
+TEST(DP_guess_sizes, wine_quality_default) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_sizes, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.targetWidth.has_value(), true);
+    EXPECT_EQ(dp.targetWidth.value(), 64uz);
+}
+TEST(DP_guess_sizes, penguins_possible_available_possible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 250};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_sizes, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.targetWidth.has_value(), true);
+    EXPECT_EQ(dp.targetWidth.value(), static_cast<size_t>(incplot::Config::scale_availablePlotWidth * 250));
+}
+TEST(DP_guess_sizes, wine_quality_available_possible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 50};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_sizes, ds.value()));
+
+    EXPECT_TRUE(dp_res.has_value());
+    auto dp = dp_res.value();
+
+    EXPECT_EQ(dp.targetWidth.has_value(), true);
+    EXPECT_EQ(dp.targetWidth.value(), static_cast<size_t>(incplot::Config::scale_availablePlotWidth * 50));
+}
+TEST(DP_guess_sizes, penguins_possible_available_impossible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::penguins.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 30};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_sizes, ds.value()));
+
+    EXPECT_EQ(dp_res.has_value(), false);
+    EXPECT_EQ(dp_res.error(), GZS_widthTooSmall);
+}
+TEST(DP_guess_sizes, wine_quality_available_impossible) {
+    using enum incplot::Unexp_plotSpecs;
+
+    auto sourceFN{DataSets_FN::wine_quality.at(0)};
+    auto ds = get_DS(sourceFN);
+    EXPECT_TRUE(ds.has_value());
+
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 0};
+
+    auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_sizes, ds.value()));
+
+    EXPECT_EQ(dp_res.has_value(), false);
+    EXPECT_EQ(dp_res.error(), GZS_widthTooSmall);
+}
 
 TEST(DP_guess_plotTypes, plotTypeName_nile_default) {
     using enum incplot::Unexp_plotSpecs;
