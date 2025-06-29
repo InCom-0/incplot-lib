@@ -18,7 +18,7 @@ using incerr_c = incerr::incerr_code;
 // You always have to make the 'Base' class a friend ... this enables really nice static compile-time polymorphism
 // coupled with 'deducing this' feature of C++23
 class Base {
-protected:
+public:
     // Descriptors - First thing to be computed.
     // BEWARE: The sizes here are 'as displayed' not the 'size in bytes' ... need to account for UTF8
     long long areaWidth = 0, areaHeight = 0;

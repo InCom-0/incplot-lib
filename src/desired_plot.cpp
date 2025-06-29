@@ -431,6 +431,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(Desired
     }
     return dp;
 }
+// This method doesn't do anything useful (yet)
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds) {
     if (not dp.valAxesNames_bool.has_value()) { dp.valAxesNames_bool = false; }
     if (not dp.valAxesLabels_bool.has_value()) { dp.valAxesLabels_bool = false; }

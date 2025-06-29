@@ -11,7 +11,12 @@ enable_testing()
 
 set(INCPLOT_LIB_TEST_SRC
     parser_test.cpp
-    dp_guess_test.cpp)
+    dp_guess_test.cpp
+    ps_test.cpp
+    ps_scatter_test.cpp
+    ps_multiline_test.cpp
+    ps_barv_test.cpp
+    ps_barh_test.cpp)
 
 list(TRANSFORM INCPLOT_LIB_TEST_SRC PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
