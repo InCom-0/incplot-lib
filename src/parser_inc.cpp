@@ -1,7 +1,8 @@
 #include <algorithm>
-#include <cerrno>
+#include <cassert>
+#include <charconv>
 #include <concepts>
-#include <cstddef>
+#include <expected>
 #include <print>
 
 #include <ranges>
@@ -59,65 +60,61 @@ std::string_view Parser::get_trimmedSV(std::string_view const &sv) {
 }
 
 
-csvCellType Parser::assess_cellType(auto const &csvCell) {
-    std::string_view rv    = csvCell.read_view();
-    const char      *first = rv.data();
-    char            *next{};
-    char            *next2{};
+CellType Parser::assess_cellType(auto const &csvCell) {
+    std::string_view rv = csvCell.read_view();
+    if (rv.empty()) { return CellType::null_like; }
 
-    errno = 0;
-    std::strtoll(first, &next, 10);
+    long long llOut = 0ll;
+    auto [ptr, _]   = std::from_chars(rv.data(), rv.data() + rv.size(), llOut);
 
-    if (next == rv.end()) { return csvCellType::ll_like; }
-    else {
-        errno = 0;
-        std::strtod(first, &next2);
-        if (next2 == rv.end()) { return csvCellType::double_like; }
-    }
-    return csvCellType::string_like;
+    if (ptr == (rv.data() + rv.size())) { return CellType::ll_like; }
+
+    double dblOut   = 0.0;
+    auto [ptr2, _2] = std::from_chars(rv.data(), rv.data() + rv.size(), dblOut);
+    if (ptr2 == (rv.data() + rv.size())) { return CellType::double_like; }
+
+    return CellType::string_like;
 }
 
 double Parser::conv_cellToDouble(auto const &csvCell) {
-    std::string_view rv    = csvCell.read_view();
-    const char      *first = rv.data();
-    char            *next{};
-    errno = 0;
+    std::string_view rv  = csvCell.read_view();
+    double           res = 0.0;
 
-    double res = std::strtod(first, &next);
-    if (next != rv.end()) {
-        std::print("{}\n{}{}\n", "Error in assess_cellType, some characters left unparsed",
+    auto [ptr, ec] = std::from_chars(rv.data(), rv.data() + rv.size(), res);
+
+    if (ec == std::errc()) { return res; }
+    else if (ec == std::errc::invalid_argument) {
+        std::print("{}\n{}{}\n", "Error in conv_cellToDouble, not convertable to double",
                    "Encountered while parsing: ", rv);
-        errno = 0;
         std::exit(1);
     }
-    else if (errno == ERANGE) {
-        std::print("{}\n{}{}\n", "Error in assess_cellType, range error in std::strtod",
+    else if (ec == std::errc::result_out_of_range) {
+        std::print("{}\n{}{}\n", "Error in conv_cellToDouble, range error in std::from_chars",
                    "Encountered while parsing: ", rv);
-        errno = 0;
         std::exit(1);
     }
-    return res;
+    else { assert(false); }
+    std::unreachable();
 }
 long long Parser::conv_cellToLongLong(auto const &csvCell) {
-    std::string_view rv    = csvCell.read_view();
-    const char      *first = rv.data();
-    char            *next{};
-    errno = 0;
+    std::string_view rv  = csvCell.read_view();
+    long long        res = 0.0;
 
-    long long res = std::strtoll(first, &next, 10);
-    if (next != rv.end()) {
-        std::print("{}\n{}{}\n", "Error in assess_cellType, some characters left unparsed",
+    auto [ptr, ec] = std::from_chars(rv.data(), rv.data() + rv.size(), res);
+
+    if (ec == std::errc()) { return res; }
+    else if (ec == std::errc::invalid_argument) {
+        std::print("{}\n{}{}\n", "Error in conv_cellToLongLong, not convertable to long long",
                    "Encountered while parsing: ", rv);
-        errno = 0;
         std::exit(1);
     }
-    else if (errno == ERANGE) {
-        std::print("{}\n{}{}\n", "Error in assess_cellType, range error in std::strtod",
+    else if (ec == std::errc::result_out_of_range) {
+        std::print("{}\n{}{}\n", "Error in conv_cellToLongLong, range error in std::from_chars",
                    "Encountered while parsing: ", rv);
-        errno = 0;
         std::exit(1);
     }
-    return res;
+    else { assert(false); }
+    std::unreachable();
 }
 std::string Parser::conv_cellToString(auto const &csvCell) {
     return std::string(csvCell.read_view());
@@ -184,7 +181,8 @@ std::expected<input_t, incerr_c> Parser::assess_inputType(std::string_view const
     else { return std::unexpected(incerr_c::make(NDJSON_isNotFlat)); }
 }
 
-Parser::parser_return_t Parser::dispatch_toParsers(input_t const &inp_t, std::string_view const &sv) {
+std::expected<DataStore::DS_CtorObj, incerr_c> Parser::dispatch_toParsers(input_t const          &inp_t,
+                                                                          std::string_view const &sv) {
     switch (inp_t) {
         case input_t::NDJSON: return parse_NDJSON(sv);
         case input_t::JSON:   return parse_JSON(sv);
@@ -196,67 +194,56 @@ Parser::parser_return_t Parser::dispatch_toParsers(input_t const &inp_t, std::st
 }
 
 // PARSE USING RANAV::CSV2
-Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_view const trimmed) {
+std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto                 &&csv2Reader,
+                                                                       std::string_view const trimmed) {
 
-    if (not csv2Reader.parse_view(trimmed)) {
-        std::print("{}\n", "Parser error when parsing as CSV, please check input formatting.");
-        std::exit(1);
-    }
+    if (not csv2Reader.parse_view(trimmed)) { return std::unexpected(incerr_c::make(CSV_parserBackendError)); }
 
     // Header 'size' for verification later
     size_t hdr_sz = 0;
     for (auto const &hdrItem : csv2Reader.header()) { hdr_sz++; }
 
-
-    DataStore::vec_pr_strVarVec_t res;
-    std::vector<csvCellType>      cellTypes;
+    DataStore::DS_CtorObj res;
+    std::vector<CellType> cellTypes;
     if (csv2Reader.rows() < 1) { return std::unexpected(incerr_c::make(JSON_isEmpty)); }
 
     // Set US locale for use in parsing CSV
     std::string orig_loc = std::setlocale(LC_ALL, nullptr);
     std::setlocale(LC_ALL, "en_US.UTF-8");
 
-    // Use first row to initialize the 'DataStore::vec_pr_strVarVec_t' data structure
-    // Enclosed because not so nice iterator and id 'leakage'
     {
+        using varVec_t    = DataStore::vec_pr_strVarVec_t::value_type::second_type;
         auto   headerItem = csv2Reader.header().begin();
         size_t id         = 0;
 
-        for (auto const &firstRow : csv2Reader) {
-            for (auto const &cell : firstRow) {
-                if (not(id < hdr_sz)) { return std::unexpected(incerr_c::make(CSV_headerHasLessItemsThanDataRow)); }
+        for (auto const &cell : (*csv2Reader.begin())) {
+            if (not(id < hdr_sz)) { return std::unexpected(incerr_c::make(CSV_headerHasLessItemsThanDataRow)); }
 
-                switch (assess_cellType(cell)) {
-                    case csvCellType::double_like:
-                        res.push_back(std::make_pair(
-                            std::string((*headerItem).read_view()),
-                            DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
-                        cellTypes.push_back(csvCellType::double_like);
-                        break;
+            switch (assess_cellType(cell)) {
+                case CellType::double_like:
+                    res.data.push_back(
+                        std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<double>())));
+                    cellTypes.push_back(CellType::double_like);
+                    break;
 
-                    case csvCellType::ll_like:
-                        res.push_back(std::make_pair(
-                            std::string((*headerItem).read_view()),
-                            DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
-                        cellTypes.push_back(csvCellType::ll_like);
-                        break;
+                case CellType::ll_like:
+                    res.data.push_back(
+                        std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<long long>())));
+                    cellTypes.push_back(CellType::ll_like);
+                    break;
 
-                    case csvCellType::string_like:
-                        res.push_back(std::make_pair(
-                            std::string((*headerItem).read_view()),
-                            DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
-                        cellTypes.push_back(csvCellType::string_like);
-                        break;
-                    default: std::unreachable();
-                }
-                id++;
-                ++headerItem;
+                case CellType::string_like:
+                    res.data.push_back(
+                        std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<std::string>())));
+                    cellTypes.push_back(CellType::string_like);
+                    break;
+                default: return std::unexpected(incerr_c::make(CSV_unhandledCellType));
             }
-            if (id != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
-            // Taking just the first row
-            // TODO: This is wierd ... need to look into what I am doing wrong
-            break;
+            res.itemFlags.push_back({});
+            ++id;
+            ++headerItem;
         }
+        if (id != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
     }
 
     for (auto const &row : csv2Reader) {
@@ -265,29 +252,37 @@ Parser::parser_return_t Parser::parse_usingCSV2(auto &&csv2Reader, std::string_v
             if (not(i < hdr_sz)) { return std::unexpected(incerr_c::make(CSV_headerHasLessItemsThanDataRow)); }
             // Error when not the same type
             // However if trying to parse 'something which looks like long long' into double ... then that's fine
-            if (assess_cellType(cell) != cellTypes[i] &&
-                (not((assess_cellType(cell) == csvCellType::ll_like) && cellTypes[i] == csvCellType::double_like))) {
-                    // TODO: Finally fix the problem of 'mixed types' by pre-evaluating the whole data file
-                auto ct = assess_cellType(cell);
+
+            auto assessed_ct = assess_cellType(cell);
+            if (assessed_ct != cellTypes[i] && assessed_ct != CellType::null_like &&
+                (not((assessed_ct == CellType::ll_like) && cellTypes[i] == CellType::double_like))) {
+
+                auto testSV = cell.read_view();
+                // TODO: Finally fix the problem of 'mixed types' by pre-evaluating the whole data file
                 return std::unexpected(incerr_c::make(CSV_valueTypeDoesntMatch));
             }
 
             auto vis = [&](auto &variVec) -> void {
                 // Selecting the right conversion based on the type inside the variant
                 if constexpr (std::same_as<std::decay_t<decltype(variVec)>, std::vector<double>>) {
-                    variVec.push_back(conv_cellToDouble(cell));
+                    if (assessed_ct == CellType::null_like) { variVec.push_back(0.0); }
+                    else { variVec.push_back(conv_cellToDouble(cell)); }
                 }
                 else if constexpr (std::same_as<std::decay_t<decltype(variVec)>, std::vector<long long>>) {
-                    variVec.push_back(conv_cellToLongLong(cell));
+                    if (assessed_ct == CellType::null_like) { variVec.push_back(0ll); }
+                    else { variVec.push_back(conv_cellToLongLong(cell)); }
                 }
                 else if constexpr (std::same_as<std::decay_t<decltype(variVec)>, std::vector<std::string>>) {
+                    if (assessed_ct == CellType::null_like) {}
                     variVec.push_back(conv_cellToString(cell));
                 }
-                // This shoudl be impossible to instantiate
+                // This should be impossible to instantiate
                 else { static_assert(false); };
+
+                res.itemFlags[i].push_back(assessed_ct == CellType::null_like ? 0b1 : 0b0);
             };
 
-            std::visit(vis, res.at(i).second);
+            std::visit(vis, res.data.at(i).second);
             ++i;
         }
         if (i != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
@@ -310,7 +305,7 @@ std::expected<DataStore, incerr_c> Parser::parse(std::string_view const sv) {
 }
 
 // JSON AND NDJSON
-Parser::parser_return_t Parser::parse_NDJSON(std::string_view const &trimmed) {
+std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_view const &trimmed) {
 
     std::vector<NLMjson> parsed;
     for (auto const &oneLine : std::views::split(trimmed, '\n') |
@@ -321,8 +316,7 @@ Parser::parser_return_t Parser::parse_NDJSON(std::string_view const &trimmed) {
         }
         catch (const NLMjson::exception &e) {
             // TODO: Finally figure out how to handle exceptions somewhat professionally
-            std::print("{}\n", e.what());
-            std::exit(1);
+            return std::unexpected(incerr_c::make(JSON_parserBackendError));
         }
         // TODO: Consider if and how we need to flatten each line of NDJSON
         // oneLineJson = oneLineJson.flatten();
@@ -333,50 +327,60 @@ Parser::parser_return_t Parser::parse_NDJSON(std::string_view const &trimmed) {
 
 
     // Construct 'vec_pr_strVarVec_t' based on the first line
-    DataStore::vec_pr_strVarVec_t res;
+    DataStore::DS_CtorObj         res;
     std::vector<NLMjson::value_t> temp_firstLineTypes;
 
     for (auto const &[key, val] : parsed.front().items()) {
         if (val.type() == NLMjson::value_t::string) {
-            res.push_back(std::make_pair(
+            res.data.push_back(std::make_pair(
                 key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
         }
         else if (val.type() == NLMjson::value_t::number_float) {
-            res.push_back(
+            res.data.push_back(
                 std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
         }
         else if (val.type() == NLMjson::value_t::number_integer || val.type() == NLMjson::value_t::number_unsigned) {
-            res.push_back(
+            res.data.push_back(
                 std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
         }
         else {}
         temp_firstLineTypes.push_back(val.type());
+        res.itemFlags.push_back({});
     }
 
     for (auto const &parsedLine : parsed) {
-        if (parsedLine.size() != res.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
+        if (parsedLine.size() != res.data.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
         for (int i = 0; auto const &[key, val] : parsedLine.items()) {
-            if (key != res[i].first) { return std::unexpected(incerr_c::make((JSON_keyNameDoesntMatch))); }
+            if (key != res.data[i].first) { return std::unexpected(incerr_c::make((JSON_keyNameDoesntMatch))); }
             // TODO: Problem with type checking different NDJSON lines
+
+            bool isNullLike = val.is_null() || (val.is_string() && (val.template get<std::string>() == ""));
+            if (isNullLike) { res.itemFlags[i].push_back(0b1); }
             else if (val.type() != temp_firstLineTypes[i] &&
                      (val.type() == NLMjson::value_t::string || temp_firstLineTypes[i] == NLMjson::value_t::string)) {
                 return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
-            else {
-                switch (res[i].second.index()) {
-                    case 0uz: std::get<0>(res[i].second).push_back(val); break;
-                    case 1uz: std::get<1>(res[i].second).push_back(val); break;
-                    case 2uz: std::get<2>(res[i].second).push_back(val); break;
-                    default:  std::unreachable();
-                }
+            else {res.itemFlags[i].push_back(0b0);}
+
+            switch (res.data[i].second.index()) {
+                case 0uz:
+                    std::get<0>(res.data[i].second).push_back(isNullLike ? "" : val.template get<std::string>());
+                    break;
+                case 1uz:
+                    std::get<1>(res.data[i].second).push_back(isNullLike ? 0.0 : val.template get<double>());
+                    break;
+                case 2uz:
+                    std::get<2>(res.data[i].second).push_back(isNullLike ? 0ll : val.template get<long long>());
+                    break;
+                default: std::unreachable();
             }
+
             ++i;
         }
     }
-
     return res;
 }
-Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
+std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_JSON(std::string_view const &trimmed) {
 
     NLMjson wholeJson;
     try {
@@ -384,8 +388,7 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
     }
     catch (const NLMjson::exception &e) {
         // TODO: Finally figure out how to handle exceptions somewhat professionally
-        std::print("{}\n", e.what());
-        std::exit(1);
+        return std::unexpected(incerr_c::make(JSON_parserBackendError));
     }
 
     // UNEXP CHECKS
@@ -405,22 +408,22 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
             }
         }
 
-        DataStore::vec_pr_strVarVec_t res;
+        DataStore::DS_CtorObj         res;
         std::vector<NLMjson::value_t> temp_firstLineTypes;
 
         // First 'record' determines the structure of each record.
         for (auto const &[key, val] : wholeJson.items().begin().value().items()) {
             if (val.type() == NLMjson::value_t::string) {
-                res.push_back(std::make_pair(
+                res.data.push_back(std::make_pair(
                     key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
             }
             else if (val.type() == NLMjson::value_t::number_float) {
-                res.push_back(
+                res.data.push_back(
                     std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
             }
             else if (val.type() == NLMjson::value_t::number_integer ||
                      val.type() == NLMjson::value_t::number_unsigned) {
-                res.push_back(std::make_pair(
+                res.data.push_back(std::make_pair(
                     key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
             }
             else {}
@@ -428,12 +431,12 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
         }
 
         for (auto const &[key_l1, val_l1] : wholeJson.items()) {
-            if (val_l1.size() != res.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
+            if (val_l1.size() != res.data.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
 
             for (int i = 0; auto const &[key, val] : val_l1.items()) {
                 // CHECKS
                 // Check keys are the same and valTypes are the same on (flattened) 3rd level
-                if (key != res[i].first) { return std::unexpected(incerr_c::make(JSON_keyNameDoesntMatch)); }
+                if (key != res.data[i].first) { return std::unexpected(incerr_c::make(JSON_keyNameDoesntMatch)); }
                 // TODO: Problem with type checking different NDJSON lines
                 else if (val.type() != temp_firstLineTypes[i] && (val.type() == NLMjson::value_t::string ||
                                                                   temp_firstLineTypes[i] == NLMjson::value_t::string)) {
@@ -441,7 +444,12 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
                 }
                 // 'CORRECT' PATH
                 else {
-                    std::visit([&](auto &vari) { vari.push_back(val); }, res[i].second);
+                    switch (res.data[i].second.index()) {
+                        case 0uz: std::get<0>(res.data[i].second).push_back(val); break;
+                        case 1uz: std::get<1>(res.data[i].second).push_back(val); break;
+                        case 2uz: std::get<2>(res.data[i].second).push_back(val); break;
+                        default:  std::unreachable();
+                    }
                 }
                 ++i;
             }
@@ -457,7 +465,7 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
                 return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
         }
-
+        DataStore::DS_CtorObj         res2;
         DataStore::vec_pr_strVarVec_t res;
         std::vector<NLMjson::value_t> temp_firstLineTypes;
 
@@ -476,7 +484,7 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
                 res.push_back(std::make_pair(
                     key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
             }
-            else { return std::unexpected(incerr_c::make(JSON_unhandledType)); }
+            else { return std::unexpected(incerr_c::make(JSON_unhandledCellType)); }
             temp_firstLineTypes.push_back(val.type());
         }
 
@@ -501,24 +509,22 @@ Parser::parser_return_t Parser::parse_JSON(std::string_view const &trimmed) {
             }
         }
 
-        return res;
+        return res2;
     }
     std::unreachable();
 }
 
 // CSV AND TSV
-Parser::parser_return_t Parser::parse_CSV(std::string_view const sv_like) {
+std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_CSV(std::string_view const sv_like) {
     return parse_usingCSV2(csv2::Reader<csv2::delimiter<','>, csv2::quote_character<'"'>,
                                         csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
                            sv_like);
 }
 
-Parser::parser_return_t Parser::parse_TSV(std::string_view const sv_like) {
-    auto res = parse_usingCSV2(csv2::Reader<csv2::delimiter<'\t'>, csv2::quote_character<'"'>,
-                                            csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
-                               sv_like);
-
-    return res;
+std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_TSV(std::string_view const sv_like) {
+    return parse_usingCSV2(csv2::Reader<csv2::delimiter<'\t'>, csv2::quote_character<'"'>,
+                                        csv2::first_row_is_header<true>, csv2::trim_policy::trim_whitespace>{},
+                           sv_like);
 }
 
 } // namespace parsers

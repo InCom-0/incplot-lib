@@ -54,7 +54,8 @@ enum class Unexp_parser {
     JSON_keyNameDoesntMatch,
     JSON_isEmpty,
     JSON_topLevelEleNotArrayOrObject,
-    JSON_unhandledType,
+    JSON_parserBackendError,
+    JSON_unhandledCellType,
     NDJSON_braceCountDoesntMatch,
     NDJSON_braceCountDoesntMatchNLcount,
     NDJSON_isEmpty,
@@ -63,6 +64,8 @@ enum class Unexp_parser {
     CSV_headerHasMoreItemsThanDataRow,
     CSV_headerHasLessItemsThanDataRow,
     CSV_valueTypeDoesntMatch,
+    CSV_parserBackendError,
+    CSV_unhandledCellType,
 };
 
 inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {

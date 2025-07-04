@@ -26,7 +26,8 @@ enum class input_t {
     CSV,
     TSV
 };
-enum class csvCellType {
+enum class CellType {
+    null_like,
     double_like,
     ll_like,
     string_like
@@ -40,7 +41,7 @@ class Parser {
     // HLPRS
     static std::string_view get_trimmedSV(std::string_view const &sv);
 
-    static csvCellType assess_cellType(auto const &csvCell);
+    static CellType assess_cellType(auto const &csvCell);
 
     static double      conv_cellToDouble(auto const &csvCell);
     static long long   conv_cellToLongLong(auto const &csvCell);
@@ -49,11 +50,13 @@ class Parser {
 
     // COMPOSITION METHODS
     // TODO: Maybe make this public for later use?
-    static std::expected<input_t, incerr_c> assess_inputType(std::string_view const &sv);
-    static parser_return_t                      dispatch_toParsers(input_t const &inp_t, std::string_view const &sv);
+    static std::expected<input_t, incerr_c>               assess_inputType(std::string_view const &sv);
+    static std::expected<DataStore::DS_CtorObj, incerr_c> dispatch_toParsers(input_t const          &inp_t,
+                                                                             std::string_view const &sv);
 
     // PARSE USING RANAV::CSV2
-    static parser_return_t parse_usingCSV2(auto &&csv2Reader, std::string_view const trimmed);
+    static std::expected<DataStore::DS_CtorObj, incerr_c> parse_usingCSV2(auto &&csv2Reader, std::string_view const trimmed);
+
 
 public:
     // MAIN INTENDED INTERFACE METHOD
@@ -61,12 +64,12 @@ public:
     static std::expected<DataStore, incerr_c> parse(std::string_view const sv);
 
     // JSON AND NDJSON
-    static parser_return_t parse_NDJSON(std::string_view const &trimmed);
-    static parser_return_t parse_JSON(std::string_view const &trimmed);
+    static std::expected<DataStore::DS_CtorObj, incerr_c> parse_NDJSON(std::string_view const &trimmed);
+    static std::expected<DataStore::DS_CtorObj, incerr_c> parse_JSON(std::string_view const &trimmed);
 
     // CSV AND TSV
-    static parser_return_t parse_CSV(std::string_view const sv_like);
-    static parser_return_t parse_TSV(std::string_view const sv_like);
+    static std::expected<DataStore::DS_CtorObj, incerr_c> parse_CSV(std::string_view const sv_like);
+    static std::expected<DataStore::DS_CtorObj, incerr_c> parse_TSV(std::string_view const sv_like);
 };
 } // namespace parsers
 } // namespace terminal_plot

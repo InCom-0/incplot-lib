@@ -1,6 +1,4 @@
 
-#include "incplot/desired_plot.hpp"
-#include "incplot/plot_structures.hpp"
 #include <gtest/gtest.h>
 #include <incstd.hpp>
 
