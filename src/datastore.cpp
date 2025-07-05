@@ -30,7 +30,7 @@ DataStore::DataStore(DataStore::DS_CtorObj const &ctorObj) {
         itemFlags.push_back({});
     }
 
-    append_data(ctorObj.data);
+    append_data(ctorObj);
     // Append 'fake' label column of strings if there is just one val column
     if (colTypes.size() == 1) {
         auto getSize = [&](auto const &vec) -> size_t { return vec.size(); };
@@ -50,29 +50,6 @@ DataStore::DataStore(DataStore::DS_CtorObj const &ctorObj) {
     };
     build_vecOfColVariants();
 }
-void DataStore::append_data(vec_pr_strVarVec_t const &vecOfDataVecs) {
-
-    if (colTypes.size() != vecOfDataVecs.size()) {
-        std::cerr << "Impossible to append data to DataStore.\n";
-        std::cerr << "colTypes.size in DataStore object = " + std::to_string(colTypes.size()) + ".\n" +
-                         "vecOfDataVecs.size() = " + std::to_string(vecOfDataVecs.size()) + ".";
-        std::exit(1);
-    }
-
-    for (int id = 0; auto const &[colt_t, idInDataVec] : colTypes) {
-        if (colt_t == parsedVal_t::string_like) {
-            stringCols.at(idInDataVec).append_range(std::get<std::vector<std::string>>(vecOfDataVecs.at(id).second));
-        }
-        else if (colt_t == parsedVal_t::double_like) {
-            doubleCols.at(idInDataVec).append_range(std::get<std::vector<double>>(vecOfDataVecs.at(id).second));
-        }
-        else if (colt_t == parsedVal_t::signed_like) {
-            llCols.at(idInDataVec).append_range(std::get<std::vector<long long>>(vecOfDataVecs.at(id).second));
-        }
-        else {}
-        ++id;
-    }
-}
 
 void DataStore::append_data(DataStore::DS_CtorObj const &ctorObj) {
 
@@ -82,10 +59,6 @@ void DataStore::append_data(DataStore::DS_CtorObj const &ctorObj) {
                          "vecOfDataVecs.size() = " + std::to_string(ctorObj.data.size()) + ".";
         std::exit(1);
     }
-
-    auto app = [&] (auto const &inp) {
-        
-    };
 
     for (int id = 0; auto const &[colt_t, idInDataVec] : colTypes) {
         if (colt_t == parsedVal_t::string_like) {
