@@ -193,6 +193,15 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::dispatch_toParsers(input_
     std::unreachable();
 }
 
+// MAIN INTENDED INTERFACE METHOD
+// Dispatches the string_view to the right parser and constructs DataStore
+std::expected<DataStore, incerr_c> Parser::parse(std::string_view const sv) {
+    std::string_view const trimmed = get_trimmedSV(sv);
+
+    auto c_dstr = [](auto const &&data) { return DataStore(data); };
+    return assess_inputType(trimmed).and_then(std::bind_back(dispatch_toParsers, trimmed)).transform(c_dstr);
+}
+
 // PARSE USING RANAV::CSV2
 std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto                 &&csv2Reader,
                                                                        std::string_view const trimmed) {
@@ -293,17 +302,6 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto     
     return res;
 }
 
-// ### PUBLIC METHODS BELOW ###
-
-// MAIN INTENDED INTERFACE METHOD
-// Dispatches the string_view to the right parser and constructs DataStore
-std::expected<DataStore, incerr_c> Parser::parse(std::string_view const sv) {
-    std::string_view const trimmed = get_trimmedSV(sv);
-
-    auto c_dstr = [](auto const &&data) { return DataStore(data); };
-    return assess_inputType(trimmed).and_then(std::bind_back(dispatch_toParsers, trimmed)).transform(c_dstr);
-}
-
 // JSON AND NDJSON
 std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_view const &trimmed) {
 
@@ -360,7 +358,7 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_
                      (val.type() == NLMjson::value_t::string || temp_firstLineTypes[i] == NLMjson::value_t::string)) {
                 return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
-            else {res.itemFlags[i].push_back(0b0);}
+            else { res.itemFlags[i].push_back(0b0); }
 
             switch (res.data[i].second.index()) {
                 case 0uz:
@@ -428,6 +426,7 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_JSON(std::string_vi
             }
             else {}
             temp_firstLineTypes.push_back(val.type());
+            res.itemFlags.push_back({});
         }
 
         for (auto const &[key_l1, val_l1] : wholeJson.items()) {
@@ -435,80 +434,94 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_JSON(std::string_vi
 
             for (int i = 0; auto const &[key, val] : val_l1.items()) {
                 // CHECKS
-                // Check keys are the same and valTypes are the same on (flattened) 3rd level
                 if (key != res.data[i].first) { return std::unexpected(incerr_c::make(JSON_keyNameDoesntMatch)); }
-                // TODO: Problem with type checking different NDJSON lines
+
+                // Check keys are the same and valTypes are the same on (flattened) 3rd level
+                bool isNullLike = val.is_null() || (val.is_string() && (val.template get<std::string>() == ""));
+                if (isNullLike) { res.itemFlags[i].push_back(0b1); }
                 else if (val.type() != temp_firstLineTypes[i] && (val.type() == NLMjson::value_t::string ||
                                                                   temp_firstLineTypes[i] == NLMjson::value_t::string)) {
                     return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
                 }
+                else { res.itemFlags[i].push_back(0b0); }
+
                 // 'CORRECT' PATH
-                else {
-                    switch (res.data[i].second.index()) {
-                        case 0uz: std::get<0>(res.data[i].second).push_back(val); break;
-                        case 1uz: std::get<1>(res.data[i].second).push_back(val); break;
-                        case 2uz: std::get<2>(res.data[i].second).push_back(val); break;
-                        default:  std::unreachable();
-                    }
+                switch (res.data[i].second.index()) {
+                    case 0uz:
+                        std::get<0>(res.data[i].second).push_back(isNullLike ? "" : val.template get<std::string>());
+                        break;
+                    case 1uz:
+                        std::get<1>(res.data[i].second).push_back(isNullLike ? 0.0 : val.template get<double>());
+                        break;
+                    case 2uz:
+                        std::get<2>(res.data[i].second).push_back(isNullLike ? 0ll : val.template get<long long>());
+                        break;
+                    default: assert(false); std::unreachable();
                 }
                 ++i;
             }
         }
-
         return res;
     }
     // The 'second level' isn't structured ... that is it is actually just one column of values
     else {
         for (auto &oneItem : std::views::drop(wholeJson, 1)) {
             // If any JSON type on 'second level' doesn't match the type of the first record
-            if (oneItem.type() != wholeJson.items().begin().value().type()) {
+            if (oneItem.type() != wholeJson.items().begin().value().type() &&
+                not(oneItem.is_null() || (oneItem.is_string() && (oneItem.template get<std::string>() == "")))) {
                 return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
         }
         DataStore::DS_CtorObj         res2;
-        DataStore::vec_pr_strVarVec_t res;
         std::vector<NLMjson::value_t> temp_firstLineTypes;
 
         // First 'record' determines the structure of each record.
         for (auto const &[key, val] : std::views::take(wholeJson.items(), 1)) {
             if (val.type() == NLMjson::value_t::string) {
-                res.push_back(std::make_pair(
+                res2.data.push_back(std::make_pair(
                     key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
             }
             else if (val.type() == NLMjson::value_t::number_float) {
-                res.push_back(
+                res2.data.push_back(
                     std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
             }
             else if (val.type() == NLMjson::value_t::number_integer ||
                      val.type() == NLMjson::value_t::number_unsigned) {
-                res.push_back(std::make_pair(
+                res2.data.push_back(std::make_pair(
                     key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
             }
             else { return std::unexpected(incerr_c::make(JSON_unhandledCellType)); }
             temp_firstLineTypes.push_back(val.type());
+            res2.itemFlags.push_back({});
         }
 
-        auto &resFront = res.at(0);
-        for (auto const &[key_l1, val_l1] : wholeJson.items()) {
-            if (val_l1.size() != res.size()) { return std::unexpected(incerr_c::make(JSON_objectsNotOfSameSize)); }
-
+        for (auto const &[key, val] : wholeJson.items()) {
             // CHECKS
-            // Check keys are the same and valTypes are the same on (flattened) 3rd level
-            if (wholeJson.is_object()) {
-                if (key_l1 != resFront.first) { return std::unexpected(incerr_c::make(JSON_keyNameDoesntMatch)); }
-            }
+            if (key != res2.data[0].first) { return std::unexpected(incerr_c::make(JSON_keyNameDoesntMatch)); }
 
-            // TODO: Problem with type checking different NDJSON lines
-            else if (val_l1.type() != wholeJson.at(0).type()) {
+            // Check keys are the same and valTypes are the same on (flattened) 3rd level
+            bool isNullLike = val.is_null() || (val.is_string() && (val.template get<std::string>() == ""));
+            if (isNullLike) { res2.itemFlags[0].push_back(0b1); }
+            else if (val.type() != temp_firstLineTypes[0] &&
+                     (val.type() == NLMjson::value_t::string || temp_firstLineTypes[0] == NLMjson::value_t::string)) {
                 return std::unexpected(incerr_c::make(JSON_valueTypeDoesntMatch));
             }
+            else { res2.itemFlags[0].push_back(0b0); }
 
             // 'CORRECT' PATH
-            else {
-                std::visit([&](auto &vari) { vari.push_back(val_l1); }, resFront.second);
+            switch (res2.data[0].second.index()) {
+                case 0uz:
+                    std::get<0>(res2.data[0].second).push_back(isNullLike ? "" : val.template get<std::string>());
+                    break;
+                case 1uz:
+                    std::get<1>(res2.data[0].second).push_back(isNullLike ? 0.0 : val.template get<double>());
+                    break;
+                case 2uz:
+                    std::get<2>(res2.data[0].second).push_back(isNullLike ? 0ll : val.template get<long long>());
+                    break;
+                default: assert(false); std::unreachable();
             }
         }
-
         return res2;
     }
     std::unreachable();
