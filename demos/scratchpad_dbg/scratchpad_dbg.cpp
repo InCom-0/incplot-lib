@@ -7398,7 +7398,7 @@ firefly,,150,41.2,Lithium-ion,112,200,125,250,8.1,65,CCS,0,404,5,RWD,B - Compact
 
 
     for (auto const &dpctr : dpCtor_Structs) {
-        std::print("{}\n", incplot::make_plot_collapseUnExp(dpctr, std::string_view(wineJSON)));
+        std::print("{}\n", incplot::make_plot_collapseUnExp(dpctr, std::string_view(flightsJSON)));
     }
 
     return 0;

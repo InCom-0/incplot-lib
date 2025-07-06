@@ -4,6 +4,7 @@
 #include <format>
 #include <functional>
 #include <iterator>
+#include <ranges>
 #include <type_traits>
 
 #include <private/color_mixer.hpp>
@@ -241,19 +242,37 @@ constexpr inline std::string format_toMax5length(T &&val) {
 using variadicColumns = std::variant<std::pair<std::string, std::reference_wrapper<const std::vector<long long>>>,
                                      std::pair<std::string, std::reference_wrapper<const std::vector<double>>>>;
 
-constexpr inline std::tuple<double, double> compute_minMaxMulti(auto &&vectorOfVariantRefWrpVectors) {
+constexpr inline std::tuple<double, double> compute_minMaxMulti(auto &&vectorOfVariantViews) {
+    std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
+
+    auto ol_set = [&](auto const &var) -> void {
+        auto &ref = var.get();
+        using vl = std::ranges::range_value_t<decltype(ref)>;
+        if constexpr (std::is_arithmetic_v<vl>) {
+            auto [minV_l, maxV_l] = std::ranges::minmax(ref);
+            res.first             = std::min(res.first, static_cast<double>(minV_l));
+            res.second            = std::max(res.second, static_cast<double>(maxV_l));
+        }
+        else {}
+    };
+
+    for (auto variantRef : vectorOfVariantViews) { std::visit(ol_set, variantRef); }
+    return res;
+}
+
+constexpr inline std::tuple<double, double> compute_minMaxMulti_ALT(auto &&vectorOfVariantViews) {
     std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
 
     auto ol_set = [&](auto &var) -> void {
-        auto const &vect = var.get();
-        if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vect)>::value_type>) {
-            auto [minV_l, maxV_l] = std::ranges::minmax(vect);
+        using val_type = std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>;
+        if constexpr (std::is_arithmetic_v<val_type>) {
+            auto [minV_l, maxV_l] = std::ranges::minmax(var);
             res.first             = std::min(res.first, static_cast<double>(minV_l));
             res.second            = std::max(res.second, static_cast<double>(maxV_l));
         }
     };
 
-    for (auto const &variantRef : vectorOfVariantRefWrpVectors) { std::visit(ol_set, variantRef); }
+    for (auto variantRef : vectorOfVariantViews) { std::visit(ol_set, variantRef); }
     return res;
 }
 

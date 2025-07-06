@@ -1,7 +1,9 @@
 #pragma once
 
-#include <ranges>
+#include <cassert>
 #include <private/detail.hpp>
+#include <ranges>
+
 
 namespace incom {
 namespace terminal_plot {
@@ -144,11 +146,12 @@ public:
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, X const &ts_values,
                                               auto viewOfValVariants, std::array<Color_CVTS, 6> colorPalette) {
 
+
         BrailleDrawer bd(canvas_width, canvas_height,
                          std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }), colorPalette);
 
 
-        auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
+        auto [yMin, yMax] = compute_minMaxMulti_ALT(viewOfValVariants);
         double xStepSize  = 1;
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
 
@@ -168,31 +171,40 @@ public:
         double              xScaler = ((canvas_width * 2) - 1) / static_cast<double>(ts_values.size() - 1);
         for (size_t i = 0; i < ts_values.size(); ++i) { xValues.push_back(i * xScaler); }
 
-        // Plot actual points on the bd canvas
-        for (size_t i = 0; auto const &one_yValCol : viewOfValVariants) {
-            auto olSet = [&](auto const &oneCol) -> void {
-                auto const &yValCol_data = oneCol.get();
-                if constexpr (std::is_arithmetic_v<
-                                  typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
+        auto viewCpy = viewOfValVariants;
 
-                    for (size_t rowID = 0; rowID < ts_values.size(); ++rowID) {
-                        placePointOnCanvas(yValCol_data[rowID], xValues[rowID], i);
+        // Plot actual points on the bd canvas
+        for (size_t i = 0; auto one_yValCol : viewOfValVariants) {
+            auto olSet = [&](auto &oneCol) -> void {
+                auto &yValCol_data = oneCol;
+                if constexpr (std::is_arithmetic_v<
+                                  std::ranges::range_value_t<std::remove_cvref_t<decltype(yValCol_data)>>>) {
+
+                    for (auto const &[yVal, xVal] : std::views::zip(yValCol_data, xValues)) {
+                        placePointOnCanvas(yVal, xVal, i);
                     }
+
+                    // for (size_t rowID = 0; rowID < ts_values.size(); ++rowID) {
+                    //     placePointOnCanvas(yValCol_data[rowID], xValues[rowID], i);
+                    // }
                 }
+                else { assert(false); }
             };
             std::visit(olSet, one_yValCol);
             i++;
         }
 
+        
+
         // Interpolate 'in between' every 2 points to actually get a line in the plot visually
         std::vector<size_t> interpolatedValues;
-        for (size_t catID = 0; auto const &one_yValCol : viewOfValVariants) {
-            auto olSet = [&](auto const &oneCol) -> void {
-                auto const &yValCol_data = oneCol.get();
+        for (size_t catID = 0; auto one_yValCol : viewCpy) {
+            auto olSet = [&](auto &oneCol) -> void {
+                auto &yValCol_data = oneCol;
 
                 // yValCol needs to be arithmetic
                 if constexpr (std::is_arithmetic_v<
-                                  typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
+                                  std::ranges::range_value_t<std::remove_cvref_t<decltype(yValCol_data)>>>) {
                     for (auto const &[pointA, pointB] :
                          (std::views::zip(yValCol_data, xValues) | std::views::pairwise)) {
                         auto intpLine = construct_interpolatedLine(

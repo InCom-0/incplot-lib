@@ -79,21 +79,29 @@ public:
 
         auto get_filteredVariantData(std::vector<unsigned char> const &itemFlags_ext) const {
             if (itemFlags_ext.size() != itemFlags.size()) { assert(false); }
-            auto fltr = [&, i = 0uz](auto &&_) mutable { return itemFlags_ext[i++] == 0b0; };
 
-            using res_t = std::variant<decltype(std::views::filter(std::get<0>(variant_data), fltr)),
-                                       decltype(std::views::filter(std::get<1>(variant_data), fltr)),
-                                       decltype(std::views::filter(std::get<2>(variant_data), fltr))>;
+            auto fltr   = [](auto &&a) { return std::get<0>(a) == 0b0; };
+            auto transf = [](auto &&b) { return std::get<1>(b); };
+
+            using res_t = std::variant<decltype(std::views::zip(itemFlags_ext, std::get<0>(variant_data)) |
+                                                std::views::filter(fltr) | std::views::transform(transf)),
+                                       decltype(std::views::zip(itemFlags_ext, std::get<1>(variant_data)) |
+                                                std::views::filter(fltr) | std::views::transform(transf)),
+                                       decltype(std::views::zip(itemFlags_ext, std::get<2>(variant_data)) |
+                                                std::views::filter(fltr) | std::views::transform(transf))>;
 
             auto visi = [&](auto const &vari) {
                 if constexpr (std::same_as<std::remove_cvref_t<decltype(vari)>, std::vector<std::string>>) {
-                    return res_t(std::views::filter(std::get<0>(variant_data), fltr));
+                    return res_t(std::views::zip(itemFlags_ext, std::get<0>(variant_data)) | std::views::filter(fltr) |
+                                 std::views::transform(transf));
                 }
                 else if constexpr (std::same_as<std::remove_cvref_t<decltype(vari)>, std::vector<long long>>) {
-                    return res_t(std::views::filter(std::get<1>(variant_data), fltr));
+                    return res_t(std::views::zip(itemFlags_ext, std::get<1>(variant_data)) | std::views::filter(fltr) |
+                                 std::views::transform(transf));
                 }
                 else if constexpr (std::same_as<std::remove_cvref_t<decltype(vari)>, std::vector<double>>) {
-                    return res_t(std::views::filter(std::get<2>(variant_data), fltr));
+                    return res_t(std::views::zip(itemFlags_ext, std::get<2>(variant_data)) | std::views::filter(fltr) |
+                                 std::views::transform(transf));
                 }
 
                 else { static_assert(false); }
@@ -145,18 +153,32 @@ public:
 
 
     // VIEWING
-    const auto get_filteredViewOfData(std::vector<size_t> const &colsToGet) const {
-        auto flags = compute_filterFlags(colsToGet);
-
-        using vec_val_t = decltype(std::declval<Column>().get_filteredVariantData(flags));
+    const auto get_filteredViewOfData(std::vector<size_t> const        &colsToGet,
+                                      std::vector<unsigned char> const &itemFlags_ext) const {
+                                        
+        using vec_val_t = decltype(std::declval<Column &>().get_filteredVariantData(std::vector<unsigned char>()));
         std::vector<vec_val_t> res;
 
-        for (auto const &oneCol : colsToGet) { res.push_back(m_data.at(oneCol).get_filteredVariantData(flags)); }
+        for (auto const &oneCol : colsToGet) {
+            res.push_back(m_data.at(oneCol).get_filteredVariantData(itemFlags_ext));
+        }
         return res;
+    }
+    const auto get_filteredViewOfData(std::vector<size_t> const       &&colsToGet,
+                                      std::vector<unsigned char> const &itemFlags_ext) const {
+        return get_filteredViewOfData(colsToGet, itemFlags_ext);
     }
 
 
-private:
+    const auto get_filteredViewOfData(std::vector<size_t> const &colsToGet) const {
+        auto flags = compute_filterFlags(colsToGet);
+        return get_filteredViewOfData(colsToGet, flags);
+    }
+    const auto get_filteredViewOfData(std::vector<size_t> const &&colsToGet) const {
+        return get_filteredViewOfData(colsToGet);
+    }
+
+
     std::vector<unsigned char> compute_filterFlags(std::vector<size_t> const &colsToGet) const {
         if (m_data.size() < 1) { assert(false); }
 

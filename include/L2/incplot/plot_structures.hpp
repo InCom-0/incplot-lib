@@ -1,6 +1,7 @@
 #pragma once
 
 #include <incplot/desired_plot.hpp>
+#include <vector>
 
 
 namespace incom {
@@ -19,6 +20,12 @@ using incerr_c = incerr::incerr_code;
 // coupled with 'deducing this' feature of C++23
 class Base {
 public:
+    using vec_val_t =
+        decltype(std::declval<DataStore::Column &>().get_filteredVariantData(std::vector<unsigned char>()));
+
+    std::vector<vec_val_t> labelTS_colView;
+    std::vector<vec_val_t> values_colViews;
+
     // Descriptors - First thing to be computed.
     // BEWARE: The sizes here are 'as displayed' not the 'size in bytes' ... need to account for UTF8
     long long areaWidth = 0, areaHeight = 0;
@@ -87,6 +94,9 @@ private:
     // One needs to define all of these in a derived class.
     // All 'Compute_*' methods are deleted in Base class on purpose to make code not compile if you don't provide
     // implementation in some derived class
+    auto initialize_data_views(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
@@ -138,6 +148,9 @@ class BarV : public Base {
     friend class Base;
 
 private:
+    auto initialize_data_views(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
