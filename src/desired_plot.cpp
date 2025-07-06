@@ -24,7 +24,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
                                                                                     DataStore const &ds) {
 
     auto c_catParams = [&](auto const &vecRef) -> void {
-        auto vecCpy = vecRef.get();
+        auto vecCpy = vecRef;
 
         std::ranges::sort(vecCpy);
         auto   view_chunked = std::views::chunk_by(vecCpy, [](auto const &l, auto const &r) { return l == r; });
@@ -52,7 +52,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
     };
 
     auto is_srss = [&](auto const &vecRef) -> bool {
-        auto const &vec = vecRef.get();
+        auto const &vec = vecRef;
         if (vec.empty()) { return false; }
 
         auto const firstVal          = vec.at(0);
@@ -85,7 +85,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
     };
 
     auto is_tsli = [&](auto const &vecRef) -> bool {
-        auto const &vec = vecRef.get();
+        auto const &vec = vecRef;
         if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
 
             auto   vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
@@ -103,32 +103,33 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
         else { return false; }
     };
 
-    for (auto const &oneCol : ds.vec_colVariants) {
+    for (auto const &oneCol : ds.m_data) {
         dp.m_colAssessments.push_back({0, false, false, false, false, false});
 
-        std::visit(c_catParams, oneCol);
-        dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol);
-        dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol);
+        std::visit(c_catParams, oneCol.variant_data);
+        dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol.variant_data);
+        dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol.variant_data);
     }
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::transform_namedColsIntoIDs(DesiredPlot    &&dp,
                                                                                         DataStore const &ds) {
     if (dp.labelTS_colName.has_value()) {
-        auto it = std::ranges::find(ds.colNames, dp.labelTS_colName.value());
-        if (it == ds.colNames.end()) { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
-        else if (not dp.labelTS_colID.has_value()) { dp.labelTS_colID = it - ds.colNames.begin(); }
+        auto it =
+            std::ranges::find_if(ds.m_data, [&](auto const &col) { return col.name == dp.labelTS_colName.value(); });
+        if (it == ds.m_data.end()) { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
+        else if (not dp.labelTS_colID.has_value()) { dp.labelTS_colID = it - ds.m_data.begin(); }
         else { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
 
         dp.labelTS_colName = std::nullopt;
     }
 
     for (auto const &v_colName : dp.values_colNames) {
-        auto it = std::ranges::find(ds.colNames, v_colName);
-        if (it == ds.colNames.end()) { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
+        auto it = std::ranges::find_if(ds.m_data, [&](auto const &col) { return col.name == v_colName; });
+        if (it == ds.m_data.end()) { return std::unexpected(incerr_c::make(TNCII_colByNameNotExist)); }
 
-        auto it2 = std::ranges::find(dp.values_colIDs, it - ds.colNames.begin());
-        if (it2 == dp.values_colIDs.end()) { dp.values_colIDs.push_back(it - ds.colNames.begin()); }
+        auto it2 = std::ranges::find(dp.values_colIDs, it - ds.m_data.begin());
+        if (it2 == dp.values_colIDs.end()) { dp.values_colIDs.push_back(it - ds.m_data.begin()); }
     }
     dp.values_colNames.clear();
     return dp;
@@ -138,13 +139,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
 
     // Helpers
     size_t useableValCols_count =
-        std::ranges::count_if(std::views::zip(ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
-            bool arithmeticCol = std::get<0>(colType).first == parsedVal_t::signed_like ||
-                                 std::get<0>(colType).first == parsedVal_t::double_like;
+        std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr) {
+            bool arithmeticCol = std::get<0>(pr).colType == parsedVal_t::signed_like ||
+                                 std::get<0>(pr).colType == parsedVal_t::double_like;
 
-            // Not timeSeriesLike and Not categoryLike
-            bool notExcluded =
-                not std::get<1>(colType).is_timeSeriesLikeIndex && not std::get<1>(colType).is_categoryLike;
+                                 // Not timeSeriesLike and Not categoryLike
+            bool notExcluded = not std::get<1>(pr).is_timeSeriesLikeIndex && not std::get<1>(pr).is_categoryLike;
 
             return (arithmeticCol && notExcluded);
         });
@@ -153,9 +153,9 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
         std::ranges::count_if(dp.m_colAssessments, [](auto const &colPars) { return colPars.is_timeSeriesLikeIndex; });
 
     size_t labelCols_sz =
-        std::ranges::count_if(std::views::zip(ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
+        std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr) {
             // Must be string AND not categoryLike
-            return (std::get<0>(colType).first == parsedVal_t::string_like && not std::get<1>(colType).is_categoryLike);
+            return (std::get<0>(pr).colType == parsedVal_t::string_like && not std::get<1>(pr).is_categoryLike);
         });
 
     // ACTUAL DEICISIOM MAKING
@@ -164,7 +164,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
 
     // labelTS_colID was specified
     else if (dp.labelTS_colID.has_value()) {
-        if (ds.colTypes.at(dp.labelTS_colID.value()).first == parsedVal_t::string_like) {
+        if (ds.m_data.at(dp.labelTS_colID.value()).colType == parsedVal_t::string_like) {
             if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
             // More than 1 value cols is impossible with labelTS col being string
             else { return std::unexpected(incerr_c::make(GPT_xValTypeStringWhileMoreThan1YvalCols)); }
@@ -197,7 +197,8 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
 
     if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
         for (auto const &fvItem : std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
-                 return std::get<1>(ca).is_timeSeriesLikeIndex && (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                 return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                        (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
                         std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
              })) {
 
@@ -209,9 +210,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
     }
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
         for (auto const &fvItem : std::views::filter(
-                 std::views::enumerate(std::views::zip(ds.colTypes, dp.m_colAssessments)), [&](auto const &ca) {
-                     return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) && (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                            (std::get<0>(std::get<1>(ca)).first != parsedVal_t::string_like) &&
+                 std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
+                     return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
+                            (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                            (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
                             std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
                  })) {
 
@@ -223,8 +225,8 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
     }
 
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-        for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.colTypes), [](auto const &ct) {
-                 return std::get<1>(ct).first == parsedVal_t::string_like;
+        for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.m_data), [](auto const &ct) {
+                 return std::get<1>(ct).colType == parsedVal_t::string_like;
              })) {
             dp.labelTS_colID = std::get<0>(fvItem);
             return dp;
@@ -237,7 +239,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(DesiredPlot &&dp, DataStore const &ds) {
     auto useableCatCols_tpl = std::views::filter(
-        std::views::zip(std::views::iota(0), ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
+        std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &colType) {
             return (std::get<2>(colType).is_categoryLike &&
                     std::get<2>(colType).categoryCount <= Config::max_maxNumOfCategories);
         });
@@ -303,14 +305,14 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
     auto useableValCols_tpl = std::views::filter(
-        std::views::zip(std::views::iota(0), ds.colTypes, dp.m_colAssessments), [&](auto const &colType) {
-            bool arithmeticCol = std::get<1>(colType).first == parsedVal_t::signed_like ||
-                                 std::get<1>(colType).first == parsedVal_t::double_like;
+        std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &tpl) {
+            bool arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
+                                 std::get<1>(tpl).colType == parsedVal_t::double_like;
 
             // Not timeSeriesLike and Not categoryLike
             bool notExcluded =
-                (dp.cat_colID.has_value() ? (std::get<0>(colType) != dp.cat_colID.value()) : true) &&
-                (dp.labelTS_colID.has_value() ? (std::get<0>(colType) != dp.labelTS_colID.value()) : true);
+                (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
+                (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
 
             return (arithmeticCol && notExcluded);
         });

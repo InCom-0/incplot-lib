@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <cassert>
 #include <concepts>
 #include <ranges>
@@ -52,7 +51,6 @@ public:
         }
 
         const auto &get_variantData() const { return variant_data; }
-
 
         auto get_filteredVariantData() const {
             auto fltr = [&, i = 0uz](auto &&_) mutable { return itemFlags[i++] == 0b0; };
