@@ -221,7 +221,7 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto     
     std::setlocale(LC_ALL, "en_US.UTF-8");
 
     {
-        using varVec_t    = DataStore::vec_pr_strVarVec_t::value_type::second_type;
+        using varVec_t    = DataStore::vec_pr_varCol_t::value_type::second_type;
         auto   headerItem = csv2Reader.header().begin();
         size_t id         = 0;
 
@@ -340,15 +340,15 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_
     for (auto const &[key, val] : parsed.front().items()) {
         if (val.type() == NLMjson::value_t::string) {
             res.data.push_back(std::make_pair(
-                key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
+                key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<std::string>())));
         }
         else if (val.type() == NLMjson::value_t::number_float) {
             res.data.push_back(
-                std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
+                std::make_pair(key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<double>())));
         }
         else if (val.type() == NLMjson::value_t::number_integer || val.type() == NLMjson::value_t::number_unsigned) {
             res.data.push_back(
-                std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
+                std::make_pair(key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<long long>())));
         }
         else {}
         temp_firstLineTypes.push_back(val.type());
@@ -422,16 +422,16 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_JSON(std::string_vi
         for (auto const &[key, val] : wholeJson.items().begin().value().items()) {
             if (val.type() == NLMjson::value_t::string) {
                 res.data.push_back(std::make_pair(
-                    key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
+                    key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<std::string>())));
             }
             else if (val.type() == NLMjson::value_t::number_float) {
                 res.data.push_back(
-                    std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
+                    std::make_pair(key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<double>())));
             }
             else if (val.type() == NLMjson::value_t::number_integer ||
                      val.type() == NLMjson::value_t::number_unsigned) {
                 res.data.push_back(std::make_pair(
-                    key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
+                    key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<long long>())));
             }
             else {}
             temp_firstLineTypes.push_back(val.type());
@@ -488,16 +488,16 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_JSON(std::string_vi
         for (auto const &[key, val] : std::views::take(wholeJson.items(), 1)) {
             if (val.type() == NLMjson::value_t::string) {
                 res2.data.push_back(std::make_pair(
-                    key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<std::string>())));
+                    key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<std::string>())));
             }
             else if (val.type() == NLMjson::value_t::number_float) {
                 res2.data.push_back(
-                    std::make_pair(key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<double>())));
+                    std::make_pair(key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<double>())));
             }
             else if (val.type() == NLMjson::value_t::number_integer ||
                      val.type() == NLMjson::value_t::number_unsigned) {
                 res2.data.push_back(std::make_pair(
-                    key, DataStore::vec_pr_strVarVec_t::value_type::second_type(std::vector<long long>())));
+                    key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<long long>())));
             }
             else { return std::unexpected(incerr_c::make(JSON_unhandledCellType)); }
             temp_firstLineTypes.push_back(val.type());

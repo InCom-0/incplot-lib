@@ -7390,7 +7390,7 @@ firefly,,150,41.2,Lithium-ion,112,200,125,250,8.1,65,CCS,0,404,5,RWD,B - Compact
 
     auto dpCtor_Structs = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
-    // dpCtor_Structs.front().plot_type_name = "Scatter";
+    // dpCtor_Structs.front().plot_type_name = "Multiline";
     // dpCtor_Structs.front().tar_width = 100;
     // dpCtor_Structs.front().availableWidth  = 200;
     // dpCtor_Structs.front().availableHeight = 15;

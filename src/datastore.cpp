@@ -62,16 +62,6 @@ DataStore::DataStore(DataStore::DS_CtorObj const &ctorObj) {
             itemFlags.push_back(std::vector<unsigned char>(std::visit(getSize, ctorObj.data.at(0).second), 0));
         }
     }
-
-    auto build_vecOfColVariants = [&]() {
-        for (auto const &[ct_t, colID] : colTypes) {
-            if (ct_t == parsedVal_t::string_like) { vec_colVariants.push_back(stringCols[colID]); }
-            else if (ct_t == parsedVal_t::double_like) { vec_colVariants.push_back(doubleCols[colID]); }
-            else if (ct_t == parsedVal_t::signed_like) { vec_colVariants.push_back(llCols[colID]); }
-            else {}
-        }
-    };
-    build_vecOfColVariants();
 }
 
 void DataStore::append_data(DataStore::DS_CtorObj const &ctorObj) {

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "incplot/datastore.hpp"
 #include <incplot/desired_plot.hpp>
 #include <optional>
 #include <vector>
@@ -28,6 +29,10 @@ protected:
     std::optional<vec_val_t> cat_colView     = std::nullopt;
     std::vector<vec_val_t>   values_colViews;
 
+    // TODO: Explore performance when the filtered data is copied here from DataStore
+    std::optional<DataStore::varCol_t> LOC_labelTS_colView = std::nullopt;
+    std::optional<DataStore::varCol_t> LOC_cat_colView     = std::nullopt;
+    std::vector<DataStore::varCol_t>   LOC_values_colViews;
 
 public:
     // Descriptors - First thing to be computed.

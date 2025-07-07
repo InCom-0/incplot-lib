@@ -25,17 +25,13 @@ class DataStore {
 public:
     // TYPE ALIAS
 
+    using varCol_t        = std::variant<std::vector<std::string>, std::vector<double>, std::vector<long long>>;
+    using vec_pr_varCol_t = std::vector<std::pair<std::string, varCol_t>>;
+
     struct DS_CtorObj {
-        std::vector<
-            std::pair<std::string, std::variant<std::vector<std::string>, std::vector<double>, std::vector<long long>>>>
-                                                data;
-        std::vector<std::vector<unsigned char>> itemFlags;
+        std::vector<std::pair<std::string, varCol_t>> data;
+        std::vector<std::vector<unsigned char>>       itemFlags;
     };
-    using vec_pr_strVarVec_t = std::vector<
-        std::pair<std::string, std::variant<std::vector<std::string>, std::vector<double>, std::vector<long long>>>>;
-    using vec_colVar_t = std::vector<
-        std::variant<std::reference_wrapper<std::vector<std::string>>, std::reference_wrapper<std::vector<double>>,
-                     std::reference_wrapper<std::vector<long long>>>>;
 
 
     struct Column {
@@ -123,10 +119,6 @@ public:
     std::vector<std::vector<long long>>   llCols; // Don't care about signed unsigned, etc. ... all will be long long
     std::vector<std::vector<double>>      doubleCols;
 
-    // DataStore can be accessed using dynamic polymorphism with this vector of variants reference to each collumn in
-    // the data storage
-    vec_colVar_t vec_colVariants;
-
     std::vector<Column> m_data;
 
 
@@ -154,7 +146,7 @@ public:
 
 
     // VIEWING
-    const auto get_filteredViewOfData(std::vector<size_t> const        &colsToGet,
+    const auto get_filteredViewOfData(std::vector<size_t> const       &colsToGet,
                                       std::vector<unsigned int> const &itemFlags_ext) const {
 
         using vec_val_t = decltype(std::declval<Column &>().get_filteredVariantData(std::vector<unsigned int>()));
@@ -165,7 +157,7 @@ public:
         }
         return res;
     }
-    const auto get_filteredViewOfData(std::vector<size_t> const       &&colsToGet,
+    const auto get_filteredViewOfData(std::vector<size_t> const      &&colsToGet,
                                       std::vector<unsigned int> const &itemFlags_ext) const {
         return get_filteredViewOfData(colsToGet, itemFlags_ext);
     }

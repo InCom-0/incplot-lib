@@ -36,7 +36,7 @@ enum class CellType {
 class Parser {
 
     // TYPE ALIAS
-    using parser_return_t = std::expected<DataStore::vec_pr_strVarVec_t, incerr_c>;
+    using parser_return_t = std::expected<DataStore::vec_pr_varCol_t, incerr_c>;
 
     // HLPRS
     static std::string_view get_trimmedSV(std::string_view const &sv);
