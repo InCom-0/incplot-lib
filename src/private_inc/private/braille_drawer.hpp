@@ -1,8 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <private/detail.hpp>
 #include <ranges>
+#include <utility>
+#include <variant>
 
 
 namespace incom {
@@ -87,21 +90,19 @@ private:
     }
 
 public:
-    template <typename X>
-    requires std::is_arithmetic_v<typename X::value_type>
-    static std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, X const &x_values,
-                                               auto                                      viewOfValVariants,
+    static std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
+                                               auto                                     &view_varValCols,
                                                std::optional<std::vector<size_t>> const &catIDs_vec,
                                                std::array<Color_CVTS, 6>                 colorPalette) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          catIDs_vec.has_value()
                              ? get_sortedAndUniqued(catIDs_vec.value()).size()
-                             : std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }),
+                             : std::ranges::count_if(view_varValCols, [](auto const &a) { return true; }),
                          colorPalette);
 
-        auto [xMin, xMax] = std::ranges::minmax(x_values);
-        auto [yMin, yMax] = compute_minMaxMulti(viewOfValVariants);
+        auto [xMin, xMax] = compute_minMaxMulti(view_labelTS_col.value());
+        auto [yMin, yMax] = compute_minMaxMulti(view_varValCols);
         double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
 
@@ -117,23 +118,37 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]++;
         };
 
-        for (size_t i = 0; auto const &one_yValCol : viewOfValVariants) {
-            auto olSet = [&](auto const &oneCol) -> void {
-                auto const &yValCol_data = oneCol.get();
-                if constexpr (std::is_arithmetic_v<
-                                  typename std::remove_reference_t<decltype(yValCol_data)>::value_type>) {
+        for (size_t i = 0; auto &one_yValCol : view_varValCols) {
+            auto olSet = [&](auto &oneCol) -> void {
+                if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(oneCol)>>>) {
                     if (catIDs_vec.has_value()) {
-                        for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
-                            placePointOnCanvas(yValCol_data[rowID], x_values[rowID], catIDs_vec.value()[rowID]);
-                        }
+                        auto vis = [&](auto &lts_col) {
+                            if constexpr (std::is_arithmetic_v<
+                                              std::ranges::range_value_t<std::remove_cvref_t<decltype(lts_col)>>>) {
+                                for (size_t rowID = 0; auto const &[yVal, xVal] : std::views::zip(oneCol, lts_col)) {
+                                    placePointOnCanvas(yVal, xVal, catIDs_vec.value()[rowID]);
+                                    rowID++;
+                                }
+                            }
+                            else { assert(false); }
+                        };
+                        std::visit(vis, view_labelTS_col.value());
                     }
                     else {
-                        for (size_t rowID = 0; rowID < x_values.size(); ++rowID) {
-                            placePointOnCanvas(yValCol_data[rowID], x_values[rowID], i);
-                        }
+                        auto vis = [&](auto &lts_col) {
+                            if constexpr (std::is_arithmetic_v<
+                                              std::ranges::range_value_t<std::remove_cvref_t<decltype(lts_col)>>>) {
+                                for (auto const &[yVal, xVal] : std::views::zip(oneCol, lts_col)) {
+                                    placePointOnCanvas(yVal, xVal, i);
+                                }
+                            }
+                            else { assert(false); }
+                        };
+                        std::visit(vis, view_labelTS_col.value());
                     }
                     i++;
                 }
+                else { assert(false); }
             };
             std::visit(olSet, one_yValCol);
         }
@@ -142,16 +157,15 @@ public:
         return bd.construct_outputPlotArea();
     }
 
-    template <typename X>
-    static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, X const &ts_values,
-                                              auto viewOfValVariants, std::array<Color_CVTS, 6> colorPalette) {
+    static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
+                                              auto &view_varValCols, std::array<Color_CVTS, 6> colorPalette) {
 
 
         BrailleDrawer bd(canvas_width, canvas_height,
-                         std::ranges::count_if(viewOfValVariants, [](auto const &a) { return true; }), colorPalette);
+                         std::ranges::count_if(view_varValCols, [](auto const &a) { return true; }), colorPalette);
 
 
-        auto [yMin, yMax] = compute_minMaxMulti_ALT(viewOfValVariants);
+        auto [yMin, yMax] = compute_minMaxMulti(view_varValCols);
         double xStepSize  = 1;
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
 
@@ -167,26 +181,24 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
         };
 
-        std::vector<double> xValues;
-        double              xScaler = ((canvas_width * 2) - 1) / static_cast<double>(ts_values.size() - 1);
-        for (size_t i = 0; i < ts_values.size(); ++i) { xValues.push_back(i * xScaler); }
+        size_t labelTS_col_sz = 0;
+        auto   vis            = [&](auto &&var) {
+            for (auto const &a : var) { labelTS_col_sz++; }
+        };
+        std::visit(vis, view_labelTS_col);
 
-        auto viewCpy = viewOfValVariants;
+        double              xScaler = ((canvas_width * 2) - 1) / static_cast<double>(labelTS_col_sz - 1);
+        std::vector<double> xValues;
+        for (size_t i = 0; i < labelTS_col_sz; ++i) { xValues.push_back(i * xScaler); }
 
         // Plot actual points on the bd canvas
-        for (size_t i = 0; auto one_yValCol : viewOfValVariants) {
+        for (size_t i = 0; auto one_yValCol : view_varValCols) {
             auto olSet = [&](auto &oneCol) -> void {
-                auto &yValCol_data = oneCol;
-                if constexpr (std::is_arithmetic_v<
-                                  std::ranges::range_value_t<std::remove_cvref_t<decltype(yValCol_data)>>>) {
+                if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(oneCol)>>>) {
 
-                    for (auto const &[yVal, xVal] : std::views::zip(yValCol_data, xValues)) {
+                    for (auto const &[yVal, xVal] : std::views::zip(oneCol, xValues)) {
                         placePointOnCanvas(yVal, xVal, i);
                     }
-
-                    // for (size_t rowID = 0; rowID < ts_values.size(); ++rowID) {
-                    //     placePointOnCanvas(yValCol_data[rowID], xValues[rowID], i);
-                    // }
                 }
                 else { assert(false); }
             };
@@ -194,11 +206,10 @@ public:
             i++;
         }
 
-        
 
         // Interpolate 'in between' every 2 points to actually get a line in the plot visually
         std::vector<size_t> interpolatedValues;
-        for (size_t catID = 0; auto one_yValCol : viewCpy) {
+        for (size_t catID = 0; auto one_yValCol : view_varValCols) {
             auto olSet = [&](auto &oneCol) -> void {
                 auto &yValCol_data = oneCol;
 

@@ -77,12 +77,11 @@ public:
             return std::visit(visi, variant_data);
         }
 
-        auto get_filteredVariantData(std::vector<unsigned char> const &itemFlags_ext) const {
-            //TODO: Cannot do it this way ... lifetime problems with itemFlags
+        auto get_filteredVariantData(std::vector<unsigned int> const &itemFlags_ext) const {
+            // TODO: Cannot do it this way ... lifetime problems with itemFlags
             if (itemFlags_ext.size() != itemFlags.size()) { assert(false); }
 
-            auto fltr   = [](auto &&a) {
-                 return std::get<0>(a) == 0b0; };
+            auto fltr   = [](auto &&a) { return std::get<0>(a) == 0b0; };
             auto transf = [](auto &&b) { return std::get<1>(b); };
 
             using res_t = std::variant<decltype(std::views::zip(itemFlags_ext, std::get<0>(variant_data)) |
@@ -156,9 +155,9 @@ public:
 
     // VIEWING
     const auto get_filteredViewOfData(std::vector<size_t> const        &colsToGet,
-                                      std::vector<unsigned char> const &itemFlags_ext) const {
-                                        
-        using vec_val_t = decltype(std::declval<Column &>().get_filteredVariantData(std::vector<unsigned char>()));
+                                      std::vector<unsigned int> const &itemFlags_ext) const {
+
+        using vec_val_t = decltype(std::declval<Column &>().get_filteredVariantData(std::vector<unsigned int>()));
         std::vector<vec_val_t> res;
 
         for (auto const &oneCol : colsToGet) {
@@ -167,10 +166,9 @@ public:
         return res;
     }
     const auto get_filteredViewOfData(std::vector<size_t> const       &&colsToGet,
-                                      std::vector<unsigned char> const &itemFlags_ext) const {
+                                      std::vector<unsigned int> const &itemFlags_ext) const {
         return get_filteredViewOfData(colsToGet, itemFlags_ext);
     }
-
 
     const auto get_filteredViewOfData(std::vector<size_t> const &colsToGet) const {
         auto flags = compute_filterFlags(colsToGet);
@@ -180,11 +178,18 @@ public:
         return get_filteredViewOfData(colsToGet);
     }
 
+    const auto get_filteredViewOfData(size_t const &colToGet, std::vector<unsigned int> const &itemFlags_ext) const {
+        return m_data.at(colToGet).get_filteredVariantData(itemFlags_ext);
+    }
+    const auto get_filteredViewOfData(size_t const &&colToGet, std::vector<unsigned int> const &itemFlags_ext) const {
+        return get_filteredViewOfData(colToGet, itemFlags_ext);
+    }
 
-    std::vector<unsigned char> compute_filterFlags(std::vector<size_t> const &colsToGet) const {
+
+    std::vector<unsigned int> compute_filterFlags(std::vector<size_t> const &colsToGet) const {
         if (m_data.size() < 1) { assert(false); }
 
-        std::vector<unsigned char> res(m_data.front().itemFlags.size(), 0b0);
+        std::vector<unsigned int> res(m_data.front().itemFlags.size(), 0b0);
 
         for (auto const &selID : colsToGet) {
             // Non existent column ID or itemFlag sizes do not match
@@ -195,7 +200,7 @@ public:
         }
         return res;
     }
-    std::vector<unsigned char> compute_filterFlags(std::vector<size_t> const &&colsToGet) const {
+    std::vector<unsigned int> compute_filterFlags(std::vector<size_t> const &&colsToGet) const {
         return compute_filterFlags(colsToGet);
     }
 };

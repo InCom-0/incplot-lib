@@ -1,6 +1,7 @@
 #pragma once
 
 #include <incplot/desired_plot.hpp>
+#include <optional>
 #include <vector>
 
 
@@ -21,11 +22,12 @@ using incerr_c = incerr::incerr_code;
 class Base {
 protected:
     using vec_val_t =
-        decltype(std::declval<DataStore::Column &>().get_filteredVariantData(std::vector<unsigned char>()));
+        decltype(std::declval<DataStore::Column &>().get_filteredVariantData(std::vector<unsigned int>()));
 
-    std::vector<vec_val_t> labelTS_colView;
-    std::vector<vec_val_t> cat_colView;
-    std::vector<vec_val_t> values_colViews;
+    std::optional<vec_val_t> labelTS_colView = std::nullopt;
+    std::optional<vec_val_t> cat_colView     = std::nullopt;
+    std::vector<vec_val_t>   values_colViews;
+
 
 public:
     // Descriptors - First thing to be computed.

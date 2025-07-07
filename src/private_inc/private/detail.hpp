@@ -245,35 +245,19 @@ using variadicColumns = std::variant<std::pair<std::string, std::reference_wrapp
 constexpr inline std::tuple<double, double> compute_minMaxMulti(auto &&vectorOfVariantViews) {
     std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
 
-    auto ol_set = [&](auto const &var) -> void {
-        auto &ref = var.get();
-        using vl  = std::ranges::range_value_t<decltype(ref)>;
-        if constexpr (std::is_arithmetic_v<vl>) {
-            auto [minV_l, maxV_l] = std::ranges::minmax(ref);
-            res.first             = std::min(res.first, static_cast<double>(minV_l));
-            res.second            = std::max(res.second, static_cast<double>(maxV_l));
-        }
-        else {}
-    };
-
-    for (auto variantRef : vectorOfVariantViews) { std::visit(ol_set, variantRef); }
-    return res;
-}
-
-constexpr inline std::tuple<double, double> compute_minMaxMulti_ALT(auto &&vectorOfVariantViews) {
-    std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
-
     auto ol_set = [&](auto &var) -> void {
         using val_type = std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>;
         if constexpr (std::is_arithmetic_v<val_type>) {
-            
+
             auto [minV_l, maxV_l] = std::ranges::minmax(var);
             res.first             = std::min(res.first, static_cast<double>(minV_l));
             res.second            = std::max(res.second, static_cast<double>(maxV_l));
         }
     };
-
-    for (auto variantRef : vectorOfVariantViews) { std::visit(ol_set, variantRef); }
+    if constexpr (std::ranges::range<decltype(vectorOfVariantViews)>) {
+        for (auto variantRef : vectorOfVariantViews) { std::visit(ol_set, variantRef); }
+    }
+    else { std::visit(ol_set, vectorOfVariantViews); }
     return res;
 }
 

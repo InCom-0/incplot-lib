@@ -41,7 +41,9 @@ enum class Unexp_plotSpecs {
 
 enum class Unexp_plotDrawer {
     // No value '0'
-    C_DSC_areaWidth_insufficient = 1,
+    INI_labelTS_colID_isNull = 1,
+    INI_values_colIDs_isEmpty,
+    C_DSC_areaWidth_insufficient,
     C_DSC_areaHeight_insufficient,
     C_DSC_,
     V_PD_nonspecificError,

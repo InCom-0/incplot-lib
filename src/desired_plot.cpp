@@ -143,7 +143,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
             bool arithmeticCol = std::get<0>(pr).colType == parsedVal_t::signed_like ||
                                  std::get<0>(pr).colType == parsedVal_t::double_like;
 
-                                 // Not timeSeriesLike and Not categoryLike
+            // Not timeSeriesLike and Not categoryLike
             bool notExcluded = not std::get<1>(pr).is_timeSeriesLikeIndex && not std::get<1>(pr).is_categoryLike;
 
             return (arithmeticCol && notExcluded);
@@ -152,11 +152,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     size_t tsLikeIndexCols_count =
         std::ranges::count_if(dp.m_colAssessments, [](auto const &colPars) { return colPars.is_timeSeriesLikeIndex; });
 
-    size_t labelCols_sz =
-        std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr) {
-            // Must be string AND not categoryLike
-            return (std::get<0>(pr).colType == parsedVal_t::string_like && not std::get<1>(pr).is_categoryLike);
-        });
+    size_t labelCols_sz = std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr) {
+        // Must be string AND not categoryLike
+        return (std::get<0>(pr).colType == parsedVal_t::string_like && not std::get<1>(pr).is_categoryLike);
+    });
 
     // ACTUAL DEICISIOM MAKING
     // Can't plot anything without at least 1 value column
@@ -304,15 +303,14 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
-    auto useableValCols_tpl = std::views::filter(
-        std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &tpl) {
+    auto useableValCols_tpl =
+        std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &tpl) {
             bool arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
                                  std::get<1>(tpl).colType == parsedVal_t::double_like;
 
             // Not timeSeriesLike and Not categoryLike
-            bool notExcluded =
-                (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
-                (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
+            bool notExcluded = (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
+                               (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
 
             return (arithmeticCol && notExcluded);
         });
@@ -442,6 +440,18 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TFfeatures(De
 
     return dp;
 }
+
+std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_filterFlags(DesiredPlot    &&dp,
+                                                                                 DataStore const &ds) {
+    std::vector<size_t> colIDs;
+    if (dp.labelTS_colID.has_value()) { colIDs.push_back(dp.labelTS_colID.value()); }
+    if (dp.cat_colID.has_value()) { colIDs.push_back(dp.cat_colID.value()); }
+    colIDs.append_range(dp.values_colIDs);
+
+    dp.filterFlags = ds.compute_filterFlags(colIDs);
+
+    return dp;
+};
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams(this DesiredPlot &&self,
                                                                                  DataStore const   &ds) {
     // Uses custom 'bind_back' to return the right callable form for and_then to use.
@@ -456,7 +466,8 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams
         .and_then(std::bind_back(DesiredPlot::guess_catCol, ds))
         .and_then(std::bind_back(DesiredPlot::guess_valueCols, ds))
         .and_then(std::bind_back(DesiredPlot::guess_sizes, ds))
-        .and_then(std::bind_back(DesiredPlot::guess_TFfeatures, ds));
+        .and_then(std::bind_back(DesiredPlot::guess_TFfeatures, ds))
+        .and_then(std::bind_back(DesiredPlot::compute_filterFlags, ds));
 }
 
 

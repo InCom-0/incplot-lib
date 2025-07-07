@@ -260,6 +260,7 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto     
             // Taking just the first row
             // TODO: This is wierd ... looked into it ... seems the only reasonable way lol ... I must be doing
             // something wrong :-)
+            break;
         }
     }
 

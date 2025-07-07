@@ -28,6 +28,7 @@ private:
 
 
 public:
+    std::vector<unsigned int> filterFlags;
     std::vector<ColumnParams> m_colAssessments = {};
 
     // BUILDING METHODS
@@ -42,6 +43,8 @@ public:
     static std::expected<DesiredPlot, incerr::incerr_code> guess_valueCols(DesiredPlot &&dp, DataStore const &ds);
     static std::expected<DesiredPlot, incerr::incerr_code> guess_sizes(DesiredPlot &&dp, DataStore const &ds);
     static std::expected<DesiredPlot, incerr::incerr_code> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds);
+
+    static std::expected<DesiredPlot, incerr::incerr_code> compute_filterFlags(DesiredPlot &&dp, DataStore const &ds);
 
 
     std::optional<std::string> plot_type_name = std::nullopt;
