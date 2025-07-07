@@ -78,9 +78,11 @@ public:
         }
 
         auto get_filteredVariantData(std::vector<unsigned char> const &itemFlags_ext) const {
+            //TODO: Cannot do it this way ... lifetime problems with itemFlags
             if (itemFlags_ext.size() != itemFlags.size()) { assert(false); }
 
-            auto fltr   = [](auto &&a) { return std::get<0>(a) == 0b0; };
+            auto fltr   = [](auto &&a) {
+                 return std::get<0>(a) == 0b0; };
             auto transf = [](auto &&b) { return std::get<1>(b); };
 
             using res_t = std::variant<decltype(std::views::zip(itemFlags_ext, std::get<0>(variant_data)) |

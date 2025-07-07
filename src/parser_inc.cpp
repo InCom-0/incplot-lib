@@ -225,34 +225,42 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto     
         auto   headerItem = csv2Reader.header().begin();
         size_t id         = 0;
 
-        for (auto const &cell : (*csv2Reader.begin())) {
-            if (not(id < hdr_sz)) { return std::unexpected(incerr_c::make(CSV_headerHasLessItemsThanDataRow)); }
+        auto const &rowIter = *csv2Reader.begin();
+        // auto const &aaa = (*rowIter);
 
-            switch (assess_cellType(cell)) {
-                case CellType::double_like:
-                    res.data.push_back(
-                        std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<double>())));
-                    cellTypes.push_back(CellType::double_like);
-                    break;
+        for (auto const &firstRow : csv2Reader) {
+            for (auto const &cell : firstRow) {
+                if (not(id < hdr_sz)) { return std::unexpected(incerr_c::make(CSV_headerHasLessItemsThanDataRow)); }
 
-                case CellType::ll_like:
-                    res.data.push_back(
-                        std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<long long>())));
-                    cellTypes.push_back(CellType::ll_like);
-                    break;
+                switch (assess_cellType(cell)) {
+                    case CellType::double_like:
+                        res.data.push_back(
+                            std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<double>())));
+                        cellTypes.push_back(CellType::double_like);
+                        break;
 
-                case CellType::string_like:
-                    res.data.push_back(
-                        std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<std::string>())));
-                    cellTypes.push_back(CellType::string_like);
-                    break;
-                default: return std::unexpected(incerr_c::make(CSV_unhandledCellType));
+                    case CellType::ll_like:
+                        res.data.push_back(
+                            std::make_pair(std::string((*headerItem).read_view()), varVec_t(std::vector<long long>())));
+                        cellTypes.push_back(CellType::ll_like);
+                        break;
+
+                    case CellType::string_like:
+                        res.data.push_back(std::make_pair(std::string((*headerItem).read_view()),
+                                                          varVec_t(std::vector<std::string>())));
+                        cellTypes.push_back(CellType::string_like);
+                        break;
+                    default: return std::unexpected(incerr_c::make(CSV_unhandledCellType));
+                }
+                res.itemFlags.push_back({});
+                ++id;
+                ++headerItem;
             }
-            res.itemFlags.push_back({});
-            ++id;
-            ++headerItem;
+            if (id != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
+            // Taking just the first row
+            // TODO: This is wierd ... looked into it ... seems the only reasonable way lol ... I must be doing
+            // something wrong :-)
         }
-        if (id != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
     }
 
     for (auto const &row : csv2Reader) {

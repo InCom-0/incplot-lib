@@ -49,7 +49,7 @@ constexpr inline std::u32string convert_u32u8(std::string const &&str) {
 
 template <typename T>
 constexpr inline auto get_sortedAndUniqued(T &cont) {
-    auto contCpy = cont;
+    auto contCpy = std::ranges::to<std::vector>(cont);
     std::ranges::sort(contCpy, std::less());
     auto [beg, end] = std::ranges::unique(contCpy);
     contCpy.erase(beg, end);
@@ -247,7 +247,7 @@ constexpr inline std::tuple<double, double> compute_minMaxMulti(auto &&vectorOfV
 
     auto ol_set = [&](auto const &var) -> void {
         auto &ref = var.get();
-        using vl = std::ranges::range_value_t<decltype(ref)>;
+        using vl  = std::ranges::range_value_t<decltype(ref)>;
         if constexpr (std::is_arithmetic_v<vl>) {
             auto [minV_l, maxV_l] = std::ranges::minmax(ref);
             res.first             = std::min(res.first, static_cast<double>(minV_l));
@@ -266,6 +266,7 @@ constexpr inline std::tuple<double, double> compute_minMaxMulti_ALT(auto &&vecto
     auto ol_set = [&](auto &var) -> void {
         using val_type = std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>;
         if constexpr (std::is_arithmetic_v<val_type>) {
+            
             auto [minV_l, maxV_l] = std::ranges::minmax(var);
             res.first             = std::min(res.first, static_cast<double>(minV_l));
             res.second            = std::max(res.second, static_cast<double>(maxV_l));

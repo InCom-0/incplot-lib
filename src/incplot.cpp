@@ -34,8 +34,7 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const 
         .guess_missingParams(ds.value())
         .and_then(std::bind_back(build_plot_structure, ds.value()))
         .transform([](auto &&ps_var) {
-            auto const ol_set = [&](auto &&ps) -> std::string { return ps.build_plotAsString(); };
-            return std::visit(ol_set, ps_var);
+            return std::visit([&](auto &&ps) -> std::string { return ps.build_plotAsString(); }, ps_var);
         });
 }
 

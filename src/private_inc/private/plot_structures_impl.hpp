@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <functional>
 #include <limits>
 #include <ranges>
@@ -27,7 +29,6 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
 
     using self_t      = std::remove_cvref_t<decltype(self)>;
     using expOfSelf_t = std::expected<self_t, incerr_c>;
-
 
     return std::bind_back(&self_t::template initialize_data_views<self_t>, dp, ds)(std::move(self))
 
@@ -197,6 +198,17 @@ inline std::string Base::build_plotAsString() const {
 
 auto BarV::initialize_data_views(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    auto colIDs = std::vector(1, dp.labelTS_colID.value());
+    colIDs.append_range(dp.values_colIDs);
+    auto const filterFlags = ds.compute_filterFlags(colIDs);
+
+    if (dp.labelTS_colID.has_value()) {
+        self.labelTS_colView = ds.get_filteredViewOfData({dp.labelTS_colID.value()}, filterFlags);
+    }
+    if (dp.cat_colID.has_value()) { self.cat_colView = ds.get_filteredViewOfData({dp.cat_colID.value()}, filterFlags); }
+
+    self.values_colViews = ds.get_filteredViewOfData(dp.values_colIDs, filterFlags);
     return self;
 }
 
@@ -205,17 +217,17 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
 
     // VERTICAL LEFT LABELS SIZE
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-        auto &labelColVarRef = ds.m_data.at(dp.labelTS_colID.value()).variant_data;
+        // auto &labelColVarRef = ds.m_data.at(dp.labelTS_colID.value()).variant_data;
 
-        auto olset = [](auto const &var) -> size_t {
-            if constexpr (std::same_as<std::decay_t<decltype(var)>, std::vector<std::string>>) {
+        auto olset = [](auto &var) -> size_t {
+            if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
                 return std::ranges::max(
                     std::views::transform(var, [](auto const &a) { return detail::strlen_utf8(a); }));
             }
             else { return Config::max_sizeOfValueLabels; }
         };
 
-        auto const maxLabelSize = std::visit(olset, labelColVarRef);
+        auto const maxLabelSize = std::visit(olset, self.labelTS_colView.at(0));
 
         self.labels_verLeftWidth = std::min(
             Config::axisLabels_maxLength_vl,
@@ -228,11 +240,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
         // catCol is specified meaning the legend will be uniqued values from that column
         if (dp.cat_colID.has_value()) {
-            auto cat_values = std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.m_data), [&](auto const &a) {
-                return std::get<0>(a) == dp.cat_colID.value();
-            }));
-
-            auto create_catIDs_vec = [&](auto const &vec) -> std::vector<std::string> {
+            auto create_catIDs_vec = [&](auto &vec) -> std::vector<std::string> {
                 auto sortedUniqued = detail::get_sortedAndUniqued(vec);
                 if constexpr (std::same_as<typename decltype(sortedUniqued)::value_type, std::string>) {
                     return sortedUniqued;
@@ -243,7 +251,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
                     return res;
                 }
             };
-            auto catIDs_vec = std::visit(create_catIDs_vec, cat_values.variant_data);
+            auto catIDs_vec = std::visit(create_catIDs_vec, self.cat_colView.at(0));
 
             size_t maxSize =
                 std::ranges::max(std::views::transform(catIDs_vec, [](auto const &a) { return a.size(); }));
@@ -302,8 +310,10 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
 
     // Plot area height (-2 is for the 2 horizontal axes positions)
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-        self.areaHeight =
-            std::visit([](auto const &a) { return a.size(); }, ds.m_data.at(dp.labelTS_colID.value()).variant_data);
+
+
+        self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
+                                     self.values_colViews.at(0));
     }
     else if (not dp.targetHeight.has_value()) {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
@@ -374,13 +384,13 @@ auto BarV::compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStor
 auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
+    // Empty label at the top
     self.labels_verLeft.push_back(
         std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
 
-    auto const &labelsRef = ds.m_data.at(dp.labelTS_colID.value());
-    auto        olset     = [&](auto const &vari) -> void {
-        if constexpr (std::same_as<std::decay_t<decltype(vari)>, std::vector<std::string>>) {
-            for (auto const &rawLabel : vari) {
+    auto olset = [&](auto &var) -> void {
+        if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            for (auto const &rawLabel : var) {
                 self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
                 for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
                     self.labels_verLeft.back().push_back(Config::space);
@@ -388,7 +398,7 @@ auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore 
             }
         }
         else {
-            for (auto const &rawLabelNumeric : vari) {
+            for (auto const &rawLabelNumeric : var) {
                 self.labels_verLeft.push_back(
                     detail::trim2Size_leading(detail::format_toMax5length(rawLabelNumeric), self.labels_verLeftWidth));
                 for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
@@ -398,8 +408,9 @@ auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore 
         }
     };
 
-    std::visit(olset, labelsRef.variant_data);
+    std::visit(olset, self.labelTS_colView.at(0));
 
+    // Empty label at the bottom
     self.labels_verLeft.push_back(
         std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
 
@@ -431,7 +442,7 @@ auto BarV::compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore co
     self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
     return self;
 }
-// All corners are simply empty as default ... but can possibly be used for something later if overrided in
+// All corners are simply empty as default ... but can possibly be used for something later if overriden in
 // derived
 auto BarV::compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
@@ -557,11 +568,13 @@ auto BarV::compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStor
 auto BarV::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
-    auto computeLabels = [&](auto const &valColRef) -> void {
-        if constexpr (std::same_as<std::decay_t<decltype(valColRef)>, std::vector<std::string>>) { assert(false); }
+    auto computeLabels = [&](auto &var) -> void {
+        if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            assert(false);
+        }
         else {
             size_t const fillerSize = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
-            auto const [minV, maxV] = std::ranges::minmax(valColRef);
+            auto const [minV, maxV] = std::ranges::minmax(var);
             auto   stepSize         = (maxV - minV) / static_cast<double>((self.areaWidth));
             size_t placedChars      = 0;
 
@@ -595,7 +608,7 @@ auto BarV::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore 
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
         self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
     }
-    else { std::visit(computeLabels, ds.m_data.at(dp.values_colIDs.front()).variant_data); }
+    else { std::visit(computeLabels, self.values_colViews.at(0)); }
 
     return self;
 }
@@ -606,28 +619,28 @@ auto BarV::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore 
 
     auto vecOfViews = ds.get_filteredViewOfData({dp.values_colIDs.front()});
 
-    auto computePA = [&]<typename T>(T &valColRef) -> void {
+    auto computePA = [&](auto &var) -> void {
         using view_vari_t = std::remove_cvref_t<decltype(vecOfViews)>::value_type;
-        if constexpr (std::same_as<std::remove_cvref_t<decltype(valColRef)>,
-                                   std::variant_alternative_t<0, view_vari_t>>) {
+        if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
             assert(false);
         }
         else {
-            auto const [minV, maxV] = std::ranges::minmax(valColRef);
+            auto const [minV, maxV] = std::ranges::minmax(var);
             long long scalingFactor;
-            if constexpr (std::is_integral_v<std::ranges::range_value_t<decltype(valColRef)>>) {
+            if constexpr (std::is_integral_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
                 scalingFactor = std::numeric_limits<long long>::max() / (std::max(std::abs(maxV), std::abs(minV)));
             }
-            else if constexpr (std::is_floating_point_v<std::ranges::range_value_t<decltype(valColRef)>>) {
+            else if constexpr (std::is_floating_point_v<std::ranges::range_value_t<decltype(var)>>) {
                 scalingFactor = 1;
             }
-            else { assert(false); } // Can't plot non-numeric values
+            // Not std::string but not integral or floating point either => impossible
+            else { assert(false); }
 
             auto maxV_adj = maxV * scalingFactor;
             auto minV_adj = minV * scalingFactor;
             auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth);
 
-            for (auto const &val : valColRef) {
+            for (auto const &val : var) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
                 self.plotArea.push_back(TermColors::get_basicColor(dp.color_basePalette.front()));
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
@@ -639,7 +652,7 @@ auto BarV::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore 
         }
     };
 
-    std::visit(computePA, vecOfViews.front());
+    std::visit(computePA, self.values_colViews.at(0));
     return self;
 }
 // ### END BAR V ###
@@ -698,14 +711,7 @@ auto Scatter::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataSto
         return res;
     };
 
-    auto yValCols_fv =
-        std::views::filter(std::views::enumerate(ds.m_data),
-                           [&](auto const &pr) {
-                               return (std::ranges::find(dp.values_colIDs, std::get<0>(pr)) != dp.values_colIDs.end());
-                           }) |
-        std::views::transform([](auto const &pr2) { return std::get<1>(pr2).variant_data; });
-
-    auto [minV, maxV] = detail::compute_minMaxMulti_ALT(yValCols_fv);
+    auto [minV, maxV] = detail::compute_minMaxMulti_ALT(self.values_colViews);
     self.labels_verLeft =
         getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
 
@@ -721,9 +727,9 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
             std::get<1>(*std::ranges::find_if(std::views::enumerate(ds.vec_colVariants),
                                               [&](auto const &a) { return std::get<0>(a) == dp.cat_colID.value(); }));
 
-        auto create_catIDs_vec = [&](auto const &vec) -> std::vector<std::string> {
-            auto sortedUniqued = detail::get_sortedAndUniqued(vec.get());
-            if constexpr (std::same_as<typename decltype(sortedUniqued)::value_type, std::string>) {
+        auto create_catIDs_vec = [&](auto &view) -> std::vector<std::string> {
+            auto sortedUniqued = detail::get_sortedAndUniqued(view);
+            if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(sortedUniqued)>>>) {
                 return sortedUniqued;
             }
             else {
@@ -732,7 +738,7 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
                 return res;
             }
         };
-        auto uniquedCats_vec = std::visit(create_catIDs_vec, cat_values);
+        auto uniquedCats_vec = std::visit(create_catIDs_vec, self.cat_colView.at(0));
         // horTop axis line
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
@@ -766,7 +772,7 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
                         .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(ds.colNames.at(dp.values_colIDs.at(lineID)),
+                        .append(detail::trim2Size_ending(ds.m_data.at(dp.values_colIDs.at(lineID)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
@@ -804,7 +810,7 @@ auto Scatter::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore
 auto Scatter::compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // Name of the TS column
-    self.axisName_horBottom = detail::trim2Size_leadingEnding(ds.colNames.at(dp.labelTS_colID.value()), self.areaWidth);
+    self.axisName_horBottom = detail::trim2Size_leadingEnding(ds.m_data.at(dp.labelTS_colID.value()).name, self.areaWidth);
     return self;
 }
 auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
@@ -854,7 +860,7 @@ auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataSto
                                  [&](auto &&pr) { return std::get<0>(pr) == dp.labelTS_colID.value(); }) |
               std::views::transform([](auto &&item) { return std::get<1>(item).variant_data; });
 
-    auto [minV, maxV] = detail::compute_minMaxMulti_ALT(rf);
+    auto [minV, maxV] = detail::compute_minMaxMulti_ALT(self.labelTS_colView);
     computeLabels(minV, maxV);
 
     return self;
