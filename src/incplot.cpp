@@ -38,7 +38,7 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const 
         });
 }
 
-std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData) {
+std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct &&dp_ctrs, std::string_view inputData) {
     return make_plot(dp_ctrs, inputData);
 }
 
@@ -53,7 +53,7 @@ std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, s
                                : std::string("\n\nAdditional context:\n").append(res.error().get_customMessage()));
     }
 }
-std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData) {
+std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct &&dp_ctrs, std::string_view inputData) {
     return make_plot_collapseUnExp(dp_ctrs, inputData);
 }
 

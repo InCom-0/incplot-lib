@@ -30,14 +30,13 @@ public:
 
     struct DS_CtorObj {
         std::vector<std::pair<std::string, varCol_t>> data;
-        std::vector<std::vector<unsigned char>>       itemFlags;
+        std::vector<std::vector<unsigned int>>        itemFlags;
     };
-
 
     struct Column {
         std::string                                                                         name;
         parsedVal_t                                                                         colType;
-        std::vector<unsigned char>                                                          itemFlags;
+        std::vector<unsigned int>                                                           itemFlags;
         std::variant<std::vector<std::string>, std::vector<long long>, std::vector<double>> variant_data;
 
         template <typename CT>
@@ -77,7 +76,7 @@ public:
             // TODO: Cannot do it this way ... lifetime problems with itemFlags
             if (itemFlags_ext.size() != itemFlags.size()) { assert(false); }
 
-            auto fltr   = [](auto &&a) { return std::get<0>(a) == 0b0; };
+            auto fltr   = [](auto &&a) { return std::get<0>(a) == 0; };
             auto transf = [](auto &&b) { return std::get<1>(b); };
 
             using res_t = std::variant<decltype(std::views::zip(itemFlags_ext, std::get<0>(variant_data)) |
@@ -110,14 +109,14 @@ public:
     };
 
     // Data descriptors
-    std::vector<std::string>                    colNames;
-    std::vector<std::pair<parsedVal_t, size_t>> colTypes; // First =  ColType, Second = ID in data vector
-    std::vector<std::vector<unsigned char>>     itemFlags;
+    // std::vector<std::string>                    colNames;
+    // std::vector<std::pair<parsedVal_t, size_t>> colTypes;
+    // std::vector<std::vector<unsigned char>>     itemFlags;
 
     // Actual data storage
-    std::vector<std::vector<std::string>> stringCols;
-    std::vector<std::vector<long long>>   llCols; // Don't care about signed unsigned, etc. ... all will be long long
-    std::vector<std::vector<double>>      doubleCols;
+    // std::vector<std::vector<std::string>> stringCols;
+    // std::vector<std::vector<long long>>   llCols;
+    // std::vector<std::vector<double>>      doubleCols;
 
     std::vector<Column> m_data;
 
@@ -131,11 +130,6 @@ public:
 
     // COMPARISON
     bool operator==(const DataStore &other) const {
-        if (colNames != other.colNames) { return false; }
-        if (colTypes != other.colTypes) { return false; }
-        if (stringCols != other.stringCols) { return false; }
-        if (llCols != other.llCols) { return false; }
-        if (doubleCols != other.doubleCols) { return false; }
         return true;
     }
 
@@ -181,7 +175,7 @@ public:
     std::vector<unsigned int> compute_filterFlags(std::vector<size_t> const &colsToGet) const {
         if (m_data.size() < 1) { assert(false); }
 
-        std::vector<unsigned int> res(m_data.front().itemFlags.size(), 0b0);
+        std::vector<unsigned int> res(m_data.front().itemFlags.size(), 0u);
 
         for (auto const &selID : colsToGet) {
             // Non existent column ID or itemFlag sizes do not match

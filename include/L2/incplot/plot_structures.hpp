@@ -1,8 +1,8 @@
 #pragma once
 
-#include "incplot/datastore.hpp"
 #include <incplot/desired_plot.hpp>
 #include <optional>
+#include <string>
 #include <vector>
 
 
@@ -22,17 +22,20 @@ using incerr_c = incerr::incerr_code;
 // coupled with 'deducing this' feature of C++23
 class Base {
 protected:
-    using vec_val_t =
-        decltype(std::declval<DataStore::Column &>().get_filteredVariantData(std::vector<unsigned int>()));
+    // LEGACY WAY TO ACCESS DATA ... local views into the data held in DataStore    
 
-    std::optional<vec_val_t> labelTS_colView = std::nullopt;
-    std::optional<vec_val_t> cat_colView     = std::nullopt;
-    std::vector<vec_val_t>   values_colViews;
+    // using vec_val_t =
+    //     decltype(std::declval<DataStore::Column &>().get_filteredVariantData(std::vector<unsigned int>()));
 
+    // std::optional<vec_val_t> labelTS_dataView = std::nullopt;
+    // std::optional<vec_val_t> LOC_cat_dataView     = std::nullopt;
+    // std::vector<vec_val_t>   LOC_values_dataViews;
+
+    // NEW WAY TO ACCESS DATA ... local copies of the data in question
     // TODO: Explore performance when the filtered data is copied here from DataStore
-    std::optional<DataStore::varCol_t> LOC_labelTS_colView = std::nullopt;
-    std::optional<DataStore::varCol_t> LOC_cat_colView     = std::nullopt;
-    std::vector<DataStore::varCol_t>   LOC_values_colViews;
+    std::optional<DataStore::varCol_t> labelTS_data = std::nullopt;
+    std::optional<DataStore::varCol_t> cat_data     = std::nullopt;
+    std::vector<DataStore::varCol_t>   values_data;
 
 public:
     // Descriptors - First thing to be computed.
@@ -80,6 +83,8 @@ public:
     std::string areaCorner_tr;
 
     std::vector<std::string> plotArea;
+
+    std::string footer = "";
 
     // Compute size in bytes (for reserving the output str size), not size in 'displayed characters'
     size_t compute_lengthOfSelf() const;
@@ -151,6 +156,9 @@ private:
 
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+
+    auto compute_footer(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 };
 
 class BarV : public Base {
@@ -208,6 +216,9 @@ private:
 
 
     auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+    auto compute_footer(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 

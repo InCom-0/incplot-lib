@@ -59,7 +59,8 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
         .and_then(std::bind_back(&self_t::template compute_axisName_hb<self_t>, dp, ds))
         .and_then(std::bind_back(&self_t::template compute_labels_hb<self_t>, dp, ds))
 
-        .and_then(std::bind_back(&self_t::template compute_plot_area<self_t>, dp, ds));
+        .and_then(std::bind_back(&self_t::template compute_plot_area<self_t>, dp, ds))
+        .and_then(std::bind_back(&self_t::template compute_footer<self_t>, dp, ds));
 }
 inline size_t Base::compute_lengthOfSelf() const {
 
@@ -189,6 +190,8 @@ inline std::string Base::build_plotAsString() const {
         result.push_back('\n');
     }
 
+    result.append(footer);
+
     // Add padding on bottom
     for (int i = 0; i < pad_bottom; ++i) { result.push_back('\n'); }
     return result;
@@ -201,16 +204,28 @@ auto BarV::initialize_data_views(this auto &&self, DesiredPlot const &dp, DataSt
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     if (dp.labelTS_colID.has_value()) {
-        self.labelTS_colView = ds.get_filteredViewOfData(dp.labelTS_colID.value(), dp.filterFlags);
+        auto dataView = ds.get_filteredViewOfData(dp.labelTS_colID.value(), dp.filterFlags);
+
+        auto create_LOC_storage = [&](auto &var) { self.labelTS_data = std::ranges::to<std::vector>(var); };
+        std::visit(create_LOC_storage, dataView);
     }
     else { return std::unexpected(incerr_c::make(INI_labelTS_colID_isNull)); }
 
     if (dp.cat_colID.has_value()) {
-        self.cat_colView = ds.get_filteredViewOfData(dp.cat_colID.value(), dp.filterFlags);
+        auto dataView = ds.get_filteredViewOfData(dp.cat_colID.value(), dp.filterFlags);
+
+        auto create_LOC_storage = [&](auto &var) { self.cat_data = std::ranges::to<std::vector>(var); };
+        std::visit(create_LOC_storage, dataView);
     }
 
     if (dp.values_colIDs.size() == 0) { return std::unexpected(incerr_c::make(INI_values_colIDs_isEmpty)); }
-    else { self.values_colViews = ds.get_filteredViewOfData(dp.values_colIDs, dp.filterFlags); }
+    else {
+        auto dataViews = ds.get_filteredViewOfData(dp.values_colIDs, dp.filterFlags);
+        for (auto &viewRef : dataViews) {
+            auto create_LOC_storage = [&](auto &var) { self.values_data.push_back(std::ranges::to<std::vector>(var)); };
+            std::visit(create_LOC_storage, viewRef);
+        }
+    }
 
     return self;
 }
@@ -230,7 +245,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
             else { return Config::max_sizeOfValueLabels; }
         };
 
-        auto const maxLabelSize = std::visit(olset, self.labelTS_colView.value());
+        auto const maxLabelSize = std::visit(olset, self.labelTS_data.value());
 
         self.labels_verLeftWidth = std::min(
             Config::axisLabels_maxLength_vl,
@@ -255,7 +270,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
                 }
             };
 
-            auto   catIDs_vec = std::visit(create_catIDs_vec, self.cat_colView.value());
+            auto   catIDs_vec = std::visit(create_catIDs_vec, self.cat_data.value());
             size_t maxSize =
                 std::ranges::max(std::views::transform(catIDs_vec, [](auto const &a) { return a.size(); }));
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
@@ -316,7 +331,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
 
 
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
-                                     self.values_colViews.at(0));
+                                     self.values_data.at(0));
     }
     else if (not dp.targetHeight.has_value()) {
         if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
@@ -411,7 +426,7 @@ auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore 
         }
     };
 
-    std::visit(olset, self.labelTS_colView.value());
+    std::visit(olset, self.labelTS_data.value());
 
     // Empty label at the bottom
     self.labels_verLeft.push_back(
@@ -611,7 +626,7 @@ auto BarV::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore 
     if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
         self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
     }
-    else { std::visit(computeLabels, self.values_colViews.at(0)); }
+    else { std::visit(computeLabels, self.values_data.at(0)); }
 
     return self;
 }
@@ -653,7 +668,33 @@ auto BarV::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore 
         }
     };
 
-    std::visit(computePA, self.values_colViews.at(0));
+    std::visit(computePA, self.values_data.at(0));
+    return self;
+}
+
+auto BarV::compute_footer(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    if ((not dp.display_filtered_bool.has_value()) || dp.display_filtered_bool.value() == false) { return self; }
+
+    auto filteredCount = std::ranges::count_if(dp.filterFlags, [](auto const &ff) { return ff != 0; });
+    if (filteredCount == 0) { return self; }
+
+    std::string res1("\n");
+    res1.append("Warning:\n");
+    res1.append("The following rows were filtered out because they contained 'null' values:\n");
+    auto viewOfFiltered = std::views::enumerate(dp.filterFlags) |
+                          std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b1; }) |
+                          std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
+
+    for (auto const &f_item : viewOfFiltered) {
+        res1.append(std::to_string(f_item));
+        res1.push_back(',');
+        res1.push_back(' ');
+    }
+    res1.pop_back();
+    res1.pop_back();
+
+    self.footer = res1;
     return self;
 }
 // ### END BAR V ###
@@ -712,7 +753,7 @@ auto Scatter::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataSto
         return res;
     };
 
-    auto [minV, maxV] = detail::compute_minMaxMulti(self.values_colViews);
+    auto [minV, maxV] = detail::compute_minMaxMulti(self.values_data);
     self.labels_verLeft =
         getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
 
@@ -736,7 +777,7 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
                 return res;
             }
         };
-        auto uniquedCats_vec = std::visit(create_catIDs_vec, self.cat_colView.value());
+        auto uniquedCats_vec = std::visit(create_catIDs_vec, self.cat_data.value());
         // horTop axis line
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
@@ -849,7 +890,7 @@ auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataSto
         self.label_horBottom.append(Config::term_setDefault);
     };
 
-    auto [minV, maxV] = detail::compute_minMaxMulti(self.labelTS_colView.value());
+    auto [minV, maxV] = detail::compute_minMaxMulti(self.labelTS_data.value());
     computeLabels(minV, maxV);
 
     return self;
@@ -871,11 +912,11 @@ auto Scatter::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataSto
             return catIDs_vec;
         };
 
-        opt_catIDs_vec = std::visit(create_catIDs_vec, self.cat_colView.value());
+        opt_catIDs_vec = std::visit(create_catIDs_vec, self.cat_data.value());
     }
 
-    self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_colView,
-                                                      self.values_colViews, opt_catIDs_vec, dp.color_basePalette);
+    self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_data,
+                                                      self.values_data, opt_catIDs_vec, dp.color_basePalette);
 
     return self;
 }
@@ -900,8 +941,8 @@ auto Multiline::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataSto
 auto Multiline::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
-    self.plotArea = detail::BrailleDrawer::drawLines(self.areaWidth, self.areaHeight, self.labelTS_colView.value(),
-                                                     self.values_colViews, dp.color_basePalette);
+    self.plotArea = detail::BrailleDrawer::drawLines(self.areaWidth, self.areaHeight, self.labelTS_data.value(),
+                                                     self.values_data, dp.color_basePalette);
     return self;
 }
 
