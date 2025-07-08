@@ -31,7 +31,9 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
     using self_t      = std::remove_cvref_t<decltype(self)>;
     using expOfSelf_t = std::expected<self_t, incerr_c>;
 
-    return std::bind_back(&self_t::template initialize_data_views<self_t>, dp, ds)(std::move(self))
+
+
+    return std::move(self).initialize_data_views(dp, ds)
 
         .and_then(std::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds))
         .and_then(std::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
