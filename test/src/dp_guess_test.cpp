@@ -290,7 +290,11 @@ TEST(DP_guess_TSCol, wine_quality_impossible) {
     auto ds = get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
-    incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{std::from_range, std::views::iota(0uz, 12uz)}};
+    incplot::DesiredPlot::DP_CtorStruct dpctrs;
+    for (auto i : std::views::iota(0uz, 12uz)) { dpctrs.v_colIDs.push_back(i); }
+
+    // TODO: Use the thing below once C++23 is properly supported on CI (ie. with GCC 15)
+    // incplot::DesiredPlot::DP_CtorStruct dpctrs2{.v_colIDs{std::from_range, std::views::iota(0uz, 12uz)}};
 
     auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
                       .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
