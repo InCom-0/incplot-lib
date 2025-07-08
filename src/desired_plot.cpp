@@ -446,7 +446,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_filterFlags
     std::vector<size_t> colIDs;
     if (dp.labelTS_colID.has_value()) { colIDs.push_back(dp.labelTS_colID.value()); }
     if (dp.cat_colID.has_value()) { colIDs.push_back(dp.cat_colID.value()); }
-    colIDs.append_range(dp.values_colIDs);
+    for (auto const &colID : dp.values_colIDs) { colIDs.push_back(colID); }
 
     dp.filterFlags = ds.compute_filterFlags(colIDs);
 

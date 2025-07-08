@@ -60,13 +60,20 @@ void DataStore::append_data(DataStore::DS_CtorObj const &ctorObj) {
     for (int id = 0; auto &[_, colt_t, flags, data] : m_data) {
         auto visi = [&](auto &&dataVari) {
             if (std::holds_alternative<std::remove_cvref_t<decltype(dataVari)>>(ctorObj.data.at(id).second)) {
-                dataVari.append_range(std::get<std::remove_cvref_t<decltype(dataVari)>>(ctorObj.data.at(id).second));
+
+                for (auto const &item : std::get<std::remove_cvref_t<decltype(dataVari)>>(ctorObj.data.at(id).second)) {
+                    dataVari.push_back(item);
+                }
+                // Once implemented in libc++
+                // dataVari.append_range(std::get<std::remove_cvref_t<decltype(dataVari)>>(ctorObj.data.at(id).second));
             }
             else { assert(false); }
         };
-
         std::visit(visi, data);
-        flags.append_range(ctorObj.itemFlags.at(id));
+
+        for (auto const &item : ctorObj.itemFlags.at(id)) { flags.push_back(item); }
+        // Once implemented in libc++
+        // flags.append_range(ctorObj.itemFlags.at(id));
         ++id;
     }
 }
