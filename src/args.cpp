@@ -1,3 +1,4 @@
+#include "incplot/config.hpp"
 #include <incplot/args.hpp>
 #include <incplot/plot_structures.hpp>
 #include <optional>
@@ -26,6 +27,7 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
             if (stddev != 0) { res.back().filter_outsideStdDev = stddev.value(); }
             else { res.back().filter_outsideStdDev = std::nullopt; }
         }
+        else { res.back().filter_outsideStdDev = Config::filter_withinStdDevMultiple_default; }
 
         res.back().plot_type_name = sv_opt;
         if (auto optVal = inout_ap.present<int>("-x")) { res.back().lts_colID = optVal.value(); }
@@ -70,9 +72,10 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
     out_ap.add_argument("-c", "--category").help("Specify the column used to group the data").nargs(1).scan<'d', int>();
     out_ap.add_argument("-c", "--category").help("Specify the column used to group the data").nargs(1).scan<'d', int>();
     out_ap.add_argument("-e", "--filter-extremes")
-        .help("Specify a multiple of standard deviation above and below which data is filtered ('0' means no filtering")
+        .help(std::format("Specify a multiple of standard deviation above and below which data is filtered('0' means "
+                          "no filtering) [default = {}]",
+                          Config::filter_withinStdDevMultiple_default))
         .nargs(1)
-        .default_value(Config::filter_withinStdDevMultiple_default)
         .scan<'d', int>();
 
 
