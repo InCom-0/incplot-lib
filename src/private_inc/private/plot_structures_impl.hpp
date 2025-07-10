@@ -28,12 +28,10 @@ auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &
     // Can only build it from rvalue ...
     if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
-    using self_t      = std::remove_cvref_t<decltype(self)>;
-    using expOfSelf_t = std::expected<self_t, incerr_c>;
+    using self_t = std::remove_cvref_t<decltype(self)>;
 
-
-
-    return std::move(self).initialize_data_views(dp, ds)
+    return std::move(self)
+        .initialize_data_views(dp, ds)
 
         .and_then(std::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds))
         .and_then(std::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
@@ -681,21 +679,41 @@ auto BarV::compute_footer(this auto &&self, DesiredPlot const &dp, DataStore con
     auto filteredCount = std::ranges::count_if(dp.filterFlags, [](auto const &ff) { return ff != 0; });
     if (filteredCount == 0) { return self; }
 
-    std::string res1("\n");
-    res1.append("Warning:\n");
-    res1.append("The following rows were filtered out because they contained 'null' values:\n");
-    auto viewOfFiltered = std::views::enumerate(dp.filterFlags) |
-                          std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b1; }) |
-                          std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
-
-    for (auto const &f_item : viewOfFiltered) {
-        res1.append(std::to_string(f_item));
-        res1.push_back(',');
-        res1.push_back(' ');
+    std::string res1{};
+    if (std::ranges::any_of(dp.filterFlags, [](auto const &ff) { return ff & 0b1; })) {
+        res1.push_back('\n');
+        res1.append("Warning:\n");
+        res1.append("The following rows were filtered out because they contained 'null' values:\n");
+        auto viewOfFiltered = std::views::enumerate(dp.filterFlags) |
+                              std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b1; }) |
+                              std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
+        for (auto const &f_item : viewOfFiltered) {
+            res1.append(std::to_string(f_item));
+            res1.push_back(',');
+            res1.push_back(' ');
+        }
+        res1.pop_back();
+        res1.pop_back();
+        res1.push_back('\n');
     }
-    res1.pop_back();
-    res1.pop_back();
-
+    if (std::ranges::any_of(dp.filterFlags, [](auto const &ff) { return ff & 0b10; })) {
+        res1.append("\n");
+        res1.append("Warning:\n");
+        res1.append(std::format(
+            "The following rows were filtered out because they contained extreme values outside {}σ from mean:\n",
+            dp.filter_outsideStdDev.value()));
+        auto viewOfFiltered = std::views::enumerate(dp.filterFlags) |
+                              std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b10; }) |
+                              std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
+        for (auto const &f_item : viewOfFiltered) {
+            res1.append(std::to_string(f_item));
+            res1.push_back(',');
+            res1.push_back(' ');
+        }
+        res1.pop_back();
+        res1.pop_back();
+        res1.push_back('\n');
+    }
     self.footer = res1;
     return self;
 }

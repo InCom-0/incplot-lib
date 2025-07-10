@@ -7388,12 +7388,13 @@ Zeekr,X Long Range RWD (MY25),190,65.0,Lithium-ion,,343,146,360,5.6,114,CCS,1600
 Zeekr,X Privilege AWD (MY25),190,65.0,Lithium-ion,,543,153,350,3.8,114,CCS,1600,362,5,AWD,JB - Compact,4432,1836,1566,SUV,https://ev-database.org/car/3199/Zeekr-X-Privilege-AWD
 firefly,,150,41.2,Lithium-ion,112,200,125,250,8.1,65,CCS,0,404,5,RWD,B - Compact,4003,1885,1557,Hatchback,https://ev-database.org/car/3178/firefly-firefly)");
 
-    auto dpCtor_Structs = incplot::CL_Args::get_dpCtorStruct();
+    auto dpCtor_Structs                         = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
     // dpCtor_Structs.front().plot_type_name = "Multiline";
     // dpCtor_Structs.front().tar_width = 100;
     // dpCtor_Structs.front().availableWidth  = 200;
     // dpCtor_Structs.front().availableHeight = 15;
+    dpCtor_Structs.front().filter_outsideStdDev = 6.0;
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

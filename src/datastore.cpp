@@ -2,6 +2,7 @@
 
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
+#include <incstd/numeric.hpp>
 #include <utility>
 
 namespace incom {
@@ -81,6 +82,60 @@ void DataStore::append_data(DataStore::DS_CtorObj const &ctorObj) {
 void DataStore::append_fakeLabelCol(size_t const sz) {
     m_data.push_back(
         Column{Config::noLabel, parsedVal_t::string_like, std::vector(sz, 0u), std::vector<std::string>(sz, "")});
+}
+
+std::vector<unsigned int> DataStore::compute_filterFlags(std::vector<size_t> const  &colsToGet,
+                                                         std::optional<double> const allowedStdDevitation) const {
+    if (m_data.size() < 1) { assert(false); }
+
+    std::vector<unsigned int> res(m_data.front().itemFlags.size(), 0u);
+
+    // Filter flags for 'null' values based just on the selected columns
+    for (auto const &selID : colsToGet) {
+        // Non existent column ID or itemFlag sizes do not match
+        if (selID >= m_data.size() || m_data.at(selID).itemFlags.size() != m_data.front().itemFlags.size()) {
+            assert(false);
+        }
+        for (size_t i = 0; auto const &flag : m_data.at(selID).itemFlags) { res[i++] |= flag; }
+    }
+
+    // Filter based on standard deviation (excluding extreme values)
+    if (allowedStdDevitation.has_value() && allowedStdDevitation.value() != 0.0) {
+        std::vector<unsigned int> res2(m_data.front().itemFlags.size(), 0u);
+        for (auto const &selID : colsToGet) {
+
+            auto lam = [&](auto const &varVec) -> void {
+                using v_t = std::remove_cvref_t<decltype(varVec)>::value_type;
+
+                if constexpr (not std::is_arithmetic_v<v_t>) { return; }
+                else {
+
+                    auto v = std::views::zip(res, varVec) |
+                             std::views::filter([](auto &&tpl) { return std::get<0>(tpl) == 0u; }) |
+                             std::views::transform([](auto &&tpl2) { return std::get<1>(tpl2); });
+
+                    v_t    sum   = 0;
+                    size_t count = 0;
+                    for (auto const &item : v) {
+                        sum += item;
+                        count++;
+                    }
+                    double avg = static_cast<double>(sum) / count;
+
+                    auto stddev  = incom::standard::numeric::compute_stdDeviation(v);
+                    stddev      *= allowedStdDevitation.value();
+                    for (size_t i = 0; i < res.size(); ++i) {
+                        if (res[i] == 0u) { res2[i] |= (std::abs(varVec[i] - avg) < stddev) ? 0b00 : 0b10; }
+                    }
+                    return;
+                }
+            };
+
+            std::visit(lam, m_data.at(selID).variant_data);
+        }
+        for (size_t i = 0; i < res.size(); ++i) { res[i] |= res2[i]; }
+    }
+    return res;
 }
 
 } // namespace terminal_plot

@@ -39,6 +39,10 @@ public:
     static constexpr std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
     static constexpr std::array<char32_t, 4> blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
 
+    // DATA
+    static constexpr double filter_withinStdDevMultiple_default = 6.0;
+    static constexpr bool   display_filtered_bool_default       = true;
+
 
     // COLORS
     static constexpr Color_CVTS color_Axes_enum  = Color_CVTS::Bright_Foreground_Black;
@@ -69,9 +73,9 @@ public:
 
     // OTHER PLOT SETTINGS
 
-    static constexpr size_t min_plotWidth = 24uz;
-    static constexpr size_t max_plotWidth = 256uz;
-    static constexpr size_t default_targetWidth = 64uz;
+    static constexpr size_t min_plotWidth            = 24uz;
+    static constexpr size_t max_plotWidth            = 256uz;
+    static constexpr size_t default_targetWidth      = 64uz;
     static constexpr double scale_availablePlotWidth = 0.75;
 
     static constexpr size_t min_plotHeight = 5uz;

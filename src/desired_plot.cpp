@@ -448,7 +448,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_filterFlags
     if (dp.cat_colID.has_value()) { colIDs.push_back(dp.cat_colID.value()); }
     for (auto const &colID : dp.values_colIDs) { colIDs.push_back(colID); }
 
-    dp.filterFlags = ds.compute_filterFlags(colIDs);
+    dp.filterFlags = ds.compute_filterFlags(colIDs, dp.filter_outsideStdDev);
 
     return dp;
 };

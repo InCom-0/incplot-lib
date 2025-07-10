@@ -1,5 +1,6 @@
 #include <incplot/args.hpp>
 #include <incplot/plot_structures.hpp>
+#include <optional>
 #include <private/detail.hpp>
 
 
@@ -21,6 +22,10 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
         res.push_back(DesiredPlot::DP_CtorStruct());
         if (auto wdt = inout_ap.present<int>("-w")) { res.back().tar_width = wdt.value(); }
         if (auto hgt = inout_ap.present<int>("-t")) { res.back().tar_height = hgt.value(); }
+        if (auto stddev = inout_ap.present<int>("-e")) {
+            if (stddev != 0) { res.back().filter_outsideStdDev = stddev.value(); }
+            else { res.back().filter_outsideStdDev = std::nullopt; }
+        }
 
         res.back().plot_type_name = sv_opt;
         if (auto optVal = inout_ap.present<int>("-x")) { res.back().lts_colID = optVal.value(); }
@@ -45,7 +50,8 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct() {
 void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
     out_ap.add_description(
         "Draw coloured plots using unicode symbols inside terminal.\n\nAutomatically infers what to display and "
-        "how based on the shape of the data piped in.\nPipe in data in JSON, JSON Lines, NDJSON, CSV or TSV formats. All "
+        "how based on the shape of the data piped in.\nPipe in data in JSON, JSON Lines, NDJSON, CSV or TSV formats. "
+        "All "
         "arguments "
         "are optional");
 
@@ -62,6 +68,12 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
         .nargs(1, 6)
         .scan<'d', int>();
     out_ap.add_argument("-c", "--category").help("Specify the column used to group the data").nargs(1).scan<'d', int>();
+    out_ap.add_argument("-c", "--category").help("Specify the column used to group the data").nargs(1).scan<'d', int>();
+    out_ap.add_argument("-e", "--filter-extremes")
+        .help("Specify a multiple of standard deviation above and below which data is filtered ('0' means no filtering")
+        .nargs(1)
+        .default_value(Config::filter_withinStdDevMultiple_default)
+        .scan<'d', int>();
 
 
     out_ap.add_group("Size options");

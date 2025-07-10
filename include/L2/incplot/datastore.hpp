@@ -108,6 +108,7 @@ public:
         }
     };
 
+
     // Data descriptors
     // std::vector<std::string>                    colNames;
     // std::vector<std::pair<parsedVal_t, size_t>> colTypes;
@@ -129,9 +130,7 @@ public:
     DataStore(DS_CtorObj const &&vecOfDataVecs) : DataStore(vecOfDataVecs) {};
 
     // COMPARISON
-    bool operator==(const DataStore &other) const {
-        return true;
-    }
+    bool operator==(const DataStore &other) const { return true; }
 
     // APPENDING
     void append_data(DS_CtorObj const &vecOfDataVecs);
@@ -143,7 +142,7 @@ public:
     const auto get_filteredViewOfData(std::vector<size_t> const       &colsToGet,
                                       std::vector<unsigned int> const &itemFlags_ext) const {
 
-        using vec_val_t = decltype(std::declval<Column &>().get_filteredVariantData(std::vector<unsigned int>()));
+        using vec_val_t = decltype(Column().get_filteredVariantData(std::vector<unsigned int>()));
         std::vector<vec_val_t> res;
 
         for (auto const &oneCol : colsToGet) {
@@ -151,17 +150,18 @@ public:
         }
         return res;
     }
+
     const auto get_filteredViewOfData(std::vector<size_t> const      &&colsToGet,
                                       std::vector<unsigned int> const &itemFlags_ext) const {
         return get_filteredViewOfData(colsToGet, itemFlags_ext);
     }
 
-    const auto get_filteredViewOfData(std::vector<size_t> const &colsToGet) const {
-        auto flags = compute_filterFlags(colsToGet);
+    const auto get_filteredViewOfData(std::vector<size_t> const &colsToGet, double const stdDeviation) const {
+        auto flags = compute_filterFlags(colsToGet, stdDeviation);
         return get_filteredViewOfData(colsToGet, flags);
     }
-    const auto get_filteredViewOfData(std::vector<size_t> const &&colsToGet) const {
-        return get_filteredViewOfData(colsToGet);
+    const auto get_filteredViewOfData(std::vector<size_t> const &&colsToGet, double const stdDeviation) const {
+        return get_filteredViewOfData(colsToGet, stdDeviation);
     }
 
     const auto get_filteredViewOfData(size_t const &colToGet, std::vector<unsigned int> const &itemFlags_ext) const {
@@ -172,22 +172,11 @@ public:
     }
 
 
-    std::vector<unsigned int> compute_filterFlags(std::vector<size_t> const &colsToGet) const {
-        if (m_data.size() < 1) { assert(false); }
-
-        std::vector<unsigned int> res(m_data.front().itemFlags.size(), 0u);
-
-        for (auto const &selID : colsToGet) {
-            // Non existent column ID or itemFlag sizes do not match
-            if (selID >= m_data.size() || m_data.at(selID).itemFlags.size() != m_data.front().itemFlags.size()) {
-                assert(false);
-            }
-            for (size_t i = 0; auto const &flag : m_data.at(selID).itemFlags) { res[i++] |= flag; }
-        }
-        return res;
-    }
-    std::vector<unsigned int> compute_filterFlags(std::vector<size_t> const &&colsToGet) const {
-        return compute_filterFlags(colsToGet);
+    std::vector<unsigned int> compute_filterFlags(std::vector<size_t> const  &colsToGet,
+                                                  std::optional<double> const stdDeviation) const;
+    std::vector<unsigned int> compute_filterFlags(std::vector<size_t> const &&colsToGet,
+                                                  std::optional<double> const stdDeviation) const {
+        return compute_filterFlags(colsToGet, stdDeviation);
     }
 };
 

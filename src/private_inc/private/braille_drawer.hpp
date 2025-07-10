@@ -159,23 +159,20 @@ public:
 
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
                                               auto &view_varValCols, std::array<Color_CVTS, 6> colorPalette) {
-
-
         BrailleDrawer bd(canvas_width, canvas_height,
                          std::ranges::count_if(view_varValCols, [](auto const &a) { return true; }), colorPalette);
 
-
+        auto [xMin, xMax] = compute_minMaxMulti(view_labelTS_col);
         auto [yMin, yMax] = compute_minMaxMulti(view_varValCols);
-        double xStepSize  = 1;
+        double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
-
 
         auto placePointOnCanvas = [&](auto const &yVal, auto const &xVal, size_t const &groupID) {
             size_t y       = static_cast<size_t>(((yVal - yMin) / yStepSize)) / 4;
             size_t yChrPos = static_cast<size_t>(((yVal - yMin) / yStepSize)) % 4;
 
-            size_t x       = static_cast<size_t>(xVal) / 2;
-            size_t xChrPos = static_cast<size_t>(xVal) % 2;
+            size_t x       = static_cast<size_t>(((xVal - xMin) / xStepSize)) / 2;
+            size_t xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
 
             bd.m_canvasBraille[y][x]                                         |= Config::braille_map[yChrPos][xChrPos];
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
@@ -187,15 +184,20 @@ public:
         };
         std::visit(vis, view_labelTS_col);
 
-        double              xScaler = ((canvas_width * 2) - 1) / static_cast<double>(labelTS_col_sz - 1);
-        std::vector<double> xValues;
-        for (size_t i = 0; i < labelTS_col_sz; ++i) { xValues.push_back(i * xScaler); }
+
+        auto createXValues = [](auto const &varVec) {
+            if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(varVec)>>>) {
+                return std::vector<double>{std::from_range, varVec};
+            }
+            else { return std::vector<double>{}; }
+            std::unreachable();
+        };
+        std::vector<double> xValues = std::visit(createXValues, view_labelTS_col);
 
         // Plot actual points on the bd canvas
         for (size_t i = 0; auto one_yValCol : view_varValCols) {
             auto olSet = [&](auto &oneCol) -> void {
                 if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(oneCol)>>>) {
-
                     for (auto const &[yVal, xVal] : std::views::zip(oneCol, xValues)) {
                         placePointOnCanvas(yVal, xVal, i);
                     }

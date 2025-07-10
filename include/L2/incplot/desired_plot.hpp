@@ -6,6 +6,7 @@
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/err.hpp>
+#include <utility>
 
 
 namespace incom {
@@ -72,11 +73,13 @@ public:
         Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
     };
 
-    std::optional<bool> valAxesNames_bool     = std::nullopt;
-    std::optional<bool> valAxesLabels_bool    = std::nullopt;
-    std::optional<bool> valAutoFormat_bool    = std::nullopt;
-    std::optional<bool> legend_bool           = std::nullopt;
-    std::optional<bool> display_filtered_bool = true;
+    std::optional<bool> valAxesNames_bool  = std::nullopt;
+    std::optional<bool> valAxesLabels_bool = std::nullopt;
+    std::optional<bool> valAutoFormat_bool = std::nullopt;
+    std::optional<bool> legend_bool        = std::nullopt;
+
+    std::optional<double> filter_outsideStdDev  = std::nullopt;
+    std::optional<bool>   display_filtered_bool = std::nullopt;
 
     // TODO: Provide some compile time programmatic way to set the default sizes here
     struct DP_CtorStruct {
@@ -90,27 +93,32 @@ public:
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
             Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
-        std::optional<std::string> lts_colName     = std::nullopt;
-        std::vector<std::string>   v_colNames      = {};
-        std::optional<std::string> c_colName       = std::nullopt;
-        std::optional<size_t>      availableWidth  = std::nullopt;
-        std::optional<size_t>      availableHeight = std::nullopt;
+        std::optional<std::string> lts_colName           = std::nullopt;
+        std::vector<std::string>   v_colNames            = {};
+        std::optional<std::string> c_colName             = std::nullopt;
+        std::optional<size_t>      availableWidth        = std::nullopt;
+        std::optional<size_t>      availableHeight       = std::nullopt;
+        std::optional<double>      filter_outsideStdDev  = std::nullopt;
+        std::optional<bool>        display_filtered_bool = Config::display_filtered_bool_default;
     };
 
     DesiredPlot(DP_CtorStruct &&dp_struct)
-        : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
+        : targetWidth(std::move(dp_struct.tar_width)), targetHeight(std::move(dp_struct.tar_height)),
           plot_type_name(std::move(dp_struct.plot_type_name)), labelTS_colID(std::move(dp_struct.lts_colID)),
           values_colIDs(std::move(dp_struct.v_colIDs)), cat_colID(std::move(dp_struct.c_colID)),
           color_basePalette(std::move(dp_struct.colors)), labelTS_colName(std::move(dp_struct.lts_colName)),
           values_colNames(std::move(dp_struct.v_colNames)), cat_colName(std::move(dp_struct.c_colName)),
-          availableWidth(std::move(dp_struct.availableWidth)), availableHeight(std::move(dp_struct.availableHeight)) {}
+          availableWidth(std::move(dp_struct.availableWidth)), availableHeight(std::move(dp_struct.availableHeight)),
+          filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
+          display_filtered_bool(std::move(dp_struct.display_filtered_bool)) {}
     DesiredPlot(DP_CtorStruct const &dp_struct)
         : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
           plot_type_name(dp_struct.plot_type_name), labelTS_colID(dp_struct.lts_colID),
           values_colIDs(dp_struct.v_colIDs), cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors),
           labelTS_colName(dp_struct.lts_colName), values_colNames(dp_struct.v_colNames),
           cat_colName(dp_struct.c_colName), availableWidth(dp_struct.availableWidth),
-          availableHeight(dp_struct.availableHeight) {}
+          availableHeight(dp_struct.availableHeight), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
+          display_filtered_bool(dp_struct.display_filtered_bool) {}
 
     // Create a new copy and guess_missingParams on it.
     std::expected<DesiredPlot, incerr::incerr_code> build_guessedParamsCPY(this DesiredPlot &self,
