@@ -187,7 +187,7 @@ public:
 
         auto createXValues = [](auto const &varVec) {
             if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(varVec)>>>) {
-                return std::vector<double>{std::from_range, varVec};
+                return std::vector<double>(varVec.begin(), varVec.end());
             }
             else { return std::vector<double>{}; }
             std::unreachable();
