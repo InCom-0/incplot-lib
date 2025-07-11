@@ -38,7 +38,7 @@ if(MINGW AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
 endif()
 
 if((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
-  target_link_options(incplot-lib PUBLIC -static -static-libgcc -static-libstdc++)
+  target_link_options(incplot-lib PUBLIC -static-libgcc -static-libstdc++)
 endif()
 
 
