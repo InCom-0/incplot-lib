@@ -58,7 +58,6 @@ public:
     std::optional<size_t>      labelTS_colID   = std::nullopt; // ID in m_data
     std::optional<std::string> labelTS_colName = std::nullopt;
 
-    // TODO: Make both 'values_' into std::optional as well to keep the logic the same for all here
     std::vector<size_t>      values_colIDs   = {}; // IDs in m_data
     std::vector<std::string> values_colNames = {};
 

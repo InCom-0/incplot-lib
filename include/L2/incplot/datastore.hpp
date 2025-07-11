@@ -73,7 +73,6 @@ public:
         }
 
         auto get_filteredVariantData(std::vector<unsigned int> const &itemFlags_ext) const {
-            // TODO: Cannot do it this way ... lifetime problems with itemFlags
             if (itemFlags_ext.size() != itemFlags.size()) { assert(false); }
 
             auto fltr   = [](auto &&a) { return std::get<0>(a) == 0; };
