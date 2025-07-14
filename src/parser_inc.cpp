@@ -6,6 +6,7 @@
 #include <print>
 
 #include <ranges>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -13,6 +14,14 @@
 
 #include <csv2/reader.hpp>
 #include <nlohmann/json.hpp>
+
+#include <cppcoro/filesystem.hpp>
+#include <cppcoro/io_service.hpp>
+#include <cppcoro/read_only_file.hpp>
+#include <cppcoro/static_thread_pool.hpp>
+#include <cppcoro/sync_wait.hpp>
+#include <cppcoro/task.hpp>
+#include <cppcoro/when_all.hpp>
 
 #include <incplot/parsers_inc.hpp>
 
@@ -314,7 +323,34 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto     
 // JSON AND NDJSON
 std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_view const &trimmed) {
 
+    // cppcoro::static_thread_pool threadPool(4);
+
+    // using retType = cppcoro::task<NLMjson>;
+
+
+    // auto process_chunk_async = [](cppcoro::static_thread_pool &tp, auto const inputData) -> retType {
+    //     co_await tp.schedule();
+    //     co_return NLMjson::parse(inputData);
+    // };
+
+    // auto run = [&](cppcoro::static_thread_pool &tp,
+    //                std::string_view const &trimmed) -> cppcoro::task<std::vector<NLMjson>> {
+    //     std::vector<retType> tasks;
+
+    //     auto ssv = std::views::split(trimmed, '\n') |
+    //                std::views::transform([](auto const &in) { return std::string_view(in); });
+
+    //     for (auto const &item : ssv) { tasks.push_back(process_chunk_async(tp, item)); }
+    //     auto aa = co_await cppcoro::when_all(std::move(tasks));
+
+    //     co_return aa;
+    // };
+
+    // = cppcoro::sync_wait(run(threadPool, trimmed));
+
     std::vector<NLMjson> parsed;
+
+
     for (auto const &oneLine : std::views::split(trimmed, '\n') |
                                    std::views::transform([](auto const &in) { return std::string_view(in); })) {
         NLMjson oneLineJson;
@@ -339,8 +375,8 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_
 
     for (auto const &[key, val] : parsed.front().items()) {
         if (val.type() == NLMjson::value_t::string) {
-            res.data.push_back(std::make_pair(
-                key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<std::string>())));
+            res.data.push_back(
+                std::make_pair(key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<std::string>())));
         }
         else if (val.type() == NLMjson::value_t::number_float) {
             res.data.push_back(
@@ -430,8 +466,8 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_JSON(std::string_vi
             }
             else if (val.type() == NLMjson::value_t::number_integer ||
                      val.type() == NLMjson::value_t::number_unsigned) {
-                res.data.push_back(std::make_pair(
-                    key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<long long>())));
+                res.data.push_back(
+                    std::make_pair(key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<long long>())));
             }
             else {}
             temp_firstLineTypes.push_back(val.type());
@@ -496,8 +532,8 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_JSON(std::string_vi
             }
             else if (val.type() == NLMjson::value_t::number_integer ||
                      val.type() == NLMjson::value_t::number_unsigned) {
-                res2.data.push_back(std::make_pair(
-                    key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<long long>())));
+                res2.data.push_back(
+                    std::make_pair(key, DataStore::vec_pr_varCol_t::value_type::second_type(std::vector<long long>())));
             }
             else { return std::unexpected(incerr_c::make(JSON_unhandledCellType)); }
             temp_firstLineTypes.push_back(val.type());

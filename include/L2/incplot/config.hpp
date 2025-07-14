@@ -68,8 +68,8 @@ public:
     static constexpr double                      colors_scaleDistanceFromBlack = 0.55;
 
     // MULTILINE
-    static constexpr size_t y_interpolationMultiplier = 4;
-    static constexpr size_t x_interpolationMultiplier = 4;
+    static constexpr size_t y_interpolationMultiplier = 4uz;
+    static constexpr size_t x_interpolationMultiplier = 4uz;
 
     // OTHER PLOT SETTINGS
 

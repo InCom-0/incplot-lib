@@ -143,7 +143,6 @@ constexpr size_t get_axisFillerSize(size_t axisLength, size_t axisStepCount) {
     return (axisLength - axisStepCount) / (axisStepCount + 1);
 }
 
-// TODO: Also make a version where the tick positions are explictily specified in one vector of size_t
 constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
                                                                 size_t totalLength) {
     size_t fillerSize = get_axisFillerSize(totalLength, steps);
@@ -171,56 +170,6 @@ constexpr inline size_t guess_stepsOnVerAxis(long long height, size_t verticalSt
     height -= (verticalStepSize - 1);
     return (std::max(0ll, height) / verticalStepSize);
 }
-
-
-// Ring vector for future usage in 'scrolling plot' scenarios
-template <typename T>
-class RingVector {
-private:
-    std::vector<T> _m_buf;
-    size_t         head        = 0;
-    size_t         nextRead_ID = 0;
-
-public:
-    RingVector(std::vector<T> &&t) : _m_buf(t) {};
-    RingVector(std::vector<T> &t) : _m_buf(t) {};
-
-    // TODO: Might not need to create a copy here or below once std::views::concatenate from C++26 exists
-    std::vector<T> create_copy() {
-        std::vector<T> res(_m_buf.begin() + head, _m_buf.end());
-        for (int i = 0; i < head; ++i) { res.push_back(_m_buf[i]); }
-        return res;
-    }
-
-    std::vector<T> create_copy_reversed() {
-        std::vector<T> res(_m_buf.rbegin() + (_m_buf.size() - head), _m_buf.rend());
-        for (int i = (_m_buf.size() - 1); i >= head; --i) { res.push_back(_m_buf[i]); }
-        return res;
-    }
-
-    T get_cur() const { return _m_buf[nextRead_ID]; }
-    T get_cur_and_next() {
-        T res = get_cur();
-        advanceByOne();
-        return res;
-    }
-    T get_cur_and_advanceBy(size_t by = 1) {
-        T res = get_cur();
-        advanceBy(by);
-        return res;
-    }
-
-    void inline advanceByOne() { nextRead_ID = (nextRead_ID + 1) % _m_buf.size(); }
-    void inline advanceBy(int by = 1) { nextRead_ID = (nextRead_ID + by) % _m_buf.size(); }
-
-    // On insertion resets nextRead_ID to head as well
-    void insertAtHead(T &&item) { insertAtHead(item); }
-    void insertAtHead(T const &item) {
-        _m_buf[head] = item;
-        head         = (head + 1) % _m_buf.size();
-        nextRead_ID  = head;
-    }
-};
 
 template <typename T>
 requires std::is_arithmetic_v<std::decay_t<T>>

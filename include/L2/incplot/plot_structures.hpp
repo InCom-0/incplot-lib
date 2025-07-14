@@ -32,7 +32,6 @@ protected:
     // std::vector<vec_val_t>   LOC_values_dataViews;
 
     // NEW WAY TO ACCESS DATA ... local copies of the data in question
-    // TODO: Explore performance when the filtered data is copied here from DataStore
     std::optional<DataStore::varCol_t> labelTS_data = std::nullopt;
     std::optional<DataStore::varCol_t> cat_data     = std::nullopt;
     std::vector<DataStore::varCol_t>   values_data;

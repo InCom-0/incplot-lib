@@ -13,8 +13,6 @@ namespace terminal_plot {
 // Encapsulates parsing of the input into DataStore
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
-// TODO: Would it be possible to cleave he parser from the library so that it is easier to customize later?
-// TODO: How would one do the above in a reasonable manner?
 namespace parsers {
 
 using incerr_c = incerr::incerr_code;
@@ -49,7 +47,6 @@ class Parser {
 
 
     // COMPOSITION METHODS
-    // TODO: Maybe make this public for later use?
     static std::expected<input_t, incerr_c>               assess_inputType(std::string_view const &sv);
     static std::expected<DataStore::DS_CtorObj, incerr_c> dispatch_toParsers(input_t const          &inp_t,
                                                                              std::string_view const &sv);

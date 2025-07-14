@@ -48,3 +48,10 @@ FetchContent_Declare(
     GIT_TAG v0.9.7
 )
 FetchContent_MakeAvailable(magic_enum)
+
+FetchContent_Declare(
+    cppcoro
+    GIT_REPOSITORY https://github.com/andreasbuhr/cppcoro.git
+    GIT_TAG        main
+)
+FetchContent_MakeAvailable(cppcoro)
