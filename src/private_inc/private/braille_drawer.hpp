@@ -25,21 +25,22 @@ private:
                   std::array<Color_CVTS, 6> const &colorPalette)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))),
+
+          m_pointsCountPerPos_perColor(std::vector(
+              canvas_height,
+              std::vector(
+                  canvas_width,
+                  std::array<std::array<std::vector<size_t>, 2>, 4>{
+                      {{std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
+                       {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
+                       {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
+                       {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)}}}))),
           m_colorPallete{detail::convert_u32u8(TermColors::get_basicColor(colorPalette[0])),
                          detail::convert_u32u8(TermColors::get_basicColor(colorPalette[1])),
                          detail::convert_u32u8(TermColors::get_basicColor(colorPalette[2])),
                          detail::convert_u32u8(TermColors::get_basicColor(colorPalette[3])),
                          detail::convert_u32u8(TermColors::get_basicColor(colorPalette[4])),
-                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[5]))},
-          m_pointsCountPerPos_perColor(std::vector(
-              canvas_height,
-              std::vector(canvas_width,
-                          std::array<std::array<std::vector<size_t>, 2>, 4>{
-                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
-                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
-                              std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz),
-                              std::vector<size_t>(numOf_categories, 0uz),
-                              std::vector<size_t>(numOf_categories, 0uz)}))) {};
+                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[5]))} {};
 
     void compute_canvasColors() {
         ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor));
@@ -178,11 +179,11 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
         };
 
-        size_t labelTS_col_sz = 0;
-        auto   vis            = [&](auto &&var) {
-            for (auto const &a : var) { labelTS_col_sz++; }
-        };
-        std::visit(vis, view_labelTS_col);
+        // size_t labelTS_col_sz = 0;
+        // auto   vis            = [&](auto &&var) {
+        //     for (auto const &_ : var) { labelTS_col_sz++; }
+        // };
+        // std::visit(vis, view_labelTS_col);
 
 
         auto createXValues = [](auto const &varVec) {

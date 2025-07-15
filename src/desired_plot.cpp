@@ -152,10 +152,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     size_t tsLikeIndexCols_count =
         std::ranges::count_if(dp.m_colAssessments, [](auto const &colPars) { return colPars.is_timeSeriesLikeIndex; });
 
-    size_t labelCols_sz = std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr) {
-        // Must be string AND not categoryLike
-        return (std::get<0>(pr).colType == parsedVal_t::string_like && not std::get<1>(pr).is_categoryLike);
-    });
+    // size_t labelCols_sz = std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr) {
+    //     // Must be string AND not categoryLike
+    //     return (std::get<0>(pr).colType == parsedVal_t::string_like && not std::get<1>(pr).is_categoryLike);
+    // });
 
     // ACTUAL DEICISIOM MAKING
     // Can't plot anything without at least 1 value column

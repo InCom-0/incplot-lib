@@ -61,8 +61,8 @@ public:
     std::vector<size_t>      values_colIDs   = {}; // IDs in m_data
     std::vector<std::string> values_colNames = {};
 
-    std::optional<size_t> targetHeight = std::nullopt;
     std::optional<size_t> targetWidth  = std::nullopt;
+    std::optional<size_t> targetHeight = std::nullopt;
 
     std::optional<size_t> availableWidth  = std::nullopt;
     std::optional<size_t> availableHeight = std::nullopt;
@@ -102,21 +102,22 @@ public:
     };
 
     DesiredPlot(DP_CtorStruct &&dp_struct)
-        : targetWidth(std::move(dp_struct.tar_width)), targetHeight(std::move(dp_struct.tar_height)),
-          plot_type_name(std::move(dp_struct.plot_type_name)), labelTS_colID(std::move(dp_struct.lts_colID)),
-          values_colIDs(std::move(dp_struct.v_colIDs)), cat_colID(std::move(dp_struct.c_colID)),
-          color_basePalette(std::move(dp_struct.colors)), labelTS_colName(std::move(dp_struct.lts_colName)),
-          values_colNames(std::move(dp_struct.v_colNames)), cat_colName(std::move(dp_struct.c_colName)),
-          availableWidth(std::move(dp_struct.availableWidth)), availableHeight(std::move(dp_struct.availableHeight)),
+        : plot_type_name(std::move(dp_struct.plot_type_name)), cat_colID(std::move(dp_struct.c_colID)),
+          cat_colName(std::move(dp_struct.c_colName)), labelTS_colID(std::move(dp_struct.lts_colID)),
+          labelTS_colName(std::move(dp_struct.lts_colName)), values_colIDs(std::move(dp_struct.v_colIDs)),
+          values_colNames(std::move(dp_struct.v_colNames)), targetWidth(std::move(dp_struct.tar_width)),
+          targetHeight(std::move(dp_struct.tar_height)), availableWidth(std::move(dp_struct.availableWidth)),
+          availableHeight(std::move(dp_struct.availableHeight)), color_basePalette(std::move(dp_struct.colors)),
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
           display_filtered_bool(std::move(dp_struct.display_filtered_bool)) {}
     DesiredPlot(DP_CtorStruct const &dp_struct)
-        : targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
-          plot_type_name(dp_struct.plot_type_name), labelTS_colID(dp_struct.lts_colID),
-          values_colIDs(dp_struct.v_colIDs), cat_colID(dp_struct.c_colID), color_basePalette(dp_struct.colors),
-          labelTS_colName(dp_struct.lts_colName), values_colNames(dp_struct.v_colNames),
-          cat_colName(dp_struct.c_colName), availableWidth(dp_struct.availableWidth),
-          availableHeight(dp_struct.availableHeight), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
+        : plot_type_name(dp_struct.plot_type_name), cat_colID(dp_struct.c_colID),
+          cat_colName(dp_struct.c_colName), labelTS_colID(dp_struct.lts_colID),
+          labelTS_colName(dp_struct.lts_colName), values_colIDs(dp_struct.v_colIDs),
+          values_colNames(dp_struct.v_colNames), targetWidth(dp_struct.tar_width),
+          targetHeight(dp_struct.tar_height), availableWidth(dp_struct.availableWidth),
+          availableHeight(dp_struct.availableHeight), color_basePalette(dp_struct.colors),
+          filter_outsideStdDev(dp_struct.filter_outsideStdDev),
           display_filtered_bool(dp_struct.display_filtered_bool) {}
 
     // Create a new copy and guess_missingParams on it.

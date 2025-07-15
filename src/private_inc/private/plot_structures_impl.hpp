@@ -144,7 +144,7 @@ inline std::string Base::build_plotAsString() const {
     result.push_back('\n');
 
     // Add plot area lines
-    for (size_t i = 0; i < areaHeight; ++i) {
+    for (long long i = 0; i < areaHeight; ++i) {
         result.append(std::string(pad_left, Config::space));
         if (axisName_verLeft_bool) { result.push_back(axisName_verLeft.at(i)); }
         result.append(std::string((Config::axis_verName_width_vl - 1) * axisName_verLeft_bool, Config::space));
@@ -312,7 +312,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
                      (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
                      self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
                      self.pad_right;
-    if (self.areaWidth < Config::min_areaWidth) {
+    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth)) {
         return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
     }
 
@@ -359,7 +359,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
                           self.labels_horTop_bool - 2ll - self.labels_horBottom_bool - self.axisName_horBottom_bool -
                           self.pad_bottom;
     }
-    if (self.areaHeight < Config::min_areaHeight) {
+    if (self.areaHeight < static_cast<long long>(Config::min_areaHeight)) {
         return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
     }
 
@@ -410,7 +410,7 @@ auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore 
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
             for (auto const &rawLabel : var) {
                 self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
-                for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
+                for (size_t i = 0; i < Config::axisLabels_padRight_vl; ++i) {
                     self.labels_verLeft.back().push_back(Config::space);
                 }
             }
@@ -419,7 +419,7 @@ auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore 
             for (auto const &rawLabelNumeric : var) {
                 self.labels_verLeft.push_back(
                     detail::trim2Size_leading(detail::format_toMax5length(rawLabelNumeric), self.labels_verLeftWidth));
-                for (int i = 0; i < Config::axisLabels_padRight_vl; ++i) {
+                for (size_t i = 0; i < Config::axisLabels_padRight_vl; ++i) {
                     self.labels_verLeft.back().push_back(Config::space);
                 }
             }
@@ -749,8 +749,8 @@ auto Scatter::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataSto
         // Value label of 'zero point'
         res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
 
-        for (int id = 0; id < self.axis_verLeftSteps; ++id) {
-            for (int fillID = 0; fillID < fillerLength; ++fillID) {
+        for (size_t id = 0; id < self.axis_verLeftSteps; ++id) {
+            for (size_t fillID = 0; fillID < fillerLength; ++fillID) {
                 res.at(id * (fillerLength + 1) + fillID + 1).append(filler);
             }
             // Value label at the current position
@@ -760,14 +760,14 @@ auto Scatter::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataSto
         }
 
         // Filler up to 'max point'
-        for (int i = self.axis_verLeftSteps * (fillerLength + 1) + 1; i < res.size() - 1; ++i) {
+        for (size_t i = self.axis_verLeftSteps * (fillerLength + 1) + 1; i < res.size() - 1; ++i) {
             res.at(i).append(filler);
         }
 
         // Value label of 'max point'
         res.back().append(detail::trim2Size_leading(detail::format_toMax5length(maxVal), labelsWidth));
         for (auto &line : res) {
-            for (int i = 0; i < padRight; ++i) { line.push_back(Config::space); }
+            for (size_t i = 0; i < padRight; ++i) { line.push_back(Config::space); }
         }
         std::ranges::reverse(res);
         return res;
@@ -802,7 +802,7 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
-        for (size_t lineID = 0; lineID < self.areaHeight; ++lineID) {
+        for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
             if (lineID < uniquedCats_vec.size()) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
@@ -826,7 +826,7 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
-        for (size_t lineID = 0; lineID < self.areaHeight; ++lineID) {
+        for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
             if (lineID < (dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
@@ -861,7 +861,7 @@ auto Scatter::compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore
 
 auto Scatter::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    for (size_t i = 0; i < self.areaWidth; ++i) { self.axis_horTop.push_back(Config::axisFiller_t); }
+    for (long long i = 0; i < self.areaWidth; ++i) { self.axis_horTop.push_back(Config::axisFiller_t); }
     return self;
 }
 
