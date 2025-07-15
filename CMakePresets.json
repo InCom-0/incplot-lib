@@ -18,6 +18,17 @@
             ]
         },
         {
+            "name": "MSYS2_UCRT_gcc_Release_TRACY",
+            "hidden": false,
+            "inherits": [
+                "gcc_Release",
+                "MSYS_default_into_PATH"
+            ],
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-DTRACY_ENABLE -DTRACY_NO_EXIT"
+            }
+        },
+        {
             "name": "gcc_Debug",
             "displayName": "gcc DBG",
             "hidden": false,

@@ -55,3 +55,12 @@ FetchContent_Declare(
     GIT_TAG        main
 )
 FetchContent_MakeAvailable(cppcoro)
+
+FetchContent_Declare (
+    tracy
+    GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+    GIT_TAG master
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS FALSE
+)
+FetchContent_MakeAvailable(tracy)
