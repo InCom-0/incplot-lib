@@ -15,13 +15,13 @@
 #include <csv2/reader.hpp>
 #include <nlohmann/json.hpp>
 
-#include <cppcoro/filesystem.hpp>
-#include <cppcoro/io_service.hpp>
-#include <cppcoro/read_only_file.hpp>
-#include <cppcoro/static_thread_pool.hpp>
-#include <cppcoro/sync_wait.hpp>
-#include <cppcoro/task.hpp>
-#include <cppcoro/when_all.hpp>
+// #include <cppcoro/filesystem.hpp>
+// #include <cppcoro/io_service.hpp>
+// #include <cppcoro/read_only_file.hpp>
+// #include <cppcoro/static_thread_pool.hpp>
+// #include <cppcoro/sync_wait.hpp>
+// #include <cppcoro/task.hpp>
+// #include <cppcoro/when_all.hpp>
 
 #include <incplot/parsers_inc.hpp>
 

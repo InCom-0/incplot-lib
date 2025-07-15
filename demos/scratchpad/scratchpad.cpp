@@ -1,12 +1,12 @@
 #include <print>
 #include <string>
-#include <unistd.h>
 
 #include <incplot.hpp>
 
 // IMPLEMENTED CROSS PLATFORM SPECIFICS JUST FOR THIS DEMO
 #if defined(_WIN64)
 #include <windows.h>
+#include <io.h>
 
 #elif defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
 #include <sys/ioctl.h>

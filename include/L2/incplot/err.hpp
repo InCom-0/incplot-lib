@@ -101,12 +101,15 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
         case Unexp_plotSpecs::GCC_noSuitableCatColForBarH:
             return "There is no suitable category column and it is required for the selected horizontal bar chart"sv;
         case Unexp_plotSpecs::GCC_specifiedCatColCantBeUsedAsCatCol:
-            static const std::string GCC_cccbuacc_r =
-                std::format("The user specified a category column that cannot be used as category column\n"
-                            "This usually happens because the category columm has more than the max number of "
-                            "categories which is: {}",
-                            Config::max_maxNumOfCategories);
-            return std::string_view(GCC_cccbuacc_r);
+            {
+                static std::string GCC_cccbuacc_r;
+                GCC_cccbuacc_r =
+                    std::format("The user specified a category column that cannot be used as category column\n"
+                                "This usually happens because the category columm has more than the max number of "
+                                "categories which is: {}",
+                                Config::max_maxNumOfCategories);
+                return std::string_view(GCC_cccbuacc_r);
+            }
 
         case Unexp_plotSpecs::GCC_cantSelectCatColAndMultipleYCols:
             return "It is not allowed to specify both a category column and multiple y-axis value columns\n"
@@ -125,16 +128,22 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
         case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarH:
             return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) horizontal bar plot"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols:
-            static const std::string GVC_mnyvc_r =
-                std::format("The user selected more than a maximum number of value columns (-y) which is: {}",
-                            Config::max_numOfValCols);
-            return std::string_view(GVC_mnyvc_r);
+            {
+                static std::string GVC_mnyvc_r;
+                GVC_mnyvc_r =
+                    std::format("The user selected more than a maximum number of value columns (-y) which is: {}",
+                                Config::max_numOfValCols);
+                return std::string_view(GVC_mnyvc_r);
+            }
 
         case Unexp_plotSpecs::GVC_selectedMoreThanAllowedOfYvalColsForMultiline:
-            static const std::string GVC_anc_r = std::format(
-                "The user selected more than a maximum number of value columns for MultiLine plot (-y) which is: {}",
-                Config::max_maxNumOfCategories);
-            return std::string_view(GVC_anc_r);
+            {
+                static std::string GVC_anc_r;
+                GVC_anc_r = std::format("The user selected more than a maximum number of value columns for MultiLine "
+                                        "plot (-y) which is: {}",
+                                        Config::max_maxNumOfCategories);
+                return std::string_view(GVC_anc_r);
+            }
 
         case Unexp_plotSpecs::GVC_notEnoughSuitableYvalCols:
             return "There is not enough suitable value columns (y-axis) in the data to satisfy the minimum number required for some plot\n"sv;
@@ -145,17 +154,23 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                    "columns with each representing one category (this is typical for MultiLine plot)\n"
                    "The user is required to select one or the other"sv;
         case Unexp_plotSpecs::GZS_widthTooSmall:
-            static const std::string GZS_wts_r =
-                std::format("The user cannot specify a width of less than: {}", Config::min_plotWidth);
-            return std::string_view(GZS_wts_r);
+            {
+                static std::string GZS_wts_r;
+                GZS_wts_r = std::format("The user cannot specify a width of less than: {}", Config::min_plotWidth);
+                return std::string_view(GZS_wts_r);
+            }
         case Unexp_plotSpecs::GZS_widthTooLarge:
-            static const std::string GZS_wtl_r =
-                std::format("The user cannot specify a width of more than: {}", Config::max_plotWidth);
-            return std::string_view(GZS_wtl_r);
+            {
+                static std::string GZS_wtl_r;
+                GZS_wtl_r = std::format("The user cannot specify a width of more than: {}", Config::max_plotWidth);
+                return std::string_view(GZS_wtl_r);
+            }
         case Unexp_plotSpecs::GZS_heightTooSmall:
-            static const std::string GZS_hts_r =
-                std::format("The user cannot specify a height of less than: {}", Config::max_plotWidth);
-            return std::string_view(GZS_hts_r);
+            {
+                static std::string GZS_hts_r;
+                GZS_hts_r = std::format("The user cannot specify a height of less than: {}", Config::max_plotWidth);
+                return std::string_view(GZS_hts_r);
+            }
 
         default: return "Undocumented error type"sv;
     }

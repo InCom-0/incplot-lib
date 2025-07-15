@@ -188,7 +188,9 @@ public:
 
         auto createXValues = [](auto const &varVec) {
             if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(varVec)>>>) {
-                return std::vector<double>(varVec.begin(), varVec.end());
+                return std::vector<double>{std::from_range, varVec | std::views::transform([](auto &&item) {
+                                                                return static_cast<double>(item);
+                                                            })};
             }
             else { return std::vector<double>{}; }
             std::unreachable();

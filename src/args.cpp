@@ -1,4 +1,3 @@
-#include "incplot/config.hpp"
 #include <incplot/args.hpp>
 #include <incplot/plot_structures.hpp>
 #include <optional>

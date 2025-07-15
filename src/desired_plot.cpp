@@ -152,7 +152,8 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     size_t tsLikeIndexCols_count =
         std::ranges::count_if(dp.m_colAssessments, [](auto const &colPars) { return colPars.is_timeSeriesLikeIndex; });
 
-    // size_t labelCols_sz = std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr) {
+    // size_t labelCols_sz = std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr)
+    // {
     //     // Must be string AND not categoryLike
     //     return (std::get<0>(pr).colType == parsedVal_t::string_like && not std::get<1>(pr).is_categoryLike);
     // });
@@ -407,7 +408,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(Desired
         // Is unknown ... defaulting to Config specified width
         if (not dp.availableWidth.has_value()) { dp.targetWidth = Config::default_targetWidth; }
         // Is known ... using it after scaling down a little
-        else { dp.targetWidth = dp.availableWidth.value() * Config::scale_availablePlotWidth; }
+        else { dp.targetWidth = static_cast<size_t>(dp.availableWidth.value() * Config::scale_availablePlotWidth); }
     }
 
     // Check for unreasonable width sizes

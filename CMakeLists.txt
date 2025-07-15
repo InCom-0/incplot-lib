@@ -53,8 +53,7 @@ target_link_libraries(incplot-lib PRIVATE
 target_link_libraries(incplot-lib PUBLIC
     argparse::argparse
     magic_enum::magic_enum
-    incerr::incerr
-    cppcoro)
+    incerr::incerr)
 
 
 
