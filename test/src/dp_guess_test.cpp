@@ -571,6 +571,7 @@ TEST(DP_guess_plotTypes, plotTypeName_nile_default) {
 
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
+    //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
     EXPECT_EQ(dp_res->plot_type_name.value(), "Multiline");
 }
 TEST(DP_guess_plotTypes, plotTypeName_flights_default) {
@@ -587,6 +588,7 @@ TEST(DP_guess_plotTypes, plotTypeName_flights_default) {
 
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
+    //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
     EXPECT_EQ(dp_res->plot_type_name.value(), "Multiline");
 }
 TEST(DP_guess_plotTypes, plotTypeName_penguins_default) {
@@ -603,6 +605,7 @@ TEST(DP_guess_plotTypes, plotTypeName_penguins_default) {
 
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
+    //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
     EXPECT_EQ(dp_res->plot_type_name.value(), "Scatter");
 }
 TEST(DP_guess_plotTypes, plotTypeName_wine_quality_default) {
@@ -619,5 +622,6 @@ TEST(DP_guess_plotTypes, plotTypeName_wine_quality_default) {
 
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
+    //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
     EXPECT_EQ(dp_res->plot_type_name.value(), "Scatter");
 }
