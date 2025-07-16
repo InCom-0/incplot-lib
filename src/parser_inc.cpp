@@ -30,8 +30,6 @@ namespace terminal_plot {
 // Encapsulates parsing of the input into DataStore
 // Validates 'hard' errors during parsing
 // Validates that input data is not structured 'impossibly' (missing values, different value names per record, etc.)
-// TODO: Would it be possible to cleave he parser from the library so that it is easier to customize later?
-// TODO: How would one do the above in a reasonable manner?
 namespace parsers {
 using NLMjson  = nlohmann::ordered_json;
 using incerr_c = incerr::incerr_code;
