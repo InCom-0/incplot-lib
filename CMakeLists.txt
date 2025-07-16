@@ -42,7 +42,6 @@ if((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (CMAKE_BUILD_TYPE STREQUAL "Release
 endif()
 
 
-
 include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
 target_link_libraries(incplot-lib PRIVATE
     nlohmann_json::nlohmann_json
