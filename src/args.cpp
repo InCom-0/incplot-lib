@@ -69,7 +69,6 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
         .nargs(1, 6)
         .scan<'d', int>();
     out_ap.add_argument("-c", "--category").help("Specify the column used to group the data").nargs(1).scan<'d', int>();
-    out_ap.add_argument("-c", "--category").help("Specify the column used to group the data").nargs(1).scan<'d', int>();
     out_ap.add_argument("-e", "--filter-extremes")
         .help(std::format("Specify a multiple of standard deviation above and below which data is filtered('0' means "
                           "no filtering) [default = {}]",
