@@ -14,7 +14,6 @@
 namespace incom {
 namespace terminal_plot {
 
-namespace incp_d = incom::terminal_plot::detail;
 using incerr_c   = incerr::incerr_code;
 using enum Unexp_plotDrawer;
 

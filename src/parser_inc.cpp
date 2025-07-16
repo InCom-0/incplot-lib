@@ -133,12 +133,13 @@ std::string Parser::conv_cellToString(auto const &csvCell) {
 // COMPOSITION METHODS
 std::expected<input_t, incerr_c> Parser::assess_inputType(std::string_view const &sv) {
     size_t begBrcCount = 0, endBrcCount = 0;
-    for (auto it = sv.begin(); it != sv.end(); ++it) {
-        if (*it == '{') { begBrcCount++; }
+
+    for (auto it : sv) {
+        if (it == '{') { begBrcCount++; }
         else { break; }
     }
-    for (auto it = sv.rbegin(); it != sv.rend(); ++it) {
-        if (*it == '}') { endBrcCount++; }
+    for (auto it : sv | std::views::reverse) {
+        if (it == '}') { endBrcCount++; }
         else { break; }
     }
 

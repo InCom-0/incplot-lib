@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 
-namespace incom::terminal_plot::testing {
+namespace incom::terminal_plot::dataget {
 
 // More efficient when FP (filepath) is known at compile-time
 template <std::string_view const &SV>
