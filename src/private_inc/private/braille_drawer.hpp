@@ -179,13 +179,6 @@ public:
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
         };
 
-        // size_t labelTS_col_sz = 0;
-        // auto   vis            = [&](auto &&var) {
-        //     for (auto const &_ : var) { labelTS_col_sz++; }
-        // };
-        // std::visit(vis, view_labelTS_col);
-
-
         auto createXValues = [](auto const &varVec) {
             std::vector<double> res;
             if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(varVec)>>>) {
