@@ -161,12 +161,12 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
     return res;
 }
 constexpr inline size_t guess_stepsOnHorAxis(long long width, size_t maxLabelSize = Config::max_valLabelSize) {
-    // Substract the beginning and the end label sizes and -2 for spacing
+    // Subtract the beginning and the end label sizes and -2 for spacing
     width += (-2 * maxLabelSize + 2) - 2;
     return (std::max(0ll, width) / (maxLabelSize + 4));
 }
 constexpr inline size_t guess_stepsOnVerAxis(long long height, size_t verticalStepSize = Config::axis_stepSize_vl) {
-    // Substract the beginning and the end label sizes and -2 for spacing
+    // Subtract the beginning and the end label sizes and -2 for spacing
     height -= (verticalStepSize - 1);
     return (std::max(0ll, height) / verticalStepSize);
 }

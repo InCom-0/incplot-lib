@@ -249,8 +249,8 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
         if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForBarV)); }
         else { return dp; }
     }
-    else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarH>()) {
-        if (useableCatCols_tpl_sz == 0) { return std::unexpected(incerr_c::make(GCC_noSuitableCatColForBarH)); }
+    else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarVM>()) {
+        if (useableCatCols_tpl_sz == 0) { return std::unexpected(incerr_c::make(GCC_noSuitableCatColForBarVM)); }
         else if (dp.cat_colID.has_value()) {
             // If the existing catColID can be found in useable CatCols then all OK.
             if (std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
@@ -356,9 +356,9 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
         if (dp.values_colIDs.size() > 1) {
-            return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarH));
+            return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarVM));
         }
         else if (not addValColsUntil(1).has_value()) {
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));

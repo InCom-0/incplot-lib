@@ -1,6 +1,7 @@
 #pragma once
 
 #include <incplot/desired_plot.hpp>
+#include <limits>
 #include <optional>
 #include <string>
 #include <vector>
@@ -22,7 +23,7 @@ using incerr_c = incerr::incerr_code;
 // coupled with 'deducing this' feature of C++23
 class Base {
 protected:
-    // LEGACY WAY TO ACCESS DATA ... local views into the data held in DataStore    
+    // LEGACY WAY TO ACCESS DATA ... local views into the data held in DataStore
 
     // using vec_val_t =
     //     decltype(std::declval<DataStore::Column &>().get_filteredVariantData(std::vector<unsigned int>()));
@@ -35,6 +36,7 @@ protected:
     std::optional<DataStore::varCol_t> labelTS_data = std::nullopt;
     std::optional<DataStore::varCol_t> cat_data     = std::nullopt;
     std::vector<DataStore::varCol_t>   values_data;
+    size_t                             data_rowCount = std::numeric_limits<size_t>::max();
 
 public:
     // Descriptors - First thing to be computed.
@@ -221,8 +223,11 @@ private:
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
-class BarH : public BarV {
+class BarVM : public BarV {
     friend class Base;
+
+    auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class Scatter : public BarV {

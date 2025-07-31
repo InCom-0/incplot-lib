@@ -23,13 +23,13 @@ enum class Unexp_plotSpecs {
     GTSC_noStringLikeColumnForLabelsForBarV,
     GTSC_unreachableCodeReached,
     GCC_cantSpecifyCategoryForBarV,
-    GCC_noSuitableCatColForBarH,
+    GCC_noSuitableCatColForBarVM,
     GCC_specifiedCatColCantBeUsedAsCatCol,
     GCC_cantSelectCatColAndMultipleYCols,
     GCC_categoryColumnIsNotAllowedForMultiline,
     GVC_selectYvalColIsUnuseable,
     GVC_selectedMoreThan1YvalColForBarV,
-    GVC_selectedMoreThan1YvalColForBarH,
+    GVC_selectedMoreThan1YvalColForBarVM,
     GVC_selectedMoreThanMaxNumOfYvalCols,
     GVC_selectedMoreThanAllowedOfYvalColsForMultiline,
     GVC_notEnoughSuitableYvalCols,
@@ -43,6 +43,7 @@ enum class Unexp_plotDrawer {
     // No value '0'
     INI_labelTS_colID_isNull = 1,
     INI_values_colIDs_isEmpty,
+    INI_values_rowCount_isZero,
     C_DSC_areaWidth_insufficient,
     C_DSC_areaHeight_insufficient,
     C_DSC_,
@@ -98,7 +99,7 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
         case Unexp_plotSpecs::GTSC_unreachableCodeReached: return "Hard library error, unreachable code path reached"sv;
         case Unexp_plotSpecs::GCC_cantSpecifyCategoryForBarV:
             return "Category column cannot be specified for (potentially inferred) vertical bar chart"sv;
-        case Unexp_plotSpecs::GCC_noSuitableCatColForBarH:
+        case Unexp_plotSpecs::GCC_noSuitableCatColForBarVM:
             return "There is no suitable category column and it is required for the selected horizontal bar chart"sv;
         case Unexp_plotSpecs::GCC_specifiedCatColCantBeUsedAsCatCol:
             {
@@ -125,7 +126,7 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                    "This usually happens because the column is 'string-like'"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV:
             return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) vertical bar plot"sv;
-        case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarH:
+        case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarVM:
             return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) horizontal bar plot"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols:
             {

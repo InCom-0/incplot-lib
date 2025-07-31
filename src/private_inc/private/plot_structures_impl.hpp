@@ -225,8 +225,10 @@ auto BarV::initialize_data_views(this auto &&self, DesiredPlot const &dp, DataSt
             auto create_LOC_storage = [&](auto &var) { self.values_data.push_back(std::ranges::to<std::vector>(var)); };
             std::visit(create_LOC_storage, viewRef);
         }
+        // Compute row count once so it is not required ad-hoc
+        self.data_rowCount = std::visit([&](auto &&varVec) { return varVec.size(); }, self.values_data.at(0));
+        if (self.data_rowCount == 0) { return std::unexpected(incerr_c::make(INI_values_rowCount_isZero)); }
     }
-
     return self;
 }
 
@@ -316,12 +318,11 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
         return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
     }
 
-    // Labels and axis name bottom
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {} // TODO: Proper assessment for Multiline
-    else {
-        self.labels_horBottom_bool   = true;
-        self.axisName_horBottom_bool = true;
-    }
+    // LABELS AND AXIS NAME HOR BOTTOM
+    // TODO: Proper assessment for Multiline
+    self.labels_horBottom_bool   = true;
+    self.axisName_horBottom_bool = true;
+
 
     // Labels and axis name top ... probably nothing so keeping 0 size
     // ...
@@ -370,7 +371,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     else { self.axis_verLeftSteps = detail::guess_stepsOnVerAxis(self.areaHeight); }
 
 
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
         self.axis_horBottomSteps = self.areaWidth;
     }
     else { self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth); }
@@ -565,7 +566,7 @@ auto BarV::compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore 
 
 auto BarV::compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
     -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
         self.axis_horBottom =
             detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b, self.areaWidth, self.areaWidth);
     }
@@ -623,7 +624,7 @@ auto BarV::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore 
             self.label_horBottom.append(Config::term_setDefault);
         }
     };
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarH>()) {
+    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
         self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
     }
     else { std::visit(computeLabels, self.values_data.at(0)); }
@@ -719,8 +720,69 @@ auto BarV::compute_footer(this auto &&self, DesiredPlot const &dp, DataStore con
 }
 // ### END BAR V ###
 
-// BAR H
-// ### END BAR H ###
+// BAR VM
+
+auto BarVM::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    // VERTICAL LEFT LABELS SIZE
+    auto olset = [](auto &var) -> size_t {
+        if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            return std::ranges::max(std::views::transform(var, [](auto const &a) { return detail::strlen_utf8(a); }));
+        }
+        else { return Config::max_sizeOfValueLabels; }
+    };
+    self.labels_verLeftWidth =
+        std::min(Config::axisLabels_maxLength_vl,
+                 std::min(std::visit(olset, self.labelTS_data.value()),
+                          static_cast<size_t>((dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
+
+    // VERTICAL RIGHT LABELS SIZE
+    // Will be used as 'legend' for some types of Plots
+    auto selColNameSizes = std::views::transform(
+        dp.values_colIDs, [&](auto &&colID) { return detail::strlen_utf8(ds.m_data.at(colID).name); });
+
+    self.labels_verLeftWidth =
+        std::min(Config::axisLabels_maxLength_vr,
+                 std::min(std::ranges::max(selColNameSizes),
+                          static_cast<size_t>((dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
+
+    // VERTICAL AXES NAMES ... LEFT always, RIGHT never
+    self.axisName_verLeft_bool  = false;
+    self.axisName_verRight_bool = false;
+
+    // PLOT AREA
+    // Plot area width (-2 is for the 2 vertical axes positions)
+    self.areaWidth = dp.targetWidth.value() - self.pad_left -
+                     (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
+                     self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
+                     self.pad_right;
+    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth)) {
+        return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
+    }
+
+    // LABELS AND AXIS NAME HOR BOTTOM
+    self.labels_horBottom_bool   = true;
+    self.axisName_horBottom_bool = false;
+
+    // Labels and axis name top ... probably nothing so keeping 0 size
+    // ...
+
+    // PLOT AREA HEIGHT
+    self.areaHeight = (self.data_rowCount * dp.values_colIDs.size()) + (self.data_rowCount - 1);
+    if (self.areaHeight < static_cast<long long>(Config::min_areaHeight)) {
+        return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
+    }
+
+    // Axes steps
+    self.axis_verLeftSteps = self.data_rowCount - 1;
+    self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth);
+
+    // Top and Right axes steps keeping as-is
+
+    return self;
+}
+// ### END BAR VM ###
 
 // SCATTER
 auto Scatter::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
