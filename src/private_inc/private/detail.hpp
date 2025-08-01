@@ -173,7 +173,7 @@ constexpr inline size_t guess_stepsOnVerAxis(long long height, size_t verticalSt
 
 template <typename T>
 requires std::is_arithmetic_v<std::decay_t<T>>
-constexpr inline std::pair<double, std::optional<std::string>> rebase_2_SIPrefix(T &&value) {
+constexpr inline std::pair<double, std::string> rebase_2_SIPrefix(T &&value) {
     if (value == 0) { return {0, ""}; }
     else {
         int target = std::log10(std::abs(value)) / 3 - (std::abs(value) < 1 ? 1 : 0);
@@ -185,7 +185,7 @@ template <typename T>
 requires std::is_arithmetic_v<std::decay_t<T>>
 constexpr inline std::string format_toMax5length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPrefix(std::forward<decltype(val)>(val));
-    return std::format("{:.{}f}{}", rbsed, (rbsed >= 10 || rbsed <= -10) ? 0 : 1, unit.value_or(""));
+    return std::format("{:.{}f}{}", rbsed, (rbsed >= 10 || rbsed <= -10) ? 0 : 1, unit);
 }
 
 using variadicColumns = std::variant<std::pair<std::string, std::reference_wrapper<const std::vector<long long>>>,

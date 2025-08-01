@@ -245,26 +245,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
         });
     size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
     // BAR PLOTS
-    if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarV>()) {
+    if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarV>() ||
+        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarVM>()) {
         if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForBarV)); }
         else { return dp; }
-    }
-    else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarVM>()) {
-        if (useableCatCols_tpl_sz == 0) { return std::unexpected(incerr_c::make(GCC_noSuitableCatColForBarVM)); }
-        else if (dp.cat_colID.has_value()) {
-            // If the existing catColID can be found in useable CatCols then all OK.
-            if (std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
-                    return std::get<0>(tpl) == dp.cat_colID.value();
-                }) != useableCatCols_tpl.end()) {
-                return dp;
-            }
-            else { return std::unexpected(incerr_c::make(GCC_specifiedCatColCantBeUsedAsCatCol)); }
-        }
-        else {
-            // The first catCol available is taken to be the category
-            dp.cat_colID = std::get<0>(useableCatCols_tpl.front());
-            return dp;
-        }
     }
     // SCATTER PLOT
     else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Scatter>()) {

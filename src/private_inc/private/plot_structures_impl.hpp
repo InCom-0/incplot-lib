@@ -748,7 +748,9 @@ auto BarVM::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataSto
                           static_cast<size_t>((dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
 
     // VERTICAL AXES NAMES ... LEFT always, RIGHT never
-    self.axisName_verLeft_bool  = false;
+
+    if (dp.values_colIDs.size() > 1) { self.axisName_verLeft_bool = false; }
+    else { self.axisName_verLeft_bool = true; }
     self.axisName_verRight_bool = false;
 
     // PLOT AREA
@@ -775,13 +777,106 @@ auto BarVM::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataSto
     }
 
     // Axes steps
-    self.axis_verLeftSteps = self.data_rowCount - 1;
+    self.axis_verLeftSteps   = self.data_rowCount - 1;
     self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth);
 
     // Top and Right axes steps keeping as-is
 
     return self;
 }
+
+auto BarVM::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    if (self.axisName_verLeft_bool) {
+        self.axisName_verLeft =
+            detail::trim2Size_leadingEnding(ds.m_data.at(dp.labelTS_colID.value()).name, self.areaHeight);
+    }
+    return self;
+}
+
+
+auto BarVM::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    auto olset = [&](auto &var) -> void {
+        size_t const cycleSize = dp.values_colIDs.size();
+        size_t const labelPos  = cycleSize / 2;
+
+        for (auto const &rawLabel : var) {
+            // (cycleSize+1) because we need to add additional empty line at the bottom
+            for (size_t cycle_i = 0; cycle_i < (cycleSize + 1); ++cycle_i) {
+                if (cycle_i == labelPos) {
+                    if constexpr (std::same_as<std::string,
+                                               std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+                        self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
+                    }
+                    else {
+                        self.labels_verLeft.push_back(
+                            detail::trim2Size_leading(detail::format_toMax5length(rawLabel), self.labels_verLeftWidth));
+                    }
+                    for (size_t i = 0; i < Config::axisLabels_padRight_vl; ++i) {
+                        self.labels_verLeft.back().push_back(Config::space);
+                    }
+                }
+                else {
+                    self.labels_verLeft.push_back(
+                        std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
+                }
+            }
+        }
+    };
+
+    // Empty label at the top
+    self.labels_verLeft.push_back(
+        std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
+
+    std::visit(olset, self.labelTS_data.value());
+
+    // No empty label at the bottom because its part of the loop above
+
+    return (self);
+}
+// labels_vr are actually the legend here
+auto BarVM::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    // Categories are specified by catColID
+    if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(INI_labelTS_colID_isNull)); }
+
+    // Categories are specified by column names
+    else if (dp.values_colIDs.size() > 1) {
+        // horTop axis line
+        self.labels_verRight.push_back(
+            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+
+        for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
+            if (lineID < (dp.values_colIDs.size())) {
+                self.labels_verRight.push_back(
+                    std::string(Config::axisLabels_padLeft_vr, Config::space)
+                        .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
+                        .append(detail::trim2Size_ending(ds.m_data.at(dp.values_colIDs.at(lineID)).name,
+                                                         self.labels_verRightWidth))
+                        .append(Config::term_setDefault));
+            }
+            else {
+                self.labels_verRight.push_back(
+                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+            }
+        }
+        // horBottom axis line
+        self.labels_verRight.push_back(
+            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+    }
+
+    // If no categories then all VR labels are empty strings
+    else {
+        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
+    }
+
+    return self;
+}
+
+
 // ### END BAR VM ###
 
 // SCATTER

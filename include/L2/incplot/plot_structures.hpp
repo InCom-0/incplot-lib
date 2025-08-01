@@ -228,6 +228,14 @@ class BarVM : public BarV {
 
     auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class Scatter : public BarV {
