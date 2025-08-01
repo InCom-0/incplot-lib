@@ -1,5 +1,6 @@
 #pragma once
 
+#include "incplot/datastore.hpp"
 #include <incplot/desired_plot.hpp>
 #include <limits>
 #include <optional>
@@ -30,7 +31,10 @@ protected:
 
     // std::optional<vec_val_t> labelTS_dataView = std::nullopt;
     // std::optional<vec_val_t> LOC_cat_dataView     = std::nullopt;
-    // std::vector<vec_val_t>   LOC_values_dataViews;
+    // std::vector<vec_val_t>   LOC_values_dataViews;+
+
+    DataStore const   &ds;
+    DesiredPlot const &dp;
 
     // NEW WAY TO ACCESS DATA ... local copies of the data in question
     std::optional<DataStore::varCol_t> labelTS_data = std::nullopt;
@@ -57,31 +61,31 @@ public:
 
 
     // Actual structure
-    std::string              axisName_verLeft;
+    std::string              axisName_verLeft = "";
     std::vector<std::string> labels_verLeft;
     std::vector<std::string> axis_verLeft;
 
-    std::string              axisName_verRight;
+    std::string              axisName_verRight = "";
     std::vector<std::string> axis_verRight;
     std::vector<std::string> labels_verRight;
 
-    std::string              axisName_horTop;
-    std::string              label_horTop;
+    std::string              axisName_horTop = "";
+    std::string              label_horTop    = "";
     std::vector<std::string> axis_horTop;
 
     std::vector<std::string> axis_horBottom;
-    std::string              label_horBottom;
-    std::string              axisName_horBottom;
+    std::string              label_horBottom    = "";
+    std::string              axisName_horBottom = "";
 
     std::vector<std::string> corner_topLeft;
     std::vector<std::string> corner_bottomLeft;
     std::vector<std::string> corner_bottomRight;
     std::vector<std::string> corner_topRight;
 
-    std::string areaCorner_tl;
-    std::string areaCorner_bl;
-    std::string areaCorner_br;
-    std::string areaCorner_tr;
+    std::string areaCorner_tl = "";
+    std::string areaCorner_bl = "";
+    std::string areaCorner_br = "";
+    std::string areaCorner_tr = "";
 
     std::vector<std::string> plotArea;
 
@@ -91,8 +95,16 @@ public:
     size_t compute_lengthOfSelf() const;
 
 public:
+    Base()             = delete;
+    Base(Base const &) = default;
+    Base(Base &)       = default;
+    Base(Base &&)      = default;
+    ~Base()            = default;
+
+    Base(DesiredPlot const &dp_ext, DataStore const &ds_ext) : dp(dp_ext), ds(ds_ext) {};
+
     // This needs to get called after default construction
-    auto build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto build_self(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     // TODO: Implement 'valiate_self()' ... consider if it is even needed or if its not already done elsewhere
@@ -101,7 +113,7 @@ public:
 
 private:
     // TODO: Implement validate_descriptors for 'plot_structures'
-    auto validate_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto validate_descriptors(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
         return self;
     }
@@ -109,176 +121,183 @@ private:
     // One needs to define all of these in a derived class.
     // All 'Compute_*' methods are deleted in Base class on purpose to make code not compile if you don't provide
     // implementation in some derived class
-    auto initialize_data_views(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto initialize_data_views(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_descriptors(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axisName_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-
-    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axisName_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-
-    auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_corner_tl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_corner_bl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_corner_br(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_corner_tr(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_areaCorners(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_ht(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axisName_ht(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_labels_ht(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_footer(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axisName_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+
+    auto compute_footer(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 };
 
 class BarV : public Base {
     friend class Base;
+    using Base::Base;
 
 private:
-    auto initialize_data_views(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto initialize_data_views(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_descriptors(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axisName_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-
-    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axisName_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-
-    auto compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_corner_tl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_corner_bl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_corner_tr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-
-
-    auto compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_corner_br(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_areaCorners(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_ht(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_ht(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_ht(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_footer(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+
+    auto compute_axis_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+    auto compute_footer(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class BarVM : public BarV {
     friend class Base;
+    using BarV::BarV;
 
-    auto compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_descriptors(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axisName_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vr(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+    auto compute_axis_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class Scatter : public BarV {
     friend class Base;
+    using BarV::BarV;
 
 private:
-    auto compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axisName_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vl(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     // labels_vr are actually the legend here
-    auto compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_labels_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-
-
-    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_ht(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axisName_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+
+    auto compute_plot_area(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class Multiline : public Scatter {
     friend class Base;
+    using Scatter::Scatter;
 
 private:
-    auto compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_vr(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_axis_ht(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
+    auto compute_plot_area(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 

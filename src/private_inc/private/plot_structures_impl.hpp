@@ -23,44 +23,43 @@ using incerr_c = incerr::incerr_code;
 using enum Unexp_plotDrawer;
 
 // BASE
-auto Base::build_self(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Base::build_self(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // Can only build it from rvalue ...
     if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
     using self_t = std::remove_cvref_t<decltype(self)>;
 
     return std::move(self)
-        .initialize_data_views(dp, ds)
+        .initialize_data_views()
 
-        .and_then(std::bind_back(&self_t::template compute_descriptors<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template validate_descriptors<self_t>, dp, ds))
+        .and_then(&self_t::template compute_descriptors<self_t>)
+        .and_then(&self_t::template validate_descriptors<self_t>)
 
-        .and_then(std::bind_back(&self_t::template compute_axisName_vl<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_axisName_vr<self_t>, dp, ds))
+        .and_then(&self_t::template compute_axisName_vl<self_t>)
+        .and_then(&self_t::template compute_axisName_vr<self_t>)
 
-        .and_then(std::bind_back(&self_t::template compute_labels_vl<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_labels_vr<self_t>, dp, ds))
+        .and_then(&self_t::template compute_labels_vl<self_t>)
+        .and_then(&self_t::template compute_labels_vr<self_t>)
 
-        .and_then(std::bind_back(&self_t::template compute_axis_vl<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_axis_vr<self_t>, dp, ds))
+        .and_then(&self_t::template compute_axis_vl<self_t>)
+        .and_then(&self_t::template compute_axis_vr<self_t>)
 
-        .and_then(std::bind_back(&self_t::template compute_corner_tl<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_corner_bl<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_corner_br<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_corner_tr<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_areaCorners<self_t>, dp, ds))
+        .and_then(&self_t::template compute_corner_tl<self_t>)
+        .and_then(&self_t::template compute_corner_bl<self_t>)
+        .and_then(&self_t::template compute_corner_br<self_t>)
+        .and_then(&self_t::template compute_corner_tr<self_t>)
+        .and_then(&self_t::template compute_areaCorners<self_t>)
 
-        .and_then(std::bind_back(&self_t::template compute_axis_ht<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_axisName_ht<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_labels_ht<self_t>, dp, ds))
+        .and_then(&self_t::template compute_axis_ht<self_t>)
+        .and_then(&self_t::template compute_axisName_ht<self_t>)
+        .and_then(&self_t::template compute_labels_ht<self_t>)
 
-        .and_then(std::bind_back(&self_t::template compute_axis_hb<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_axisName_hb<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_labels_hb<self_t>, dp, ds))
+        .and_then(&self_t::template compute_axis_hb<self_t>)
+        .and_then(&self_t::template compute_axisName_hb<self_t>)
+        .and_then(&self_t::template compute_labels_hb<self_t>)
 
-        .and_then(std::bind_back(&self_t::template compute_plot_area<self_t>, dp, ds))
-        .and_then(std::bind_back(&self_t::template compute_footer<self_t>, dp, ds));
+        .and_then(&self_t::template compute_plot_area<self_t>)
+        .and_then(&self_t::template compute_footer<self_t>);
 }
 inline size_t Base::compute_lengthOfSelf() const {
 
@@ -200,27 +199,26 @@ inline std::string Base::build_plotAsString() const {
 
 // BAR V
 
-auto BarV::initialize_data_views(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::initialize_data_views(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
-    if (dp.labelTS_colID.has_value()) {
-        auto dataView = ds.get_filteredViewOfData(dp.labelTS_colID.value(), dp.filterFlags);
+    if (self.dp.labelTS_colID.has_value()) {
+        auto dataView = self.ds.get_filteredViewOfData(self.dp.labelTS_colID.value(), self.dp.filterFlags);
 
         auto create_LOC_storage = [&](auto &var) { self.labelTS_data = std::ranges::to<std::vector>(var); };
         std::visit(create_LOC_storage, dataView);
     }
     else { return std::unexpected(incerr_c::make(INI_labelTS_colID_isNull)); }
 
-    if (dp.cat_colID.has_value()) {
-        auto dataView = ds.get_filteredViewOfData(dp.cat_colID.value(), dp.filterFlags);
+    if (self.dp.cat_colID.has_value()) {
+        auto dataView = self.ds.get_filteredViewOfData(self.dp.cat_colID.value(), self.dp.filterFlags);
 
         auto create_LOC_storage = [&](auto &var) { self.cat_data = std::ranges::to<std::vector>(var); };
         std::visit(create_LOC_storage, dataView);
     }
 
-    if (dp.values_colIDs.size() == 0) { return std::unexpected(incerr_c::make(INI_values_colIDs_isEmpty)); }
+    if (self.dp.values_colIDs.size() == 0) { return std::unexpected(incerr_c::make(INI_values_colIDs_isEmpty)); }
     else {
-        auto dataViews = ds.get_filteredViewOfData(dp.values_colIDs, dp.filterFlags);
+        auto dataViews = self.ds.get_filteredViewOfData(self.dp.values_colIDs, self.dp.filterFlags);
         for (auto &viewRef : dataViews) {
             auto create_LOC_storage = [&](auto &var) { self.values_data.push_back(std::ranges::to<std::vector>(var)); };
             std::visit(create_LOC_storage, viewRef);
@@ -232,12 +230,11 @@ auto BarV::initialize_data_views(this auto &&self, DesiredPlot const &dp, DataSt
     return self;
 }
 
-auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     // VERTICAL LEFT LABELS SIZE
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
-        // auto &labelColVarRef = ds.m_data.at(dp.labelTS_colID.value()).variant_data;
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+        // auto &labelColVarRef = self.ds.m_data.at(self.dp.labelTS_colID.value()).variant_data;
 
         auto olset = [](auto &var) -> size_t {
             if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -251,15 +248,15 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
 
         self.labels_verLeftWidth = std::min(
             Config::axisLabels_maxLength_vl,
-            std::min(maxLabelSize, static_cast<size_t>((dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
+            std::min(maxLabelSize, static_cast<size_t>((self.dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
     }
     else { self.labels_verLeftWidth = Config::max_valLabelSize; }
 
     // VERTICAL RIGHT LABELS SIZE
     // Will be used as 'legend' for some types of Plots
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
         // catCol is specified meaning the legend will be uniqued values from that column
-        if (dp.cat_colID.has_value()) {
+        if (self.dp.cat_colID.has_value()) {
             auto create_catIDs_vec = [&](auto &vec) -> std::vector<std::string> {
                 auto sortedUniqued = detail::get_sortedAndUniqued(vec);
                 if constexpr (std::same_as<typename decltype(sortedUniqued)::value_type, std::string>) {
@@ -278,28 +275,28 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
         // Else if more than one YvalCols, legend will be column names of those YvalCols
-        else if (dp.values_colIDs.size() > 1) {
+        else if (self.dp.values_colIDs.size() > 1) {
             size_t maxSize = 0;
-            for (auto const &colID : dp.values_colIDs) { maxSize = std::max(maxSize, ds.m_data.at(colID).name.size()); }
+            for (auto const &colID : self.dp.values_colIDs) { maxSize = std::max(maxSize, self.ds.m_data.at(colID).name.size()); }
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
         else { self.labels_verRightWidth = 0; }
     }
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
-        if (dp.values_colIDs.size() > 1) {
+    else if (self.dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+        if (self.dp.values_colIDs.size() > 1) {
             size_t maxSize = 0;
-            for (auto const &colID : dp.values_colIDs) { maxSize = std::max(maxSize, ds.m_data.at(colID).name.size()); }
+            for (auto const &colID : self.dp.values_colIDs) { maxSize = std::max(maxSize, self.ds.m_data.at(colID).name.size()); }
             self.labels_verRightWidth = std::min(maxSize, Config::axisLabels_maxLength_vr);
         }
     }
     else { self.labels_verRightWidth = 0; }
 
     // VERTICAL AXES NAMES ... LEFT always, RIGHT never
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
         self.axisName_verLeft_bool  = false;
         self.axisName_verRight_bool = false;
     }
-    else if (dp.values_colIDs.size() > 1) {
+    else if (self.dp.values_colIDs.size() > 1) {
         self.axisName_verLeft_bool  = false;
         self.axisName_verRight_bool = false;
     }
@@ -310,7 +307,7 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
 
     // PLOT AREA
     // Plot area width (-2 is for the 2 vertical axes positions)
-    self.areaWidth = dp.targetWidth.value() - self.pad_left -
+    self.areaWidth = self.dp.targetWidth.value() - self.pad_left -
                      (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
                      self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
                      self.pad_right;
@@ -328,35 +325,35 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     // ...
 
     // Plot area height (-2 is for the 2 horizontal axes positions)
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
 
 
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
                                      self.values_data.at(0));
     }
-    else if (not dp.targetHeight.has_value()) {
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+    else if (not self.dp.targetHeight.has_value()) {
+        if (self.dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
             //
-            if (not dp.availableWidth.has_value() || not dp.availableHeight.has_value()) {
+            if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
                 self.areaHeight = self.areaWidth / 6;
             }
             else {
                 self.areaHeight =
-                    self.areaWidth * (static_cast<double>(dp.availableHeight.value()) / dp.availableWidth.value());
+                    self.areaWidth * (static_cast<double>(self.dp.availableHeight.value()) / self.dp.availableWidth.value());
             }
         }
         else {
-            if (not dp.availableWidth.has_value() || not dp.availableHeight.has_value()) {
+            if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
                 self.areaHeight = self.areaWidth / 3;
             }
             else {
                 self.areaHeight =
-                    self.areaWidth * (static_cast<double>(dp.availableHeight.value()) / dp.availableWidth.value());
+                    self.areaWidth * (static_cast<double>(self.dp.availableHeight.value()) / self.dp.availableWidth.value());
             }
         }
     }
     else {
-        self.areaHeight = static_cast<long long>(dp.targetHeight.value()) - self.pad_top - self.axisName_horTop_bool -
+        self.areaHeight = static_cast<long long>(self.dp.targetHeight.value()) - self.pad_top - self.axisName_horTop_bool -
                           self.labels_horTop_bool - 2ll - self.labels_horBottom_bool - self.axisName_horBottom_bool -
                           self.pad_bottom;
     }
@@ -365,13 +362,13 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     }
 
     // Axes steps
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
         self.axis_verLeftSteps = self.areaHeight;
     }
     else { self.axis_verLeftSteps = detail::guess_stepsOnVerAxis(self.areaHeight); }
 
 
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
         self.axis_horBottomSteps = self.areaWidth;
     }
     else { self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth); }
@@ -381,48 +378,41 @@ auto BarV::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStor
     return self;
 }
 
-auto BarV::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_verLeft_bool) {
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+        if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
             self.axisName_verLeft =
-                detail::trim2Size_leadingEnding(ds.m_data.at(dp.labelTS_colID.value()).name, self.areaHeight);
+                detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
         }
         else {
             self.axisName_verLeft =
-                detail::trim2Size_leadingEnding(ds.m_data.at(dp.values_colIDs.at(0)).name, self.areaHeight);
+                detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaHeight);
         }
     }
     return self;
 }
-auto BarV::compute_axisName_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axisName_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     return self;
 }
 
-auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     // Empty label at the top
     self.labels_verLeft.push_back(
         std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
 
     auto olset = [&](auto &var) -> void {
-        if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
-            for (auto const &rawLabel : var) {
+        for (auto const &rawLabel : var) {
+            if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
                 self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
-                for (size_t i = 0; i < Config::axisLabels_padRight_vl; ++i) {
-                    self.labels_verLeft.back().push_back(Config::space);
-                }
             }
-        }
-        else {
-            for (auto const &rawLabelNumeric : var) {
+            else {
                 self.labels_verLeft.push_back(
-                    detail::trim2Size_leading(detail::format_toMax5length(rawLabelNumeric), self.labels_verLeftWidth));
-                for (size_t i = 0; i < Config::axisLabels_padRight_vl; ++i) {
-                    self.labels_verLeft.back().push_back(Config::space);
-                }
+                    detail::trim2Size_leading(detail::format_toMax5length(rawLabel), self.labels_verLeftWidth));
+            }
+
+            for (size_t i = 0; i < Config::axisLabels_padRight_vl; ++i) {
+                self.labels_verLeft.back().push_back(Config::space);
             }
         }
     };
@@ -435,15 +425,13 @@ auto BarV::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore 
 
     return (self);
 }
-auto BarV::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
     return self;
 }
 
-auto BarV::compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+auto BarV::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
         self.axis_verLeft =
             detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight, self.areaHeight);
     }
@@ -456,15 +444,13 @@ auto BarV::compute_axis_vl(this auto &&self, DesiredPlot const &dp, DataStore co
     }
     return self;
 }
-auto BarV::compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
     return self;
 }
 // All corners are simply empty as default ... but can possibly be used for something later if overriden in
 // derived
-auto BarV::compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_tl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_horTop_bool) {
         self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth +
                                                       (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
@@ -480,8 +466,7 @@ auto BarV::compute_corner_tl(this auto &&self, DesiredPlot const &dp, DataStore 
 
     return self;
 }
-auto BarV::compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_bl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_horBottom_bool) {
         self.corner_bottomLeft.push_back(std::string(self.labels_verLeftWidth +
                                                          (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
@@ -497,8 +482,7 @@ auto BarV::compute_corner_bl(this auto &&self, DesiredPlot const &dp, DataStore 
 
     return self;
 }
-auto BarV::compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_tr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_horTop_bool) {
         self.corner_topRight.push_back(std::string(self.labels_verRightWidth +
                                                        (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
@@ -514,8 +498,7 @@ auto BarV::compute_corner_tr(this auto &&self, DesiredPlot const &dp, DataStore 
 
     return self;
 }
-auto BarV::compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_br(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_horBottom_bool) {
         self.corner_bottomRight.push_back(
             std::string(self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
@@ -531,9 +514,8 @@ auto BarV::compute_corner_br(this auto &&self, DesiredPlot const &dp, DataStore 
 
     return self;
 }
-auto BarV::compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+auto BarV::compute_areaCorners(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
         self.areaCorner_tl = Config::areaCorner_tl_barV;
         self.areaCorner_bl = Config::areaCorner_bl_barV;
         self.areaCorner_tr = Config::areaCorner_tr;
@@ -549,24 +531,20 @@ auto BarV::compute_areaCorners(this auto &&self, DesiredPlot const &dp, DataStor
 }
 
 
-auto BarV::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
     return self;
 }
-auto BarV::compute_axisName_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axisName_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     return self;
 }
-auto BarV::compute_labels_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_labels_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     return self;
 }
 
 
-auto BarV::compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
+auto BarV::compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
         self.axis_horBottom =
             detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b, self.areaWidth, self.areaWidth);
     }
@@ -577,15 +555,13 @@ auto BarV::compute_axis_hb(this auto &&self, DesiredPlot const &dp, DataStore co
     }
     return self;
 }
-auto BarV::compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // Name of the FIRST value column
     self.axisName_horBottom =
-        detail::trim2Size_leadingEnding(ds.m_data.at(dp.values_colIDs.at(0)).name, self.areaWidth);
+        detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaWidth);
     return self;
 }
-auto BarV::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto computeLabels = [&](auto &var) -> void {
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -624,7 +600,7 @@ auto BarV::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore 
             self.label_horBottom.append(Config::term_setDefault);
         }
     };
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
         self.label_horBottom = std::string(self.areaWidth + 2, Config::space);
     }
     else { std::visit(computeLabels, self.values_data.at(0)); }
@@ -633,8 +609,7 @@ auto BarV::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore 
 }
 
 
-auto BarV::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto computePA = [&](auto &var) -> void {
         if constexpr (not std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -659,7 +634,7 @@ auto BarV::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore 
 
             for (auto const &val : var) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.push_back(TermColors::get_basicColor(dp.color_basePalette.front()));
+                self.plotArea.push_back(TermColors::get_basicColor(self.dp.color_basePalette.front()));
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
                 self.plotArea.back().append(Config::color_Axes);
 
@@ -673,19 +648,18 @@ auto BarV::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore 
     return self;
 }
 
-auto BarV::compute_footer(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if ((not dp.display_filtered_bool.has_value()) || dp.display_filtered_bool.value() == false) { return self; }
+auto BarV::compute_footer(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    if ((not self.dp.display_filtered_bool.has_value()) || self.dp.display_filtered_bool.value() == false) { return self; }
 
-    auto filteredCount = std::ranges::count_if(dp.filterFlags, [](auto const &ff) { return ff != 0; });
+    auto filteredCount = std::ranges::count_if(self.dp.filterFlags, [](auto const &ff) { return ff != 0; });
     if (filteredCount == 0) { return self; }
 
     std::string res1{};
-    if (std::ranges::any_of(dp.filterFlags, [](auto const &ff) { return ff & 0b1; })) {
+    if (std::ranges::any_of(self.dp.filterFlags, [](auto const &ff) { return ff & 0b1; })) {
         res1.push_back('\n');
         res1.append("Warning:\n");
         res1.append("The following rows were filtered out because they contained 'null' values:\n");
-        auto viewOfFiltered = std::views::enumerate(dp.filterFlags) |
+        auto viewOfFiltered = std::views::enumerate(self.dp.filterFlags) |
                               std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b1; }) |
                               std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
         for (auto const &f_item : viewOfFiltered) {
@@ -697,13 +671,13 @@ auto BarV::compute_footer(this auto &&self, DesiredPlot const &dp, DataStore con
         res1.pop_back();
         res1.push_back('\n');
     }
-    if (std::ranges::any_of(dp.filterFlags, [](auto const &ff) { return ff & 0b10; })) {
+    if (std::ranges::any_of(self.dp.filterFlags, [](auto const &ff) { return ff & 0b10; })) {
         res1.append("\n");
         res1.append("Warning:\n");
         res1.append(std::format(
             "The following rows were filtered out because they contained extreme values outside {}σ from mean:\n",
-            dp.filter_outsideStdDev.value()));
-        auto viewOfFiltered = std::views::enumerate(dp.filterFlags) |
+            self.dp.filter_outsideStdDev.value()));
+        auto viewOfFiltered = std::views::enumerate(self.dp.filterFlags) |
                               std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b10; }) |
                               std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
         for (auto const &f_item : viewOfFiltered) {
@@ -722,8 +696,7 @@ auto BarV::compute_footer(this auto &&self, DesiredPlot const &dp, DataStore con
 
 // BAR VM
 
-auto BarVM::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     // VERTICAL LEFT LABELS SIZE
     auto olset = [](auto &var) -> size_t {
@@ -735,27 +708,27 @@ auto BarVM::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataSto
     self.labels_verLeftWidth =
         std::min(Config::axisLabels_maxLength_vl,
                  std::min(std::visit(olset, self.labelTS_data.value()),
-                          static_cast<size_t>((dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
+                          static_cast<size_t>((self.dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
 
     // VERTICAL RIGHT LABELS SIZE
     // Will be used as 'legend' for some types of Plots
     auto selColNameSizes = std::views::transform(
-        dp.values_colIDs, [&](auto &&colID) { return detail::strlen_utf8(ds.m_data.at(colID).name); });
+        self.dp.values_colIDs, [&](auto &&colID) { return detail::strlen_utf8(self.ds.m_data.at(colID).name); });
 
     self.labels_verLeftWidth =
         std::min(Config::axisLabels_maxLength_vr,
                  std::min(std::ranges::max(selColNameSizes),
-                          static_cast<size_t>((dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
+                          static_cast<size_t>((self.dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
 
     // VERTICAL AXES NAMES ... LEFT always, RIGHT never
 
-    if (dp.values_colIDs.size() > 1) { self.axisName_verLeft_bool = false; }
+    if (self.dp.values_colIDs.size() > 1) { self.axisName_verLeft_bool = false; }
     else { self.axisName_verLeft_bool = true; }
     self.axisName_verRight_bool = false;
 
     // PLOT AREA
     // Plot area width (-2 is for the 2 vertical axes positions)
-    self.areaWidth = dp.targetWidth.value() - self.pad_left -
+    self.areaWidth = self.dp.targetWidth.value() - self.pad_left -
                      (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
                      self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
                      self.pad_right;
@@ -771,7 +744,7 @@ auto BarVM::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataSto
     // ...
 
     // PLOT AREA HEIGHT
-    self.areaHeight = (self.data_rowCount * dp.values_colIDs.size()) + (self.data_rowCount - 1);
+    self.areaHeight = (self.data_rowCount * self.dp.values_colIDs.size()) + (self.data_rowCount - 1);
     if (self.areaHeight < static_cast<long long>(Config::min_areaHeight)) {
         return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
     }
@@ -785,21 +758,19 @@ auto BarVM::compute_descriptors(this auto &&self, DesiredPlot const &dp, DataSto
     return self;
 }
 
-auto BarVM::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_verLeft_bool) {
         self.axisName_verLeft =
-            detail::trim2Size_leadingEnding(ds.m_data.at(dp.labelTS_colID.value()).name, self.areaHeight);
+            detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
     }
     return self;
 }
 
 
-auto BarVM::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto olset = [&](auto &var) -> void {
-        size_t const cycleSize = dp.values_colIDs.size();
+        size_t const cycleSize = self.dp.values_colIDs.size();
         size_t const labelPos  = cycleSize / 2;
 
         for (auto const &rawLabel : var) {
@@ -837,24 +808,23 @@ auto BarVM::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore
     return (self);
 }
 // labels_vr are actually the legend here
-auto BarVM::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     // Categories are specified by catColID
-    if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(INI_labelTS_colID_isNull)); }
+    if (self.dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(INI_labelTS_colID_isNull)); }
 
     // Categories are specified by column names
-    else if (dp.values_colIDs.size() > 1) {
+    else if (self.dp.values_colIDs.size() > 1) {
         // horTop axis line
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
         for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
-            if (lineID < (dp.values_colIDs.size())) {
+            if (lineID < (self.dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(ds.m_data.at(dp.values_colIDs.at(lineID)).name,
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
@@ -877,22 +847,36 @@ auto BarVM::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore
 }
 
 
+auto BarVM::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+        self.axis_verLeft =
+            detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight, self.areaHeight);
+    }
+    // All else should have vl axis ticks according to numeric values
+    else {
+        auto tmpAxis = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
+                                                     self.areaHeight);
+        std::ranges::reverse(tmpAxis);
+        self.axis_verLeft = std::move(tmpAxis);
+    }
+    return self;
+}
+
+
 // ### END BAR VM ###
 
 // SCATTER
-auto Scatter::compute_axisName_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_verLeft_bool) {
-        if (dp.values_colIDs.size() == 1) {
+        if (self.dp.values_colIDs.size() == 1) {
             self.axisName_verLeft =
-                detail::trim2Size_leadingEnding(ds.m_data.at(dp.values_colIDs.at(0)).name, self.areaHeight);
+                detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaHeight);
         }
     }
     return self;
 }
 
-auto Scatter::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto getValLabels = [&](double const &minVal, double const &maxVal, size_t areaLength, size_t const &labelsWidth,
                             size_t const padRight, size_t const padLeft) {
@@ -937,11 +921,10 @@ auto Scatter::compute_labels_vl(this auto &&self, DesiredPlot const &dp, DataSto
     return (self);
 }
 // labels_vr are actually the legend here
-auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     // Categories are specified by catColID
-    if (dp.cat_colID.has_value()) {
+    if (self.dp.cat_colID.has_value()) {
         auto create_catIDs_vec = [&](auto &view) -> std::vector<std::string> {
             auto sortedUniqued = detail::get_sortedAndUniqued(view);
             if constexpr (std::same_as<std::string,
@@ -963,7 +946,7 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
             if (lineID < uniquedCats_vec.size()) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
                         .append(detail::trim2Size_ending(uniquedCats_vec.at(lineID), self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
@@ -978,17 +961,17 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
     }
 
     // Categories are specified by column names
-    else if (dp.values_colIDs.size() > 1) {
+    else if (self.dp.values_colIDs.size() > 1) {
         // horTop axis line
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
         for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
-            if (lineID < (dp.values_colIDs.size())) {
+            if (lineID < (self.dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(ds.m_data.at(dp.values_colIDs.at(lineID)).name,
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
@@ -1010,27 +993,23 @@ auto Scatter::compute_labels_vr(this auto &&self, DesiredPlot const &dp, DataSto
     return self;
 }
 
-auto Scatter::compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     self.axis_verRight = detail::create_tickMarkedAxis(Config::axisFiller_r, Config::axisTick_r, 0, self.areaHeight);
     return self;
 }
 
-auto Scatter::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     for (long long i = 0; i < self.areaWidth; ++i) { self.axis_horTop.push_back(Config::axisFiller_t); }
     return self;
 }
 
-auto Scatter::compute_axisName_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // Name of the TS column
     self.axisName_horBottom =
-        detail::trim2Size_leadingEnding(ds.m_data.at(dp.labelTS_colID.value()).name, self.areaWidth);
+        detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaWidth);
     return self;
 }
-auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
 
     auto computeLabels = [&](double const &minV, double const &maxV) -> void {
@@ -1072,11 +1051,10 @@ auto Scatter::compute_labels_hb(this auto &&self, DesiredPlot const &dp, DataSto
 
     return self;
 }
-auto Scatter::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     std::optional<std::vector<size_t>> opt_catIDs_vec = std::nullopt;
-    if (dp.cat_colID.has_value()) {
+    if (self.dp.cat_colID.has_value()) {
         auto create_catIDs_vec = [&](auto &vec) -> std::vector<size_t> {
             auto                catVals_uniqued = detail::get_sortedAndUniqued(vec);
             std::vector<size_t> catIDs_vec;
@@ -1093,7 +1071,7 @@ auto Scatter::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataSto
     }
 
     self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_data,
-                                                      self.values_data, opt_catIDs_vec, dp.color_basePalette);
+                                                      self.values_data, opt_catIDs_vec, self.dp.color_basePalette);
 
     return self;
 }
@@ -1103,23 +1081,20 @@ auto Scatter::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataSto
 
 // MULTILINE
 
-auto Multiline::compute_axis_vr(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Multiline::compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
     return self;
 }
 
-auto Multiline::compute_axis_ht(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Multiline::compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
     return self;
 }
 
-auto Multiline::compute_plot_area(this auto &&self, DesiredPlot const &dp, DataStore const &ds)
-    -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Multiline::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     self.plotArea = detail::BrailleDrawer::drawLines(self.areaWidth, self.areaHeight, self.labelTS_data.value(),
-                                                     self.values_data, dp.color_basePalette);
+                                                     self.values_data, self.dp.color_basePalette);
     return self;
 }
 

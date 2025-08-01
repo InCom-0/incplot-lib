@@ -4,9 +4,9 @@
 #include <source_location>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <variant>
 #include <vector>
-
 
 
 namespace incom {
@@ -43,6 +43,35 @@ constexpr inline auto generate_variantTypeMap() {
     (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
     return res;
 }
+
+template <typename BASE, typename... Ts>
+requires(std::is_base_of_v<BASE, Ts>, ...) && detail::none_sameLastLevelTypeName_v<Ts...>
+struct VariantUtility {
+    // PTC = Types To Pass To Constructors
+    template <typename... PTC>
+    static constexpr inline auto gen_typeMap(PTC const &...ptc) {
+        std::unordered_map<std::string, std::variant<Ts...>> res;
+        (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts(std::forward<decltype(ptc)>(ptc)...))}), ...);
+        return res;
+    };
+
+    static constexpr inline auto gen_typeMap() {
+        std::unordered_map<std::string, std::variant<Ts...>> res;
+        (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
+        return res;
+    };
+};
+
+
+template <typename BASE, typename... Ts>
+requires(std::is_base_of_v<BASE, Ts>, ...) && detail::none_sameLastLevelTypeName_v<Ts...>
+constexpr inline auto generate_variantTypeMap_refPass() {
+    std::unordered_map<std::string, std::variant<Ts...>> res;
+    (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
+    return res;
+}
+
+
 } // namespace detail
 } // namespace terminal_plot
 } // namespace incom

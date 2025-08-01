@@ -18,9 +18,7 @@ TEST(PS, penguins_default) {
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
     auto                                dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
 
-    incom::terminal_plot::plot_structures::Scatter ps;
-
-    auto ar = incom::terminal_plot::plot_structures::Scatter{}.build_self(dp.value(), ds.value());
+    auto ar = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value()).build_self();
 
     EXPECT_EQ(ar.value().areaWidth, 43);
     EXPECT_EQ(ar.value().areaHeight, 14);
@@ -46,9 +44,7 @@ TEST(PS, wine_quality_default) {
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
     auto                                dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
 
-    incom::terminal_plot::plot_structures::Scatter ps;
-
-    auto ar = incom::terminal_plot::plot_structures::Scatter{}.build_self(dp.value(), ds.value());
+    auto ar = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value()).build_self();
 
     EXPECT_EQ(ar.value().areaWidth, 47);
     EXPECT_EQ(ar.value().areaHeight, 15);
@@ -63,4 +59,3 @@ TEST(PS, wine_quality_default) {
 
     EXPECT_EQ(true, true);
 }
-
