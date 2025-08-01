@@ -104,8 +104,7 @@ public:
     Base(DesiredPlot const &dp_ext, DataStore const &ds_ext) : dp(dp_ext), ds(ds_ext) {};
 
     // This needs to get called after default construction
-    auto build_self(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto build_self(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     // TODO: Implement 'valiate_self()' ... consider if it is even needed or if its not already done elsewhere
     bool        validate_self() const { return true; }
@@ -113,8 +112,7 @@ public:
 
 private:
     // TODO: Implement validate_descriptors for 'plot_structures'
-    auto validate_descriptors(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    auto validate_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
         return self;
     }
 
@@ -124,54 +122,34 @@ private:
     auto initialize_data_views(this auto &&self)
         -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_descriptors(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_axisName_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axisName_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axisName_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_labels_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_labels_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_axis_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axis_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_corner_tl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_corner_bl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_corner_br(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_corner_tr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_areaCorners(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_corner_tl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_corner_bl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_corner_br(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_corner_tr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_areaCorners(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_axis_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axisName_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_labels_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>     = delete;
+    auto compute_axisName_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_labels_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
 
-    auto compute_axis_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_axisName_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-    auto compute_labels_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>     = delete;
+    auto compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
 
-    auto compute_plot_area(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_footer(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
+    auto compute_footer(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 };
 
 class BarV : public Base {
@@ -179,80 +157,56 @@ class BarV : public Base {
     using Base::Base;
 
 private:
-    auto initialize_data_views(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto initialize_data_views(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_descriptors(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axisName_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axisName_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_labels_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axis_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axis_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_corner_tl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_corner_bl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_corner_tr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_corner_br(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_areaCorners(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_corner_tl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_corner_bl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_corner_tr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_corner_br(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_areaCorners(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_axis_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axisName_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_axis_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axisName_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_plot_area(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_footer(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_footer(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class BarVM : public BarV {
     friend class Base;
     using BarV::BarV;
 
-    auto compute_descriptors(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axisName_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_labels_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axis_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+
+    auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class Scatter : public BarV {
@@ -260,30 +214,22 @@ class Scatter : public BarV {
     using BarV::BarV;
 
 private:
-    auto compute_axisName_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_vl(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     // labels_vr are actually the legend here
-    auto compute_labels_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_axis_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_axis_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_axisName_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
-    auto compute_labels_hb(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
 
-    auto compute_plot_area(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 class Multiline : public Scatter {
@@ -291,14 +237,11 @@ class Multiline : public Scatter {
     using Scatter::Scatter;
 
 private:
-    auto compute_axis_vr(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_axis_ht(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    auto compute_plot_area(this auto &&self)
-        -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
 } // namespace plot_structures

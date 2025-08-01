@@ -204,7 +204,7 @@ constexpr inline std::tuple<double, double> compute_minMaxMulti(auto &&vectorOfV
         }
     };
     if constexpr (std::ranges::range<decltype(vectorOfVariantViews)>) {
-        for (auto variantRef : vectorOfVariantViews) { std::visit(ol_set, variantRef); }
+        for (auto &variantRef : vectorOfVariantViews) { std::visit(ol_set, variantRef); }
     }
     else { std::visit(ol_set, vectorOfVariantViews); }
     return res;
