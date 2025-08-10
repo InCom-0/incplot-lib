@@ -896,6 +896,49 @@ auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
     return self;
 }
 
+auto BarVM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    auto [minV, maxV] = detail::compute_minMaxMulti(self.values_data);
+
+    auto computePA = [&](auto &var) -> void {
+        if constexpr (not std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            // Non-arithmetic types cannot be plotted as values
+            assert(false);
+        }
+        else {
+            auto const [minV, maxV] = std::ranges::minmax(var);
+            long long scalingFactor;
+            if constexpr (std::is_integral_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+                scalingFactor = std::numeric_limits<long long>::max() / (std::max(std::abs(maxV), std::abs(minV)));
+            }
+            else if constexpr (std::is_floating_point_v<std::ranges::range_value_t<decltype(var)>>) {
+                scalingFactor = 1;
+            }
+            // Is arithmetic but not integral or floating point => impossible
+            else { static_assert(false); }
+
+            auto maxV_adj = maxV * scalingFactor;
+            auto minV_adj = minV * scalingFactor;
+            auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth);
+
+            for (auto const &val : var) {
+                long long rpt = (val * scalingFactor - minV_adj) / stepSize;
+                self.plotArea.push_back(TermColors::get_basicColor(self.dp.color_basePalette.front()));
+                for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
+                self.plotArea.back().append(Config::color_Axes);
+
+                self.plotArea.back().append(Config::term_setDefault);
+                for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(Config::space); }
+            }
+        }
+    };
+
+    
+
+    std::visit(computePA, self.values_data.at(0));
+    return self;
+}
+
 
 // ### END BAR VM ###
 

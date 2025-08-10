@@ -72,6 +72,10 @@ constexpr inline auto generate_variantTypeMap_refPass() {
     return res;
 }
 
+template <typename T>
+concept is_someVariant =
+    requires(T t) { std::is_same_v<std::variant_alternative_t<0, T>, std::variant_alternative_t<0, T>>; };
+
 
 } // namespace detail
 } // namespace terminal_plot
