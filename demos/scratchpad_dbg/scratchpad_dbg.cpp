@@ -1,7 +1,6 @@
-#include <string_view>
-
-#include <data_get.hpp>
+#include <incstd.hpp>
 #include <incplot.hpp>
+
 
 #if defined(_WIN64)
 #include <windows.h>
@@ -41,7 +40,7 @@ int main(int argc, char *argv[]) {
     std::string_view nile{DATAFOLDER "nile_data.csv"sv};
     std::string_view wine{DATAFOLDER "wine_quality_data.ndjson"sv};
 
-    auto data = incplot::dataget::get_data(flights);
+    auto data = incstd::filesys::get_file_textual(flights);
 
     if (not data.has_value()) { std::exit(1); }
 

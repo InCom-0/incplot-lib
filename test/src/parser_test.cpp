@@ -2,35 +2,34 @@
 #include <gtest/gtest.h>
 #include <incstd.hpp>
 
-#include <data_get.hpp>
-
+#include <incplot.hpp>
+#include <tests_config.hpp>
 
 using namespace incom::terminal_plot::testing;
-using namespace incom::terminal_plot::dataget;
 namespace incplot = incom::terminal_plot;
 
 
 TEST(ParserTest, parsing_csv) {
     auto sourceFileTypeSet{DataSets_FN_transposed::csv};
-    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
+    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return incstd::filesys::get_file_textual(oneFN); });
     auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
 TEST(ParserTest, parsing_tsv) {
     auto sourceFileTypeSet{DataSets_FN_transposed::tsv};
-    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
+    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return incstd::filesys::get_file_textual(oneFN); });
     auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
 TEST(ParserTest, parsing_json) {
     auto sourceFileTypeSet{DataSets_FN_transposed::json};
-    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
+    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return incstd::filesys::get_file_textual(oneFN); });
     auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
 TEST(ParserTest, parsing_ndjson) {
     auto sourceFileTypeSet{DataSets_FN_transposed::ndjson};
-    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return get_data(oneFN); });
+    auto dataSet   = std::views::transform(sourceFileTypeSet, [](auto const &oneFN) { return incstd::filesys::get_file_textual(oneFN); });
     auto allParsed = std::ranges::all_of(dataSet, [](auto const &opt) { return opt.has_value(); });
     EXPECT_TRUE(allParsed);
 }
@@ -43,7 +42,7 @@ TEST(ParserTest, identicalDS_regardlessOfFileType) {
     for (auto const &oneSet : allDataSets) {
         vOfv_ds.push_back(std::vector<incplot::DataStore>{});
         for (auto const &oneFN : oneSet) {
-            auto dt = get_data(oneFN);
+            auto dt = incstd::filesys::get_file_textual(oneFN);
             if (dt.has_value()) {
                 auto parsedDS = incom::terminal_plot::parsers::Parser::parse(dt.value());
                 if (parsedDS.has_value()) { vOfv_ds.back().push_back(std::move(parsedDS.value())); }

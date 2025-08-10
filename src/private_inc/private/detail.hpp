@@ -12,6 +12,7 @@
 #include <ww898/utf_converters.hpp>
 
 
+
 namespace incom {
 namespace terminal_plot {
 namespace detail {

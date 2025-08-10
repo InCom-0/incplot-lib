@@ -3,18 +3,17 @@
 #include <gtest/gtest.h>
 #include <incstd.hpp>
 
-#include <data_get.hpp>
-#include <vector>
+#include <incplot.hpp>
+#include <tests_config.hpp>
 
 
 using namespace incom::terminal_plot::testing;
-using namespace incom::terminal_plot::dataget;
 namespace incplot = incom::terminal_plot;
 
 
 TEST(DP_compute_colAssessment, penguins_csv) {
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     auto dp_res = incplot::DesiredPlot::compute_colAssessments(incplot::DesiredPlot::DP_CtorStruct{}, ds.value());
@@ -77,7 +76,7 @@ TEST(DP_compute_colAssessment, penguins_csv) {
 }
 TEST(DP_compute_colAssessment, nile_csv) {
     auto sourceFN{DataSets_FN::nile.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     auto dp_res = incplot::DesiredPlot::compute_colAssessments(incplot::DesiredPlot::DP_CtorStruct{}, ds.value());
@@ -100,7 +99,7 @@ TEST(DP_compute_colAssessment, nile_csv) {
 }
 TEST(DP_compute_colAssessment, flights_ndjson) {
     auto sourceFN{DataSets_FN::flights.at(3)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     auto dp_res = incplot::DesiredPlot::compute_colAssessments(incplot::DesiredPlot::DP_CtorStruct{}, ds.value());
@@ -125,7 +124,7 @@ TEST(DP_compute_colAssessment, flights_ndjson) {
 
 TEST(DP_transform_namedColsIntoIDs, TScol_flights_real) {
     auto sourceFN{DataSets_FN::flights.at(3)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.lts_colName = "period"};
@@ -142,7 +141,7 @@ TEST(DP_transform_namedColsIntoIDs, TScol_flights_real) {
 }
 TEST(DP_transform_namedColsIntoIDs, TScol_nile_real) {
     auto sourceFN{DataSets_FN::nile.at(1)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.lts_colName = "time"};
@@ -162,7 +161,7 @@ TEST(DP_transform_namedColsIntoIDs, TScol_flights_fake) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::flights.at(2)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.lts_colName = "non-existent_col"};
@@ -175,7 +174,7 @@ TEST(DP_transform_namedColsIntoIDs, TScol_nile_fake) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::nile.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.lts_colName = "non-existent_col"};
@@ -189,7 +188,7 @@ TEST(DP_transform_namedColsIntoIDs, valCols_wine_quality_real) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{
@@ -208,7 +207,7 @@ TEST(DP_transform_namedColsIntoIDs, valCols_penguins_real) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colNames{"flipper_length_mm", "body_mass_g"}};
@@ -228,7 +227,7 @@ TEST(DP_guess_TSCol, penguins_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{4, 5}};
@@ -249,7 +248,7 @@ TEST(DP_guess_TSCol, penguins_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{2, 3, 4, 5}, .c_colID = 7};
@@ -267,7 +266,7 @@ TEST(DP_guess_TSCol, wine_quality_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{4, 5, 0}};
@@ -288,7 +287,7 @@ TEST(DP_guess_TSCol, wine_quality_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs;
@@ -311,7 +310,7 @@ TEST(DP_guess_catCol, penguins_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -335,7 +334,7 @@ TEST(DP_guess_catCol, penguins_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.v_colIDs{0, 1, 6, 7}};
@@ -359,7 +358,7 @@ TEST(DP_guess_catCol, wine_quality_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -383,7 +382,7 @@ TEST(DP_guess_catCol, wine_quality_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.lts_colID = 12};
@@ -408,7 +407,7 @@ TEST(DP_guess_valueCols, penguins_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -432,7 +431,7 @@ TEST(DP_guess_valueCols, wine_quality_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -458,7 +457,7 @@ TEST(DP_guess_sizes, penguins_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -476,7 +475,7 @@ TEST(DP_guess_sizes, wine_quality_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -494,7 +493,7 @@ TEST(DP_guess_sizes, penguins_possible_available_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 250};
@@ -512,7 +511,7 @@ TEST(DP_guess_sizes, wine_quality_available_possible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 50};
@@ -530,7 +529,7 @@ TEST(DP_guess_sizes, penguins_possible_available_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 30};
@@ -545,7 +544,7 @@ TEST(DP_guess_sizes, wine_quality_available_impossible) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{.availableWidth = 0};
@@ -561,7 +560,7 @@ TEST(DP_guess_plotTypes, plotTypeName_nile_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::nile.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -578,7 +577,7 @@ TEST(DP_guess_plotTypes, plotTypeName_flights_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::flights.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -595,7 +594,7 @@ TEST(DP_guess_plotTypes, plotTypeName_penguins_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::penguins.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -612,7 +611,7 @@ TEST(DP_guess_plotTypes, plotTypeName_wine_quality_default) {
     using enum incplot::Unexp_plotSpecs;
 
     auto sourceFN{DataSets_FN::wine_quality.at(0)};
-    auto ds = get_DS(sourceFN);
+    auto ds = incplot::DataStore::get_DS(sourceFN);
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};

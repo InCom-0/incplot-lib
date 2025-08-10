@@ -1,6 +1,6 @@
 #pragma once
 
-#include "incplot/datastore.hpp"
+#include <incplot/datastore.hpp>
 #include <incplot/desired_plot.hpp>
 #include <limits>
 #include <optional>

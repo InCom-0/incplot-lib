@@ -1,9 +1,12 @@
 #include <iostream>
+#include <unordered_map>
 
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
-#include <incstd/numeric.hpp>
+#include <incplot/parsers_inc.hpp>
+#include <incstd.hpp>
 #include <utility>
+
 
 namespace incom {
 namespace terminal_plot {
@@ -136,6 +139,19 @@ std::vector<unsigned int> DataStore::compute_filterFlags(std::vector<size_t> con
         for (size_t i = 0; i < res.size(); ++i) { res[i] |= res2[i]; }
     }
     return res;
+}
+
+std::optional<std::reference_wrapper<const DataStore>> DataStore::get_DS(std::string_view const &sv) {
+    static std::unordered_map<std::string, const DataStore> storageMP;
+    if (auto ele = storageMP.find(std::string(sv)); ele != storageMP.end()) { return ele->second; }
+    else {
+        auto data_sv = incstd::filesys::get_file_textual(sv);
+        if (not data_sv.has_value()) { return std::nullopt; }
+
+        auto newDS = incom::terminal_plot::parsers::Parser::parse(data_sv.value());
+        if (newDS.has_value()) { return storageMP.insert({std::string(sv), std::move(newDS.value())}).first->second; }
+        else { return std::nullopt; }
+    };
 }
 
 } // namespace terminal_plot

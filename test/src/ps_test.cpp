@@ -2,17 +2,17 @@
 #include <gtest/gtest.h>
 #include <incstd.hpp>
 
-#include <data_get.hpp>
+#include <incplot.hpp>
+#include <tests_config.hpp>
 
 
 using namespace incom::terminal_plot::testing;
-using namespace incom::terminal_plot::dataget;
 namespace incplot = incom::terminal_plot;
 
 TEST(PS, penguins_default) {
     using enum incplot::Unexp_plotSpecs;
 
-    auto ds = get_DS(DataSets_FN::penguins.at(0));
+    auto ds = incplot::DataStore::get_DS(DataSets_FN::penguins.at(0));
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};
@@ -38,7 +38,7 @@ TEST(PS, penguins_default) {
 TEST(PS, wine_quality_default) {
     using enum incplot::Unexp_plotSpecs;
 
-    auto ds = get_DS(DataSets_FN::wine_quality.at(0));
+    auto ds = incplot::DataStore::get_DS(DataSets_FN::wine_quality.at(0));
     EXPECT_TRUE(ds.has_value());
 
     incplot::DesiredPlot::DP_CtorStruct dpctrs{};

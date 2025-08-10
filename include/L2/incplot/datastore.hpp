@@ -2,13 +2,13 @@
 
 #include <cassert>
 #include <concepts>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
-#include <optional>
 
 
 namespace incom {
@@ -178,6 +178,9 @@ public:
                                                   std::optional<double> const stdDeviation) const {
         return compute_filterFlags(colsToGet, stdDeviation);
     }
+
+    // STATIC
+    static std::optional<std::reference_wrapper<const DataStore>> get_DS(std::string_view const &sv);
 };
 
 } // namespace terminal_plot
