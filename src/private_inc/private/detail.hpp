@@ -9,6 +9,7 @@
 
 #include <private/color_mixer.hpp>
 #include <private/concepts.hpp>
+#include <variant>
 #include <ww898/utf_converters.hpp>
 
 
@@ -187,43 +188,6 @@ constexpr inline std::string format_toMax5length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPrefix(std::forward<decltype(val)>(val));
     return std::format("{:.{}f}{}", rbsed, (rbsed >= 10 || rbsed <= -10) ? 0 : 1, unit);
 }
-
-// Computes minmax of all 'last level' arithmetic types.
-// Looks through containers (and other ranges) as well as std::variant
-constexpr inline std::tuple<double, double> compute_minMaxMulti(auto &&anything) {
-    std::pair<double, double> res{std::numeric_limits<double>::max(), std::numeric_limits<double>::min()};
-
-    auto ol_set_solver = [&](this auto const &self, auto const &any) -> void {
-        using any_t = std::remove_cvref_t<decltype(any)>;
-        if constexpr (incom::terminal_plot::detail::is_someVariant<any_t>) {
-             std::visit(self, any); }
-
-        else if constexpr (std::ranges::range<any_t>) {
-            using val_type = std::ranges::range_value_t<any_t>;
-            if constexpr (std::ranges::range<val_type>) {
-                for (auto const &subRng : any) { self(subRng); }
-            }
-            else if constexpr (std::is_arithmetic_v<val_type>) {
-                auto [minV_l, maxV_l] = std::ranges::minmax(any);
-                res.first             = std::min(res.first, static_cast<double>(minV_l));
-                res.second            = std::max(res.second, static_cast<double>(maxV_l));
-            }
-            else if constexpr (incom::terminal_plot::detail::is_someVariant<val_type>) {
-                for (auto const &subVari : any) { std::visit(self, subVari); }
-            }
-            else {}
-        }
-        else if constexpr (std::is_arithmetic_v<any_t>) {
-            res.first  = std::min(res.first, static_cast<double>(any));
-            res.second = std::max(res.second, static_cast<double>(any));
-        }
-        else {}
-    };
-
-    ol_set_solver(anything);
-    return res;
-}
-
 
 } // namespace detail
 } // namespace terminal_plot

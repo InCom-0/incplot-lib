@@ -2,11 +2,12 @@
 
 #include <algorithm>
 #include <cassert>
-#include <private/detail.hpp>
 #include <ranges>
 #include <utility>
 #include <variant>
 
+#include <private/detail.hpp>
+#include <incstd/algos.hpp>
 
 namespace incom {
 namespace terminal_plot {
@@ -102,8 +103,8 @@ public:
                              : std::ranges::count_if(view_varValCols, [](auto const &a) { return true; }),
                          colorPalette);
 
-        auto [xMin, xMax] = compute_minMaxMulti(view_labelTS_col.value());
-        auto [yMin, yMax] = compute_minMaxMulti(view_varValCols);
+        auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col.value());
+        auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);
         double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
 
@@ -163,8 +164,8 @@ public:
         BrailleDrawer bd(canvas_width, canvas_height,
                          std::ranges::count_if(view_varValCols, [](auto const &a) { return true; }), colorPalette);
 
-        auto [xMin, xMax] = compute_minMaxMulti(view_labelTS_col);
-        auto [yMin, yMax] = compute_minMaxMulti(view_varValCols);
+        auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col);
+        auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);
         double xStepSize  = (xMax - xMin) / ((static_cast<double>(canvas_width) * 2) - 1);
         double yStepSize  = (yMax - yMin) / ((static_cast<double>(canvas_height) * 4) - 1);
 

@@ -890,7 +890,7 @@ auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
         self.label_horBottom.append(Config::term_setDefault);
     };
 
-    auto [minV, maxV] = detail::compute_minMaxMulti(self.values_data);
+    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
     computeLabels(minV, maxV);
 
     return self;
@@ -898,7 +898,7 @@ auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
 
 auto BarVM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
-    auto [minV, maxV] = detail::compute_minMaxMulti(self.values_data);
+    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
 
     auto computePA = [&](auto &var) -> void {
         if constexpr (not std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -991,7 +991,7 @@ auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_c
         return res;
     };
 
-    auto [minV, maxV] = detail::compute_minMaxMulti(self.values_data);
+    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
     self.labels_verLeft =
         getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
 
@@ -1122,7 +1122,7 @@ auto Scatter::compute_labels_hb(this auto &&self) -> std::expected<std::remove_c
         self.label_horBottom.append(Config::term_setDefault);
     };
 
-    auto [minV, maxV] = detail::compute_minMaxMulti(self.labelTS_data.value());
+    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.labelTS_data.value());
     computeLabels(minV, maxV);
 
     return self;
