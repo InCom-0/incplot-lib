@@ -152,12 +152,6 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     size_t tsLikeIndexCols_count =
         std::ranges::count_if(dp.m_colAssessments, [](auto const &colPars) { return colPars.is_timeSeriesLikeIndex; });
 
-    // size_t labelCols_sz = std::ranges::count_if(std::views::zip(ds.m_data, dp.m_colAssessments), [&](auto const &pr)
-    // {
-    //     // Must be string AND not categoryLike
-    //     return (std::get<0>(pr).colType == parsedVal_t::string_like && not std::get<1>(pr).is_categoryLike);
-    // });
-
     // ACTUAL DEICISIOM MAKING
     // Can't plot anything without at least 1 value column
     if (useableValCols_count == 0) { return std::unexpected(incerr_c::make(GPT_zeroUseableValueColumns)); }
@@ -166,8 +160,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     else if (dp.labelTS_colID.has_value()) {
         if (ds.m_data.at(dp.labelTS_colID.value()).colType == parsedVal_t::string_like) {
             if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
-            // More than 1 value cols is impossible with labelTS col being string
-            else { return std::unexpected(incerr_c::make(GPT_xValTypeStringWhileMoreThan1YvalCols)); }
+            else { dp.plot_type_name = detail::TypeToString<plot_structures::BarVM>(); }
         }
         else {
             // If labelTSCol is value then select based on whether its is 'timeSeriesLike' or not
@@ -224,7 +217,9 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
         return std::unexpected(incerr_c::make(GTSC_noUnusedXvalColumnForScatter));
     }
 
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>() ||
+             dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>() ||
+             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>()) {
         for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.m_data), [](auto const &ct) {
                  return std::get<1>(ct).colType == parsedVal_t::string_like;
              })) {
@@ -232,7 +227,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
             return dp;
         }
         // If there are none (therefore none of the for loops execute at all) then return unexpected
-        return std::unexpected(incerr_c::make(GTSC_noStringLikeColumnForLabelsForBarV));
+        return std::unexpected(incerr_c::make(GTSC_noStringLikeColumnForLabelsForBarPlot));
     }
 
     return std::unexpected(incerr_c::make(GTSC_unreachableCodeReached));
@@ -341,10 +336,11 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
         }
     }
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
-        if (dp.values_colIDs.size() > 1) {
-            return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarVM));
+        if (dp.values_colIDs.size() > 6) {
+            return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarVM));
         }
-        else if (not addValColsUntil(1).has_value()) {
+        else if (dp.values_colIDs.size() == 1) {}
+        else if (not addValColsUntil(2).has_value()) {
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }

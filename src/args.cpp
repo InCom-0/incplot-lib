@@ -1,5 +1,6 @@
 #include <incplot/args.hpp>
 #include <incplot/plot_structures.hpp>
+#include <incstd/typegen.hpp>
 #include <optional>
 #include <private/detail.hpp>
 
@@ -37,6 +38,7 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
     };
 
     if (inout_ap.get<bool>("-b")) { addOne(detail::TypeToString<plot_structures::BarV>()); }
+    if (inout_ap.get<bool>("-m")) { addOne(detail::TypeToString<plot_structures::BarVM>()); }
     if (inout_ap.get<bool>("-s")) { addOne(detail::TypeToString<plot_structures::Scatter>()); }
     if (inout_ap.get<bool>("-l")) { addOne(detail::TypeToString<plot_structures::Multiline>()); }
     if (res.empty()) { addOne(std::nullopt); }
@@ -58,6 +60,7 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
 
     out_ap.add_group("Plot type options");
     out_ap.add_argument("-b", "--barV").help("Draw vertical bar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-m", "--barVM").help("Draw vertical multibar plot [flag]").flag().nargs(0);
     out_ap.add_argument("-s", "--scatter").help("Draw scatter plot [flag]").flag().nargs(0);
     out_ap.add_argument("-l", "--line").help("Draw (multi)line plot [flag]").flag().nargs(0);
 

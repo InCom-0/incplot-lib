@@ -1,5 +1,6 @@
-#include <incstd.hpp>
 #include <incplot.hpp>
+#include <incstd.hpp>
+
 
 
 #if defined(_WIN64)
@@ -25,11 +26,13 @@ int main(int argc, char *argv[]) {
 
     auto dpCtor_Structs                         = incplot::CL_Args::get_dpCtorStruct();
     // dpCtor_Structs.front().tar_width = 120uz;
-    // dpCtor_Structs.front().plot_type_name = "Multiline";
+    dpCtor_Structs.front().plot_type_name       = "BarVM";
     // dpCtor_Structs.front().tar_width = 100;
     // dpCtor_Structs.front().availableWidth  = 200;
     // dpCtor_Structs.front().availableHeight = 15;
     dpCtor_Structs.front().filter_outsideStdDev = 6.0;
+    dpCtor_Structs.front().lts_colID            = 0;
+    dpCtor_Structs.front().v_colIDs             = {1, 2};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

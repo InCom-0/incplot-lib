@@ -1,9 +1,11 @@
 #pragma once
 
-#include <algorithm>
-#include <functional>
+#include <array>
+#include <incstd/views.hpp>
 #include <source_location>
 #include <string>
+#include <typeindex>
+#include <typeinfo>
 #include <unordered_map>
 #include <utility>
 #include <variant>
@@ -22,31 +24,22 @@ constexpr auto TypeToString() {
 }
 
 template <typename... Ts>
-struct none_sameLastLevelTypeName {
+struct _types_noneSame {
     static consteval bool operator()() {
-        std::vector<std::string> vect;
-        (vect.push_back(TypeToString<Ts>()), ...);
-        std::ranges::sort(vect, std::less());
-        auto [beg, end] = std::ranges::unique(vect);
-        vect.erase(beg, end);
-        return vect.size() == sizeof...(Ts);
+        std::vector<const std::type_info *> typeVect{&typeid(Ts)...};
+        for (auto [lhs, rhs] : incom::standard::views::combinations_k<2uz>(typeVect)) {
+            if (*lhs == *rhs) { return false; }
+        }
+        return true;
     }
 };
 
 // Just the 'last level' type name ... not the fully qualified typename
 template <typename... Ts>
-concept none_sameLastLevelTypeName_v = none_sameLastLevelTypeName<Ts...>::operator()();
+concept types_noneSame_v = _types_noneSame<Ts...>::operator()();
 
 template <typename BASE, typename... Ts>
-requires(std::is_base_of_v<BASE, Ts>, ...) && detail::none_sameLastLevelTypeName_v<Ts...>
-constexpr inline auto generate_variantTypeMap() {
-    std::unordered_map<std::string, std::variant<Ts...>> res;
-    (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
-    return res;
-}
-
-template <typename BASE, typename... Ts>
-requires(std::is_base_of_v<BASE, Ts>, ...) && detail::none_sameLastLevelTypeName_v<Ts...>
+requires(std::is_base_of_v<BASE, Ts>, ...) && detail::types_noneSame_v<Ts...>
 struct VariantUtility {
     // PTC = Types To Pass To Constructors
     template <typename... PTC>
@@ -62,15 +55,6 @@ struct VariantUtility {
         return res;
     };
 };
-
-
-template <typename BASE, typename... Ts>
-requires(std::is_base_of_v<BASE, Ts>, ...) && detail::none_sameLastLevelTypeName_v<Ts...>
-constexpr inline auto generate_variantTypeMap_refPass() {
-    std::unordered_map<std::string, std::variant<Ts...>> res;
-    (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
-    return res;
-}
 
 template <typename T>
 concept is_someVariant =

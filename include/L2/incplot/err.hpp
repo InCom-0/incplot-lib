@@ -20,7 +20,7 @@ enum class Unexp_plotSpecs {
     GPT_xValTypeStringWhileMoreThan1YvalCols,
     GTSC_noTimeSeriesLikeColumnForMultiline,
     GTSC_noUnusedXvalColumnForScatter,
-    GTSC_noStringLikeColumnForLabelsForBarV,
+    GTSC_noStringLikeColumnForLabelsForBarPlot,
     GTSC_unreachableCodeReached,
     GCC_cantSpecifyCategoryForBarV,
     GCC_noSuitableCatColForBarVM,
@@ -29,7 +29,7 @@ enum class Unexp_plotSpecs {
     GCC_categoryColumnIsNotAllowedForMultiline,
     GVC_selectYvalColIsUnuseable,
     GVC_selectedMoreThan1YvalColForBarV,
-    GVC_selectedMoreThan1YvalColForBarVM,
+    GVC_selectedMoreThan6YvalColForBarVM,
     GVC_selectedMoreThanMaxNumOfYvalCols,
     GVC_selectedMoreThanAllowedOfYvalColsForMultiline,
     GVC_notEnoughSuitableYvalCols,
@@ -94,7 +94,7 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
         case Unexp_plotSpecs::GTSC_noUnusedXvalColumnForScatter:
             return "Scatter plot cannot be constructed because there is no free value column to use for the x-axis\n"
                    "This happens when the user selected all available columns for values (-y) and there are none left for the x-axis"sv;
-        case Unexp_plotSpecs::GTSC_noStringLikeColumnForLabelsForBarV:
+        case Unexp_plotSpecs::GTSC_noStringLikeColumnForLabelsForBarPlot:
             return "There is no string-like column to be used for label in vertical bar chart"sv;
         case Unexp_plotSpecs::GTSC_unreachableCodeReached: return "Hard library error, unreachable code path reached"sv;
         case Unexp_plotSpecs::GCC_cantSpecifyCategoryForBarV:
@@ -126,8 +126,8 @@ inline std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                    "This usually happens because the column is 'string-like'"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV:
             return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) vertical bar plot"sv;
-        case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarVM:
-            return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) horizontal bar plot"sv;
+        case Unexp_plotSpecs::GVC_selectedMoreThan6YvalColForBarVM:
+            return "It is not allowed to select more than six value columns (-y) for use in (potentially inferred) vertical multibar plot"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols:
             {
                 static std::string GVC_mnyvc_r;

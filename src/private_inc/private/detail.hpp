@@ -9,7 +9,6 @@
 
 #include <private/color_mixer.hpp>
 #include <private/concepts.hpp>
-#include <variant>
 #include <ww898/utf_converters.hpp>
 
 
