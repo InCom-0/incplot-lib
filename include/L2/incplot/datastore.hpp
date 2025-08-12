@@ -26,7 +26,7 @@ class DataStore {
 public:
     // TYPE ALIAS
 
-    using varCol_t        = std::variant<std::vector<std::string>, std::vector<double>, std::vector<long long>>;
+    using varCol_t        = std::variant<std::vector<std::string>, std::vector<long long>, std::vector<double>>;
     using vec_pr_varCol_t = std::vector<std::pair<std::string, varCol_t>>;
 
     struct DS_CtorObj {
@@ -35,10 +35,10 @@ public:
     };
 
     struct Column {
-        std::string                                                                         name;
-        parsedVal_t                                                                         colType;
-        std::vector<unsigned int>                                                           itemFlags;
-        std::variant<std::vector<std::string>, std::vector<long long>, std::vector<double>> variant_data;
+        std::string               name;
+        parsedVal_t               colType;
+        std::vector<unsigned int> itemFlags;
+        varCol_t                  variant_data;
 
         template <typename CT>
         const auto &get_data() const {
