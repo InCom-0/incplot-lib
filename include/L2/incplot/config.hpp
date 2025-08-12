@@ -36,6 +36,7 @@ public:
         {{U'⡀', U'⢀'}, {U'⠄', U'⠠'}, {U'⠂', U'⠐'}, {U'⠁', U'⠈'}}};
     static inline char32_t braille_blank = U'⠀';
     static inline char     space         = ' ';
+    static inline char32_t spaceU32      = U' ';
 
     static inline std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
     static inline std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
@@ -112,7 +113,7 @@ public:
     static inline std::string term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
 
     static inline std::array<std::string, 21> const si_prefixes{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
-                                                                   "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
+                                                                "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
 
     // COLUMN PARAMETERS ANALYSIS SETTINGS
     static inline double timeSeriesIDX_allowanceUP   = 0.1;

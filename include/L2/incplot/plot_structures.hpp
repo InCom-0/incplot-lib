@@ -54,7 +54,6 @@ public:
     long long pad_left = Config::ps_padLeft, pad_right = Config::ps_padRight, pad_top = Config::ps_padTop,
               pad_bottom = Config::ps_padBottom;
 
-    bool labels_horTop_bool = false, labels_horBottom_bool = false;
     bool axisName_horTop_bool = false, axisName_horBottom_bool = false;
 
     bool axisName_verLeft_bool = false, axisName_verRight_bool = false;
@@ -65,16 +64,16 @@ public:
     std::vector<std::string> labels_verLeft;
     std::vector<std::string> axis_verLeft;
 
-    std::string              axisName_verRight = "";
     std::vector<std::string> axis_verRight;
     std::vector<std::string> labels_verRight;
+    std::string              axisName_verRight = "";
 
     std::string              axisName_horTop = "";
-    std::string              label_horTop    = "";
+    std::vector<std::string> labels_horTop;
     std::vector<std::string> axis_horTop;
 
     std::vector<std::string> axis_horBottom;
-    std::string              label_horBottom    = "";
+    std::vector<std::string> labels_horBottom;
     std::string              axisName_horBottom = "";
 
     std::vector<std::string> corner_topLeft;
@@ -133,12 +132,6 @@ private:
     auto compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
     auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
-    auto compute_corner_tl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
-    auto compute_corner_bl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
-    auto compute_corner_br(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
-    auto compute_corner_tr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
-    auto compute_areaCorners(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
-
     auto compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>     = delete;
     auto compute_axisName_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
     auto compute_labels_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
@@ -146,6 +139,12 @@ private:
     auto compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>     = delete;
     auto compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
     auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+
+    auto compute_corner_tl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_corner_bl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_corner_br(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_corner_tr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>   = delete;
+    auto compute_areaCorners(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> = delete;
 
@@ -208,7 +207,7 @@ class BarVM : public BarV {
 
     auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    
+
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
@@ -227,7 +226,7 @@ class BarHM : public BarV {
 
     auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
-    
+
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 

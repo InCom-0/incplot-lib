@@ -28,7 +28,7 @@ TEST(PS, penguins_default) {
     EXPECT_EQ(ar.value().axis_horBottomSteps, 3);
     EXPECT_EQ(ar.value().axisName_horBottom_bool, true);
     EXPECT_EQ(ar.value().axisName_verLeft_bool, true);
-    EXPECT_EQ(ar.value().labels_horBottom_bool, true);
+    EXPECT_EQ(ar.value().labels_horBottom.size(), 1uz);
 
 
     EXPECT_EQ(true, true);
@@ -54,7 +54,7 @@ TEST(PS, wine_quality_default) {
     EXPECT_EQ(ar.value().axis_horBottomSteps, 4);
     EXPECT_EQ(ar.value().axisName_horBottom_bool, true);
     EXPECT_EQ(ar.value().axisName_verLeft_bool, true);
-    EXPECT_EQ(ar.value().labels_horBottom_bool, true);
+    EXPECT_EQ(ar.value().labels_horBottom.size(), 1uz);
 
 
     EXPECT_EQ(true, true);
