@@ -87,8 +87,10 @@ public:
 
     static inline size_t max_sizeOfValueLabels = 5uz;
 
-    static inline size_t min_areaWidth  = 8uz;
-    static inline size_t min_areaHeight = 1uz;
+    static inline size_t min_areaWidth                  = 8uz;
+    static inline size_t min_areaWidth_BarHM            = 1uz;
+    static inline size_t min_areaHeight                 = 1uz;
+    static inline size_t default_areaWidth2Height_ratio = 6uz;
 
     static inline size_t max_numOfValCols             = 3uz;
     static inline size_t max_maxNumOfCategories       = 3uz;

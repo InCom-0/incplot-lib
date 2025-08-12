@@ -342,7 +342,7 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
         if (self.dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
             //
             if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-                self.areaHeight = self.areaWidth / 6;
+                self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
             }
             else {
                 self.areaHeight = self.areaWidth * (static_cast<double>(self.dp.availableHeight.value()) /
@@ -838,14 +838,7 @@ auto BarVM::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
 
     return self;
 }
-auto BarVM::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    // All else should have vl axis ticks according to numeric values
-    self.axis_verLeft = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
-                                                      self.areaHeight);
-    std::ranges::reverse(self.axis_verLeft);
 
-    return self;
-}
 auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto computeLabels = [&](double const &minV, double const &maxV) -> void {
@@ -944,247 +937,6 @@ auto BarVM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
 }
 // ### END BAR VM ###
 
-
-// BAR HM
-auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-
-    // VERTICAL LEFT LABELS SIZE
-    self.labels_verLeftWidth = Config::max_valLabelSize;
-
-    // VERTICAL RIGHT LABELS SIZE
-    // Will be used as 'legend' for some types of Plots
-    auto selColNameSizes = std::views::transform(
-        self.dp.values_colIDs, [&](auto &&colID) { return detail::strlen_utf8(self.ds.m_data.at(colID).name); });
-
-    self.labels_verRightWidth =
-        std::min(Config::axisLabels_maxLength_vr,
-                 std::min(std::ranges::max(selColNameSizes),
-                          static_cast<size_t>((self.dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
-
-    // VERTICAL AXES NAMES ... LEFT always, RIGHT never
-
-    if (self.dp.values_colIDs.size() > 1) { self.axisName_verLeft_bool = false; }
-    else { self.axisName_verLeft_bool = true; }
-    self.axisName_verRight_bool = false;
-
-    // PLOT AREA
-    // Plot area width (-2 is for the 2 vertical axes positions)
-    self.areaWidth = self.dp.targetWidth.value() - self.pad_left -
-                     (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2 -
-                     self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
-                     self.pad_right;
-    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth)) {
-        return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
-    }
-
-    // LABELS AND AXIS NAME HOR BOTTOM
-    self.axisName_horBottom_bool = false;
-
-    // Labels and axis name top ... probably nothing so keeping 0 size
-    // ...
-
-    // PLOT AREA HEIGHT
-    self.areaHeight = (self.data_rowCount * self.dp.values_colIDs.size()) + (self.data_rowCount - 1);
-    if (self.areaHeight < static_cast<long long>(Config::min_areaHeight)) {
-        return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
-    }
-
-    // Axes steps
-
-    self.axis_verLeftSteps   = detail::guess_stepsOnHorAxis(self.areaHeight);
-    self.axis_horBottomSteps = self.data_rowCount - 1;
-
-    // Top and Right axes steps keeping as-is
-
-    return self;
-}
-auto BarHM::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if (self.axisName_verLeft_bool) {
-        self.axisName_verLeft =
-            detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
-    }
-    return self;
-}
-auto BarHM::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-
-    auto olset = [&](auto &var) -> void {
-        size_t const cycleSize = self.dp.values_colIDs.size();
-        size_t const labelPos  = cycleSize / 2;
-
-        for (auto const &rawLabel : var) {
-            // (cycleSize+1) because we need to add additional empty line at the bottom
-            for (size_t cycle_i = 0; cycle_i < (cycleSize + 1); ++cycle_i) {
-                if (cycle_i == labelPos) {
-                    if constexpr (std::same_as<std::string,
-                                               std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
-                        self.labels_verLeft.push_back(detail::trim2Size_leading(rawLabel, self.labels_verLeftWidth));
-                    }
-                    else {
-                        self.labels_verLeft.push_back(
-                            detail::trim2Size_leading(detail::format_toMax5length(rawLabel), self.labels_verLeftWidth));
-                    }
-                    for (size_t i = 0; i < Config::axisLabels_padRight_vl; ++i) {
-                        self.labels_verLeft.back().push_back(Config::space);
-                    }
-                }
-                else {
-                    self.labels_verLeft.push_back(
-                        std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
-                }
-            }
-        }
-    };
-
-    // Empty label at the top
-    self.labels_verLeft.push_back(
-        std::string(self.labels_verLeftWidth + Config::axisLabels_padRight_vl, Config::space));
-
-    std::visit(olset, self.labelTS_data.value());
-
-    // No empty label at the bottom because its part of the loop above
-
-    return (self);
-}
-// labels_vr are actually the legend here
-auto BarHM::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-
-    // Categories are specified by column names
-    if (self.dp.values_colIDs.size() > 1) {
-        // horTop axis line
-        self.labels_verRight.push_back(
-            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
-
-        for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
-            if (lineID < (self.dp.values_colIDs.size())) {
-                self.labels_verRight.push_back(
-                    std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
-                                                         self.labels_verRightWidth))
-                        .append(Config::term_setDefault));
-            }
-            else {
-                self.labels_verRight.push_back(
-                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
-            }
-        }
-        // horBottom axis line
-        self.labels_verRight.push_back(
-            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
-    }
-
-    // If no categories then all VR labels are empty strings
-    else {
-        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
-    }
-
-    return self;
-}
-auto BarHM::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    // All else should have vl axis ticks according to numeric values
-    self.axis_verLeft = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
-                                                      self.areaHeight);
-    std::ranges::reverse(self.axis_verLeft);
-
-    return self;
-}
-auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-
-    auto computeLabels = [&](double const &minV, double const &maxV) -> void {
-        size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
-        auto         stepSize    = ((maxV - minV) / self.areaWidth);
-        size_t       placedChars = 0;
-
-        self.labels_horBottom.push_back(std::string());
-        self.labels_horBottom.back().append(Config::color_Axes);
-
-        // Construct the [0:0] point label == minV
-        std::string tempStr = detail::format_toMax5length(minV);
-        self.labels_horBottom.back().append(tempStr);
-        placedChars += detail::strlen_utf8(tempStr);
-
-        // Construct the tick labels
-        for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
-            tempStr = detail::format_toMax5length(minV + ((i + 1) * (fillerSize + 1) * stepSize));
-
-            while (placedChars < (i * (fillerSize + 1) + fillerSize + (tempStr.size() < 3) - (tempStr.size() > 4))) {
-                self.labels_horBottom.back().push_back(Config::space);
-                placedChars++;
-            }
-
-            self.labels_horBottom.back().append(tempStr);
-            placedChars += detail::strlen_utf8(tempStr);
-        }
-
-        // Construct the [0:end] point label
-        tempStr = detail::format_toMax5length(maxV);
-        for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
-            self.labels_horBottom.back().push_back(Config::space);
-        }
-        self.labels_horBottom.back().append(tempStr);
-        self.labels_horBottom.back().append(Config::term_setDefault);
-    };
-
-    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
-    computeLabels(minV, maxV);
-
-    return self;
-}
-auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-
-    auto const [minV, maxV]         = incom::standard::algos::compute_minMaxMulti(self.values_data);
-    auto const        bigStepSize   = (maxV - minV) / (self.areaWidth);
-    auto const        smallStepSize = bigStepSize / 8;
-    size_t const      skipSize      = self.values_data.size() + 1;
-    std::string const emptyPlotLine(self.areaWidth, Config::space);
-
-    // Series count * row count + 'empty lines' (row count - 1)
-    self.plotArea =
-        std::vector((self.values_data.size() * self.data_rowCount) + self.data_rowCount - 1, std::string{""});
-
-    auto computePA = [&, seriesID = 0uz](auto &var) mutable -> void {
-        if constexpr (not std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
-            // Non-arithmetic types cannot be plotted as values
-            assert(false);
-        }
-        else {
-            std::u32string tmp_u32string;
-            for (size_t rowID = 0; auto const &val : var) {
-                long long const bigSteps   = (val - minV) / bigStepSize;
-                long long const smallSteps = ((val - minV) - (bigSteps * bigStepSize)) / smallStepSize;
-
-                size_t barsPlaced = 1;
-                for (long long i = bigSteps; i > 0; --i) {
-                    tmp_u32string.push_back(Config::blocks_hor[8]);
-                    barsPlaced++;
-                }
-                tmp_u32string.push_back(Config::blocks_hor[smallSteps]);
-
-                for (; barsPlaced < self.areaWidth; ++barsPlaced) { tmp_u32string.push_back(Config::blocks_hor[0]); }
-
-                if (rowID != 0 && seriesID == 0) {
-                    self.plotArea.at((rowID * skipSize) - 1).append(Config::term_setDefault);
-                    self.plotArea.at((rowID * skipSize) - 1).append(emptyPlotLine);
-                }
-
-                std::string &lineRef = self.plotArea.at((rowID * skipSize) + seriesID);
-                lineRef.append(TermColors::get_basicColor(self.dp.color_basePalette.at(seriesID)));
-                lineRef.append(incom::terminal_plot::detail::convert_u32u8(tmp_u32string));
-                lineRef.append(Config::term_setDefault);
-
-                tmp_u32string.clear();
-                rowID++;
-            }
-        }
-        seriesID++;
-    };
-
-    for (auto const &varVec : self.values_data) { std::visit(computePA, varVec); }
-
-
-    return self;
-}
-// ### END BAR HM ###
 
 // SCATTER
 auto Scatter::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
@@ -1418,8 +1170,175 @@ auto Multiline::compute_plot_area(this auto &&self) -> std::expected<std::remove
                                                      self.values_data, self.dp.color_basePalette);
     return self;
 }
-
 // ### END MULTILINE ###
+
+
+// BAR HM
+auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    // VERTICAL LEFT LABELS SIZE
+    self.labels_verLeftWidth = Config::max_valLabelSize;
+
+    // VERTICAL RIGHT LABELS SIZE
+    // Will be used as 'legend' for some types of Plots
+    auto selColNameSizes = std::views::transform(
+        self.dp.values_colIDs, [&](auto &&colID) { return detail::strlen_utf8(self.ds.m_data.at(colID).name); });
+
+    self.labels_verRightWidth =
+        std::min(Config::axisLabels_maxLength_vr,
+                 std::min(std::ranges::max(selColNameSizes),
+                          static_cast<size_t>((self.dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
+
+    // VERTICAL AXES NAMES ... LEFT if values col size == 1, RIGHT never
+    if (self.dp.values_colIDs.size() > 1) { self.axisName_verLeft_bool = false; }
+    else { self.axisName_verLeft_bool = true; }
+    self.axisName_verRight_bool = false;
+
+    // PLOT AREA
+    // Plot area width (-2 is for the 2 vertical axes positions)
+    self.areaWidth = self.dp.targetWidth.value() - self.pad_left -
+                     (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2ll -
+                     self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
+                     self.pad_right;
+    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth_BarHM) ||
+        self.areaWidth < ((self.data_rowCount * self.values_data.size()) + self.data_rowCount - 1)) {
+        return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
+    }
+    else { self.areaWidth = ((self.data_rowCount * self.values_data.size()) + self.data_rowCount - 1); }
+
+    // LABELS AND AXIS NAME HOR BOTTOM
+    self.axisName_horBottom_bool = false;
+
+    // LABELS AND AXIS NAME HOR TOP ... probably nothing so keeping 0 size
+    // ...
+
+    // PLOT AREA HEIGHT
+    if (not self.dp.targetHeight.has_value()) {
+        if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
+            self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
+        }
+        else {
+            self.areaHeight = self.areaWidth *
+                              (static_cast<double>(self.dp.availableHeight.value()) / self.dp.availableWidth.value());
+        }
+    }
+    else {
+        self.areaHeight = static_cast<long long>(self.dp.targetHeight.value()) - self.pad_top -
+                          self.axisName_horTop_bool - self.labels_horTop.size() - 2ll - self.labels_horBottom.size() -
+                          self.axisName_horBottom_bool - self.pad_bottom;
+    }
+    if (self.areaHeight < static_cast<long long>(Config::min_areaHeight)) {
+        return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
+    }
+
+    // Axes steps
+
+    self.axis_verLeftSteps   = detail::guess_stepsOnHorAxis(self.areaHeight);
+    self.axis_horBottomSteps = self.data_rowCount - 1;
+
+    // Top and Right axes steps keeping as-is
+
+    return self;
+}
+
+auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    auto computeLabels = [&](double const &minV, double const &maxV) -> void {
+        size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
+        auto         stepSize    = ((maxV - minV) / self.areaWidth);
+        size_t       placedChars = 0;
+
+        self.labels_horBottom.push_back(std::string());
+        self.labels_horBottom.back().append(Config::color_Axes);
+
+        // Construct the [0:0] point label == minV
+        std::string tempStr = detail::format_toMax5length(minV);
+        self.labels_horBottom.back().append(tempStr);
+        placedChars += detail::strlen_utf8(tempStr);
+
+        // Construct the tick labels
+        for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
+            tempStr = detail::format_toMax5length(minV + ((i + 1) * (fillerSize + 1) * stepSize));
+
+            while (placedChars < (i * (fillerSize + 1) + fillerSize + (tempStr.size() < 3) - (tempStr.size() > 4))) {
+                self.labels_horBottom.back().push_back(Config::space);
+                placedChars++;
+            }
+
+            self.labels_horBottom.back().append(tempStr);
+            placedChars += detail::strlen_utf8(tempStr);
+        }
+
+        // Construct the [0:end] point label
+        tempStr = detail::format_toMax5length(maxV);
+        for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
+            self.labels_horBottom.back().push_back(Config::space);
+        }
+        self.labels_horBottom.back().append(tempStr);
+        self.labels_horBottom.back().append(Config::term_setDefault);
+    };
+
+    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
+    computeLabels(minV, maxV);
+
+    return self;
+}
+
+auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    auto const [minV, maxV]         = incom::standard::algos::compute_minMaxMulti(self.values_data);
+    auto const        bigStepSize   = (maxV - minV) / (self.areaWidth);
+    auto const        smallStepSize = bigStepSize / 8;
+    size_t const      skipSize      = self.values_data.size() + 1;
+    std::string const emptyPlotLine(self.areaWidth, Config::space);
+
+    // Series count * row count + 'empty lines' (row count - 1)
+    self.plotArea =
+        std::vector((self.values_data.size() * self.data_rowCount) + self.data_rowCount - 1, std::string{""});
+
+    auto computePA = [&, seriesID = 0uz](auto &var) mutable -> void {
+        if constexpr (not std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            // Non-arithmetic types cannot be plotted as values
+            assert(false);
+        }
+        else {
+            std::u32string tmp_u32string;
+            for (size_t rowID = 0; auto const &val : var) {
+                long long const bigSteps   = (val - minV) / bigStepSize;
+                long long const smallSteps = ((val - minV) - (bigSteps * bigStepSize)) / smallStepSize;
+
+                size_t barsPlaced = 1;
+                for (long long i = bigSteps; i > 0; --i) {
+                    tmp_u32string.push_back(Config::blocks_hor[8]);
+                    barsPlaced++;
+                }
+                tmp_u32string.push_back(Config::blocks_hor[smallSteps]);
+
+                for (; barsPlaced < self.areaWidth; ++barsPlaced) { tmp_u32string.push_back(Config::blocks_hor[0]); }
+
+                if (rowID != 0 && seriesID == 0) {
+                    self.plotArea.at((rowID * skipSize) - 1).append(Config::term_setDefault);
+                    self.plotArea.at((rowID * skipSize) - 1).append(emptyPlotLine);
+                }
+
+                std::string &lineRef = self.plotArea.at((rowID * skipSize) + seriesID);
+                lineRef.append(TermColors::get_basicColor(self.dp.color_basePalette.at(seriesID)));
+                lineRef.append(incom::terminal_plot::detail::convert_u32u8(tmp_u32string));
+                lineRef.append(Config::term_setDefault);
+
+                tmp_u32string.clear();
+                rowID++;
+            }
+        }
+        seriesID++;
+    };
+
+    for (auto const &varVec : self.values_data) { std::visit(computePA, varVec); }
+
+
+    return self;
+}
+// ### END BAR HM ###
 
 } // namespace plot_structures
 } // namespace terminal_plot
