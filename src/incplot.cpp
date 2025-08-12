@@ -72,11 +72,13 @@ std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &d
     auto varCpy = mp_names2Types.at(dp.plot_type_name.value());
 
     auto ol = [&](auto &&var) -> std::expected<var_plotTypes, incerr_c> {
-        return std::move(var).build_self().transform(
-            [](auto &&ps) -> var_plotTypes { return var_plotTypes(ps); });
+        return std::move(var).build_self().transform([](auto &&ps) -> var_plotTypes { return var_plotTypes(ps); });
     };
     return std::visit(ol, varCpy);
 };
+
+
+
 
 
 } // namespace terminal_plot

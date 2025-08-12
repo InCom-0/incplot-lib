@@ -754,7 +754,6 @@ auto BarVM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
     return self;
 }
-
 auto BarVM::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_verLeft_bool) {
         self.axisName_verLeft =
@@ -762,8 +761,6 @@ auto BarVM::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_c
     }
     return self;
 }
-
-
 auto BarVM::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto olset = [&](auto &var) -> void {
@@ -839,8 +836,6 @@ auto BarVM::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
 
     return self;
 }
-
-
 auto BarVM::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // All else should have vl axis ticks according to numeric values
     self.axis_verLeft = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
@@ -849,8 +844,6 @@ auto BarVM::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref
 
     return self;
 }
-
-
 auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto computeLabels = [&](double const &minV, double const &maxV) -> void {
@@ -892,7 +885,6 @@ auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
 
     return self;
 }
-
 auto BarVM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto const [minV, maxV]         = incom::standard::algos::compute_minMaxMulti(self.values_data);
@@ -1012,7 +1004,6 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
     return self;
 }
-
 auto BarHM::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_verLeft_bool) {
         self.axisName_verLeft =
@@ -1020,8 +1011,6 @@ auto BarHM::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_c
     }
     return self;
 }
-
-
 auto BarHM::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto olset = [&](auto &var) -> void {
@@ -1097,8 +1086,6 @@ auto BarHM::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
 
     return self;
 }
-
-
 auto BarHM::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // All else should have vl axis ticks according to numeric values
     self.axis_verLeft = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
@@ -1107,8 +1094,6 @@ auto BarHM::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref
 
     return self;
 }
-
-
 auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto computeLabels = [&](double const &minV, double const &maxV) -> void {
@@ -1150,7 +1135,6 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
 
     return self;
 }
-
 auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto const [minV, maxV]         = incom::standard::algos::compute_minMaxMulti(self.values_data);

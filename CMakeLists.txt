@@ -9,12 +9,13 @@ add_library(incplot-lib STATIC)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
 
 set(INCPLOT_LIB_SRC
-    incplot.cpp
-    desired_plot.cpp
-    datastore.cpp
+    args.cpp
     color_mixer.cpp
-    parser_inc.cpp
-    args.cpp)
+    datastore.cpp
+    desired_plot.cpp
+    err.cpp
+    incplot.cpp
+    parser_inc.cpp)
 list(TRANSFORM INCPLOT_LIB_SRC PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 target_sources(incplot-lib PRIVATE ${INCPLOT_LIB_SRC})
