@@ -29,7 +29,7 @@ public:
     static inline std::string areaCorner_tr = "┐";
 
     static inline std::string areaCorner_tl_barV = "┌";
-    static inline std::string areaCorner_bl_barV = "└";
+    static inline std::string areaCorner_bl_barV = "├"; 
 
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
     static inline std::array<std::array<char32_t, 2>, 4> braille_map{
