@@ -109,7 +109,7 @@ public:
     bool        validate_self() const { return true; }
     std::string build_plotAsString() const;
 
-private:
+protected:
     // TODO: Implement validate_descriptors for 'plot_structures'
     auto validate_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
         return self;
@@ -155,7 +155,7 @@ class BarV : public Base {
     friend class Base;
     using Base::Base;
 
-private:
+protected:
     auto initialize_data_views(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -196,7 +196,7 @@ class BarVM : public BarV {
     friend class Base;
     using BarV::BarV;
 
-private:
+protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -215,7 +215,7 @@ class Scatter : public BarV {
     friend class Base;
     using BarV::BarV;
 
-private:
+protected:
     auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
     auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
@@ -238,7 +238,7 @@ class Multiline : public Scatter {
     friend class Base;
     using Scatter::Scatter;
 
-private:
+protected:
     auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -250,7 +250,7 @@ class BarHM : public Multiline {
     friend class Base;
     using Multiline::Multiline;
 
-private:
+protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;

@@ -409,11 +409,12 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_
                     std::get<0>(res.data[i].second).push_back(isNullLike ? "" : val.template get<std::string>());
                     break;
                 case 1uz:
-                    std::get<1>(res.data[i].second).push_back(isNullLike ? 0.0 : val.template get<double>());
+                    std::get<1>(res.data[i].second).push_back(isNullLike ? 0ll : val.template get<long long>());
                     break;
                 case 2uz:
-                    std::get<2>(res.data[i].second).push_back(isNullLike ? 0ll : val.template get<long long>());
+                    std::get<2>(res.data[i].second).push_back(isNullLike ? 0.0 : val.template get<double>());
                     break;
+
                 default: std::unreachable();
             }
 

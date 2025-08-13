@@ -951,11 +951,15 @@ auto Scatter::compute_axisName_vl(this auto &&self) -> std::expected<std::remove
 
 auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
-    auto getValLabels = [&](double const &minVal, double const &maxVal, size_t areaLength, size_t const &labelsWidth,
-                            size_t const padRight, size_t const padLeft) {
+    auto getValLabels = [&](size_t areaLength, size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
         auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
         std::string filler(labelsWidth, Config::space);
-        auto        stepSize = (maxVal - minVal) / (areaLength + 1);
+
+        // Min and Max are not actually at the position of horizontal axes, but one smallStep below and above
+        auto [minVal, maxVal] = incom::standard::algos::compute_minMaxMulti(self.values_data);
+        auto stepSize         = (maxVal - minVal) / (areaLength + 0.25);
+        minVal                = minVal - (stepSize / 4);
+        maxVal                = maxVal + (stepSize / 4);
 
         // Construct with 'left padding' in place
         std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
@@ -968,7 +972,7 @@ auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_c
                 res.at(id * (fillerLength + 1) + fillID + 1).append(filler);
             }
             // Value label at the current position
-            res.at(id * (fillerLength + 1) + fillerLength + 1)
+            res.at((id + 1) * (fillerLength + 1))
                 .append(detail::trim2Size_leading(
                     detail::format_toMax5length(minVal + (stepSize * (id + 1) * (fillerLength + 1))), labelsWidth));
         }
@@ -987,9 +991,8 @@ auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_c
         return res;
     };
 
-    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
-    self.labels_verLeft =
-        getValLabels(minV, maxV, self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
+
+    self.labels_verLeft = getValLabels(self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
 
     return (self);
 }
@@ -1160,6 +1163,10 @@ auto Multiline::compute_axis_vr(this auto &&self) -> std::expected<std::remove_c
 }
 
 auto Multiline::compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    // Below is a trick to call a member function as if 'self' was its parent type
+    // return (&BarV::template compute_axis_ht<std::remove_cvref_t<decltype(self)>>)(std::move(self));
+
     self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
     return self;
 }
