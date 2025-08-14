@@ -253,6 +253,7 @@ class BarHM : public Multiline {
 protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
+    auto compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
     auto compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;

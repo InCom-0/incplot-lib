@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     // dpCtor_Structs.front().availableHeight = 15;
     // dpCtor_Structs.front().filter_outsideStdDev = 0;
     dpCtor_Structs.front().lts_colID            = 4;
-    dpCtor_Structs.front().v_colIDs             = {0, 1,2};
+    dpCtor_Structs.front().v_colIDs             = {0};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

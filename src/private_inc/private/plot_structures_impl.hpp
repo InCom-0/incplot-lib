@@ -1210,10 +1210,14 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
                      self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
                      self.pad_right;
     if (self.areaWidth < static_cast<long long>(Config::min_areaWidth_BarHM) ||
-        self.areaWidth < ((self.data_rowCount * self.values_data.size()) + self.data_rowCount - 1)) {
+        self.areaWidth < ((self.data_rowCount * self.values_data.size()) +
+                          (self.values_data.size() == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount - 2))) {
         return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
     }
-    else { self.areaWidth = ((self.data_rowCount * self.values_data.size()) + self.data_rowCount - 1); }
+    else {
+        self.areaWidth = ((self.data_rowCount * self.values_data.size()) +
+                          (self.values_data.size() == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount - 2));
+    }
 
     // LABELS AND AXIS NAME HOR BOTTOM
     self.axisName_horBottom_bool = false;
@@ -1250,6 +1254,11 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
     return self;
 }
 
+auto BarHM::compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    self.axis_horBottom.push_back(Config::color_Axes);
+    for (size_t id = 0; id < self.areaWidth; ++id) { self.axis_horBottom.push_back(Config::axisFiller_b); }
+    return self;
+};
 auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto olset = [](auto &var) -> size_t {
@@ -1272,6 +1281,7 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
         std::min(Config::axisLabels_maxHeight_hb, (realMaxLabelSize + labelWidth - 1) / labelWidth);
 
     size_t const labelCharCount = labelHeight * (pureVertical ? 1 : labelWidth);
+    bool const   doubleSpace    = self.values_data.size() > 1;
 
     auto computeLabels = [&](auto &var) -> void {
         size_t const label_startHorPos = pureVertical ? self.values_data.size() / 2 : 0;
@@ -1298,8 +1308,10 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
             for (auto const &tmpLine : tmpHolder) {
                 res_oneLine.append(label_startHorPos, Config::space);
                 res_oneLine.append(tmpLine.begin() + startOffset, tmpLine.begin() + startOffset + label_horSize);
-                res_oneLine.append(self.values_data.size() - labelWidth - label_startHorPos+1, Config::space);
+                res_oneLine.append(self.values_data.size() - labelWidth - label_startHorPos + 1 + doubleSpace,
+                                   Config::space);
             }
+            if (doubleSpace) { res_oneLine.pop_back(); }
             startOffset += label_horSize;
         }
     };
@@ -1322,7 +1334,6 @@ auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
     auto       bigStepSize   = (maxV - minV) / (self.areaHeight - 0.125);
     auto const smallStepSize = bigStepSize / 8;
     minV                     = minV - (bigStepSize / 8);
-    size_t const skipSize    = self.values_data.size() + 1;
 
     self.plotArea = std::vector(static_cast<size_t>(self.areaHeight), std::string{});
 
@@ -1350,6 +1361,7 @@ auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
         valColID++;
     }
 
+    bool const doubleSpace = self.values_data.size() > 1;
 
     for (size_t resLine_ID = 0; auto &resLine : self.plotArea) {
         std::string &resLineRef = self.plotArea.at(resLine_ID);
@@ -1360,9 +1372,10 @@ auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
                 resLineRef.append(TermColors::get_basicColor(self.dp.color_basePalette.at(valColID)));
                 resLineRef.append(Config::blocks_ver_str.at(symbolVects[valColID][resLine_ID][col_inPlotID]));
             }
-            resLineRef.push_back(Config::space);
+            for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLineRef.push_back(Config::space); }
         }
-        resLineRef.pop_back();
+        for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLineRef.pop_back(); }
+        resLineRef.append(Config::term_setDefault);
         resLine_ID++;
     }
 
