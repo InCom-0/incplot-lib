@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     set_cocp();
 
     auto dpCtor_Structs                         = incplot::CL_Args::get_dpCtorStruct();
-    dpCtor_Structs.front().tar_width = 120uz;
+    dpCtor_Structs.front().tar_width = 200uz;
     dpCtor_Structs.front().tar_height = 10uz;
     dpCtor_Structs.front().plot_type_name       = "BarHM";
     // dpCtor_Structs.front().tar_width = 100;
