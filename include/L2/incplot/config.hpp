@@ -29,7 +29,7 @@ public:
     static inline std::string areaCorner_tr = "┐";
 
     static inline std::string areaCorner_tl_barV = "┌";
-    static inline std::string areaCorner_bl_barV = "├"; 
+    static inline std::string areaCorner_bl_barV = "├";
 
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
     static inline std::array<std::array<char32_t, 2>, 4> braille_map{
@@ -40,6 +40,9 @@ public:
 
     static inline std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
     static inline std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
+
+    static inline std::array<std::string, 9> blocks_ver_str{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
+    static inline std::array<std::string, 9> blocks_hor_str{" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
     static inline std::array<char32_t, 4> blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
 
     // DATA
@@ -87,10 +90,12 @@ public:
 
     static inline size_t max_sizeOfValueLabels = 5uz;
 
-    static inline size_t min_areaWidth                  = 8uz;
-    static inline size_t min_areaWidth_BarHM            = 1uz;
-    static inline size_t min_areaHeight                 = 1uz;
-    static inline size_t default_areaWidth2Height_ratio = 6uz;
+    static inline size_t min_areaWidth       = 8uz;
+    static inline size_t min_areaWidth_BarHM = 1uz;
+    static inline size_t min_areaHeight      = 1uz;
+
+    static inline size_t default_areaWidth2Height_ratio       = 6uz;
+    static inline size_t default_areaWidth2Height_ratio_BarHM = 3uz;
 
     static inline size_t max_numOfValCols             = 3uz;
     static inline size_t max_maxNumOfCategories       = 3uz;
@@ -98,8 +103,11 @@ public:
 
     static inline size_t axisLabels_maxLength_vl = 16uz;
     static inline size_t axisLabels_maxLength_vr = 16uz;
-    static inline size_t axisLabels_padRight_vl  = 1uz;
-    static inline size_t axisLabels_padLeft_vr   = 1uz;
+    static inline size_t axisLabels_maxHeight_ht = 8uz;
+    static inline size_t axisLabels_maxHeight_hb = 8uz;
+
+    static inline size_t axisLabels_padRight_vl = 1uz;
+    static inline size_t axisLabels_padLeft_vr  = 1uz;
 
     static inline size_t ps_padLeft   = 2;
     static inline size_t ps_padRight  = 0;

@@ -84,7 +84,7 @@ constexpr inline std::string trim2Size_leading(std::string const &str, size_t ma
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
 }
-constexpr inline std::string trim2Size_leading(std::string const &&str, size_t maxSize) {
+constexpr inline std::string trim2Size_leading(std::string &&str, size_t maxSize) {
     return trim2Size_leading(str, maxSize);
 }
 constexpr inline std::string trim2Size_ending(std::string const &str, size_t maxSize) {
@@ -108,7 +108,7 @@ constexpr inline std::string trim2Size_ending(std::string const &str, size_t max
             .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
     }
 }
-constexpr inline std::string trim2Size_ending(std::string const &&str, size_t maxSize) {
+constexpr inline std::string trim2Size_ending(std::string &&str, size_t maxSize) {
     return trim2Size_ending(str, maxSize);
 }
 constexpr inline std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
@@ -172,7 +172,7 @@ constexpr inline size_t guess_stepsOnVerAxis(long long height, size_t verticalSt
 }
 
 template <typename T>
-requires std::is_arithmetic_v<std::decay_t<T>>
+requires std::is_arithmetic_v<std::remove_cvref_t<T>>
 constexpr inline std::pair<double, std::string> rebase_2_SIPrefix(T &&value) {
     if (value == 0) { return {0, ""}; }
     else {
@@ -182,7 +182,7 @@ constexpr inline std::pair<double, std::string> rebase_2_SIPrefix(T &&value) {
 }
 
 template <typename T>
-requires std::is_arithmetic_v<std::decay_t<T>>
+requires std::is_arithmetic_v<std::remove_cvref_t<T>>
 constexpr inline std::string format_toMax5length(T &&val) {
     auto [rbsed, unit] = rebase_2_SIPrefix(std::forward<decltype(val)>(val));
     return std::format("{:.{}f}{}", rbsed, (rbsed >= 10 || rbsed <= -10) ? 0 : 1, unit);

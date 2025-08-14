@@ -1,9 +1,12 @@
 #pragma once
 
+#include "incplot/config.hpp"
 #include <algorithm>
 #include <cassert>
 #include <concepts>
+#include <cstddef>
 #include <expected>
+#include <iterator>
 #include <limits>
 #include <ranges>
 #include <string>
@@ -199,7 +202,6 @@ inline std::string Base::build_plotAsString() const {
     return result;
 }
 // ### END BASE ###
-
 // BAR V
 
 auto BarV::initialize_data_views(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
@@ -957,7 +959,7 @@ auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_c
 
         // Min and Max are not actually at the position of horizontal axes, but one smallStep below and above
         auto [minVal, maxVal] = incom::standard::algos::compute_minMaxMulti(self.values_data);
-        auto stepSize         = (maxVal - minVal) / (areaLength + 0.25);
+        auto stepSize         = (maxVal - minVal) / (areaLength - 0.25);
         minVal                = minVal - (stepSize / 4);
         maxVal                = maxVal + (stepSize / 4);
 
@@ -1222,7 +1224,7 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
     // PLOT AREA HEIGHT
     if (not self.dp.targetHeight.has_value()) {
         if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-            self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
+            self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio_BarHM;
         }
         else {
             self.areaHeight = self.areaWidth *
@@ -1240,7 +1242,7 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
     // Axes steps
 
-    self.axis_verLeftSteps   = detail::guess_stepsOnHorAxis(self.areaHeight);
+    self.axis_verLeftSteps   = detail::guess_stepsOnVerAxis(self.areaHeight);
     self.axis_horBottomSteps = self.data_rowCount - 1;
 
     // Top and Right axes steps keeping as-is
@@ -1250,97 +1252,118 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
 auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
-    auto computeLabels = [&](double const &minV, double const &maxV) -> void {
-        size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
-        auto         stepSize    = ((maxV - minV) / self.areaWidth);
-        size_t       placedChars = 0;
-
-        self.labels_horBottom.push_back(std::string());
-        self.labels_horBottom.back().append(Config::color_Axes);
-
-        // Construct the [0:0] point label == minV
-        std::string tempStr = detail::format_toMax5length(minV);
-        self.labels_horBottom.back().append(tempStr);
-        placedChars += detail::strlen_utf8(tempStr);
-
-        // Construct the tick labels
-        for (size_t i = 0; i < self.axis_horBottomSteps; ++i) {
-            tempStr = detail::format_toMax5length(minV + ((i + 1) * (fillerSize + 1) * stepSize));
-
-            while (placedChars < (i * (fillerSize + 1) + fillerSize + (tempStr.size() < 3) - (tempStr.size() > 4))) {
-                self.labels_horBottom.back().push_back(Config::space);
-                placedChars++;
-            }
-
-            self.labels_horBottom.back().append(tempStr);
-            placedChars += detail::strlen_utf8(tempStr);
+    auto olset = [](auto &var) -> size_t {
+        if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            return std::ranges::max(std::views::transform(var, [](auto const &a) { return detail::strlen_utf8(a); }));
         }
-
-        // Construct the [0:end] point label
-        tempStr = detail::format_toMax5length(maxV);
-        for (size_t i = 0; i < ((self.areaWidth + 2 - placedChars) - detail::strlen_utf8(tempStr)); ++i) {
-            self.labels_horBottom.back().push_back(Config::space);
+        else if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            return Config::max_sizeOfValueLabels;
         }
-        self.labels_horBottom.back().append(tempStr);
-        self.labels_horBottom.back().append(Config::term_setDefault);
+        else { static_assert(false); } // This should never be instantiated
     };
+    auto const realMaxLabelSize = std::visit(olset, self.labelTS_data.value());
 
-    auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
-    computeLabels(minV, maxV);
+    // If max label size is small enough we will make all 1 width vertical (usually used for arithmetic values)
+    bool const   pureVertical = realMaxLabelSize <= Config::max_sizeOfValueLabels;
+    size_t const labelWidth   = pureVertical ? 1 : self.values_data.size();
+
+    // '(realMaxLabelSize + labelWidth - 1) / labelWidth)' means rounded up to nearest integer
+    size_t const labelHeight =
+        std::min(Config::axisLabels_maxHeight_hb, (realMaxLabelSize + labelWidth - 1) / labelWidth);
+
+    size_t const labelCharCount = labelHeight * (pureVertical ? 1 : labelWidth);
+
+    auto computeLabels = [&](auto &var) -> void {
+        size_t const label_startHorPos = pureVertical ? self.values_data.size() / 2 : 0;
+        size_t const label_horSize     = pureVertical ? label_startHorPos + 1 : self.values_data.size();
+
+        std::ranges::fill_n(std::back_inserter(self.labels_horBottom), labelHeight, std::string{Config::color_Axes});
+
+        std::vector<std::string> tmpHolder;
+        if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            tmpHolder = std::vector<std::string>(std::from_range, std::views::transform(var, [&](auto &&oneValue) {
+                                                     return detail::trim2Size_ending(oneValue, labelCharCount);
+                                                 }));
+        }
+        else if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+            tmpHolder = std::vector<std::string>(std::from_range, std::views::transform(var, [&](auto &&oneValue) {
+                                                     return detail::trim2Size_ending(
+                                                         detail::format_toMax5length(oneValue), labelCharCount);
+                                                 }));
+        }
+        else { static_assert(false); } // This should never be instantiated
+
+        for (size_t startOffset = 0; auto &res_oneLine : self.labels_horBottom) {
+            for (auto const &tmpLine : tmpHolder) {
+                res_oneLine.append(label_startHorPos + 1, Config::space);
+                res_oneLine.append(tmpLine.begin() + startOffset, tmpLine.begin() + startOffset + label_horSize);
+                res_oneLine.append(self.values_data.size() - labelWidth - label_startHorPos, Config::space);
+            }
+            startOffset += label_horSize;
+        }
+    };
+    std::visit(computeLabels, self.labelTS_data.value());
+
+    // Add one space at the end of each label line (aligned with vertical right axis)
+    // Set terminal colour back to default on each line
+    for (auto &labelLine : self.labels_horBottom) {
+        labelLine.push_back(Config::space);
+        labelLine.append(Config::term_setDefault);
+    }
+
 
     return self;
 }
 
 auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
-    auto const [minV, maxV]         = incom::standard::algos::compute_minMaxMulti(self.values_data);
-    auto const        bigStepSize   = (maxV - minV) / (self.areaWidth);
-    auto const        smallStepSize = bigStepSize / 8;
-    size_t const      skipSize      = self.values_data.size() + 1;
-    std::string const emptyPlotLine(self.areaWidth, Config::space);
+    auto [minV, maxV]        = incom::standard::algos::compute_minMaxMulti(self.values_data);
+    auto       bigStepSize   = (maxV - minV) / (self.areaHeight - 0.125);
+    auto const smallStepSize = bigStepSize / 8;
+    minV                     = minV - (bigStepSize / 8);
+    size_t const skipSize    = self.values_data.size() + 1;
 
-    // Series count * row count + 'empty lines' (row count - 1)
-    self.plotArea =
-        std::vector((self.values_data.size() * self.data_rowCount) + self.data_rowCount - 1, std::string{""});
+    self.plotArea = std::vector(static_cast<size_t>(self.areaHeight), std::string{});
 
-    auto computePA = [&, seriesID = 0uz](auto &var) mutable -> void {
-        if constexpr (not std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
-            // Non-arithmetic types cannot be plotted as values
-            assert(false);
-        }
-        else {
-            std::u32string tmp_u32string;
-            for (size_t rowID = 0; auto const &val : var) {
-                long long const bigSteps   = (val - minV) / bigStepSize;
-                long long const smallSteps = ((val - minV) - (bigSteps * bigStepSize)) / smallStepSize;
+    // levels: 0 = valuesCols, 1 = rowIDs_inPlot, 2 = lineOfVals
+    std::vector symbolVects(self.values_data.size(), std::vector(self.areaHeight, std::vector<size_t>{}));
 
-                size_t barsPlaced = 1;
-                for (long long i = bigSteps; i > 0; --i) {
-                    tmp_u32string.push_back(Config::blocks_hor[8]);
-                    barsPlaced++;
+    for (size_t valColID = 0; auto const &valCol : self.values_data) {
+        auto symbolVectorCreator = [&](auto const &valCol) {
+            if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(valCol)>>>) {
+                auto &symbolVecOfRows = symbolVects.at(valColID);
+                for (size_t rowID_ID = 0; auto &symbol_oneRow : std::views::reverse(symbolVecOfRows)) {
+                    auto const bottomLvl = minV + (rowID_ID * bigStepSize);
+                    for (auto const &oneValue : valCol) {
+                        if (oneValue < bottomLvl) { symbol_oneRow.push_back(0uz); }
+                        else if (oneValue >= (bottomLvl + bigStepSize)) { symbol_oneRow.push_back(8uz); }
+                        else { symbol_oneRow.push_back((oneValue - bottomLvl) / smallStepSize); }
+                    }
+                    rowID_ID++;
                 }
-                tmp_u32string.push_back(Config::blocks_hor[smallSteps]);
-
-                for (; barsPlaced < self.areaWidth; ++barsPlaced) { tmp_u32string.push_back(Config::blocks_hor[0]); }
-
-                if (rowID != 0 && seriesID == 0) {
-                    self.plotArea.at((rowID * skipSize) - 1).append(Config::term_setDefault);
-                    self.plotArea.at((rowID * skipSize) - 1).append(emptyPlotLine);
-                }
-
-                std::string &lineRef = self.plotArea.at((rowID * skipSize) + seriesID);
-                lineRef.append(TermColors::get_basicColor(self.dp.color_basePalette.at(seriesID)));
-                lineRef.append(incom::terminal_plot::detail::convert_u32u8(tmp_u32string));
-                lineRef.append(Config::term_setDefault);
-
-                tmp_u32string.clear();
-                rowID++;
             }
-        }
-        seriesID++;
-    };
+            else { assert(false); }
+        };
 
-    for (auto const &varVec : self.values_data) { std::visit(computePA, varVec); }
+        std::visit(symbolVectorCreator, valCol);
+        valColID++;
+    }
+
+
+    for (size_t resLine_ID = 0; auto &resLine : self.plotArea) {
+        std::string &resLineRef = self.plotArea.at(resLine_ID);
+
+        for (size_t col_inPlotID = 0; col_inPlotID < self.data_rowCount; ++col_inPlotID) {
+            for (size_t valColID = 0; valColID < self.values_data.size(); ++valColID) {
+
+                resLineRef.append(TermColors::get_basicColor(self.dp.color_basePalette.at(valColID)));
+                resLineRef.append(Config::blocks_ver_str.at(symbolVects[valColID][resLine_ID][col_inPlotID]));
+            }
+            resLineRef.push_back(Config::space);
+        }
+        resLineRef.pop_back();
+        resLine_ID++;
+    }
 
 
     return self;

@@ -400,10 +400,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(Desired
 
     // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
     if (not dp.targetHeight.has_value()) {
-        if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {}
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {}
-        else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {}
-        else { dp.targetHeight = dp.targetWidth.value() / 2; }
+        // if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {}
+        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {}
+        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {}
+        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {}
+        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>()) {}
+        // else { dp.targetHeight = dp.targetWidth.value() / 2; }
     }
 
     // Impossible to print with height <5 under all circumstances
