@@ -114,10 +114,14 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
         default: return "Undocumented error type"sv;
     }
 }
-std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e) {
-    switch (e) {
-        default: return "Undocumented error type"sv;
-    }
-}
+
+// COMMENTED OUT UNTILL ERROR TYPE IS DOCUMENTED
+// TODO: Implement the method below
+// std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e) {
+//     switch (e) {
+//         default: return "Undocumented error type"sv;
+//     }
+// }
+
 } // namespace terminal_plot
 } // namespace incom

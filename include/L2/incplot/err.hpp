@@ -69,7 +69,7 @@ enum class Unexp_parser {
 };
 
 std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e);
-std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e);
+// std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e);
 
 
 } // namespace terminal_plot
