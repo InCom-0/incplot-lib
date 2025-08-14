@@ -1275,9 +1275,10 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
 
     auto computeLabels = [&](auto &var) -> void {
         size_t const label_startHorPos = pureVertical ? self.values_data.size() / 2 : 0;
-        size_t const label_horSize     = pureVertical ? label_startHorPos + 1 : self.values_data.size();
+        size_t const label_horSize     = pureVertical ? 1 : self.values_data.size();
 
         std::ranges::fill_n(std::back_inserter(self.labels_horBottom), labelHeight, std::string{Config::color_Axes});
+        for (auto &lab_line : self.labels_horBottom) { lab_line.push_back(Config::space); }
 
         std::vector<std::string> tmpHolder;
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -1295,9 +1296,9 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
 
         for (size_t startOffset = 0; auto &res_oneLine : self.labels_horBottom) {
             for (auto const &tmpLine : tmpHolder) {
-                res_oneLine.append(label_startHorPos + 1, Config::space);
+                res_oneLine.append(label_startHorPos, Config::space);
                 res_oneLine.append(tmpLine.begin() + startOffset, tmpLine.begin() + startOffset + label_horSize);
-                res_oneLine.append(self.values_data.size() - labelWidth - label_startHorPos, Config::space);
+                res_oneLine.append(self.values_data.size() - labelWidth - label_startHorPos+1, Config::space);
             }
             startOffset += label_horSize;
         }
