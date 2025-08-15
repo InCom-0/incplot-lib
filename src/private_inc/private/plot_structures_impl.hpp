@@ -1310,15 +1310,18 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
 
         std::vector<std::string> tmpHolder;
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
-            tmpHolder = std::vector<std::string>(std::from_range, std::views::transform(var, [&](auto &&oneValue) {
-                                                     return detail::trim2Size_ending(oneValue, labelCharCount);
-                                                 }));
+            // TODO: Once on GCC 15 (or supporting) use std::from_range based constructor
+            auto view = std::views::transform(
+                var, [&](auto &&oneValue) { return detail::trim2Size_ending(oneValue, labelCharCount); });
+
+            tmpHolder = std::vector<std::string>(view.begin(), view.end());
         }
         else if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
-            tmpHolder = std::vector<std::string>(std::from_range, std::views::transform(var, [&](auto &&oneValue) {
-                                                     return detail::trim2Size_ending(
-                                                         detail::format_toMax5length(oneValue), labelCharCount);
-                                                 }));
+            // TODO: Once on GCC 15 (or supporting) use std::from_range based constructor
+            auto view = std::views::transform(var, [&](auto &&oneValue) {
+                return detail::trim2Size_ending(detail::format_toMax5length(oneValue), labelCharCount);
+            });
+            tmpHolder = std::vector<std::string>(view.begin(), view.end());
         }
         else { static_assert(false); } // This should never be instantiated
 
@@ -1428,7 +1431,7 @@ auto BarHS::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvr
             return std::visit(ol, oneVarCol);
         });
 
-    auto       maxVal = std::ranges::max(std::vector<double>(std::from_range, stackedIniRng));
+    auto       maxVal = std::ranges::max(std::vector<double>(stackedIniRng.begin(), stackedIniRng.end()));
     auto const minVal = 0.0;
 
 

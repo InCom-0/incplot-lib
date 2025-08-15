@@ -114,7 +114,7 @@ jobs:
         sys: [linux]
         runs-on: [ubuntu-24.04, ubuntu-24.04-arm]
         compiler: ["gcc"]
-        compiler-ver: ["14"]
+        compiler-ver: ["15"]
         build-type: ["Release", "Debug"]
         target : ["all"]
         cmake-override: [""]
@@ -126,11 +126,11 @@ jobs:
             platform: "arm64"
 
           - compiler: "gcc"
-            compiler-ver: "14"
+            compiler-ver: "15"
             install: |
-              sudo apt install gcc-14 g++-14
-              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
-              sudo update-alternatives --set gcc /usr/bin/gcc-14
+              sudo apt install gcc-15 g++-15
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100 --slave /usr/bin/g++ g++ /usr/bin/g++-15 --slave /usr/bin/gcov gcov /usr/bin/gcov-15
+              sudo update-alternatives --set gcc /usr/bin/gcc-15
               
           # Temporarily disabled CLANG because libstc++ is not up to date
           # - compiler: "clang"
@@ -189,8 +189,8 @@ jobs:
             platform: "x86_64"
 
           - compiler: "gcc"
-            compiler-ver: "14"
-            cmake-override: "-DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14"
+            compiler-ver: "15"
+            cmake-override: "-DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15"
             install:
           # - compiler: "clang"
           #   compiler-ver: "20"
@@ -201,6 +201,8 @@ jobs:
         exclude:
           - compiler: "gcc"
             compiler-ver: "20"
+          - compiler: "gcc"
+            compiler-ver: "21"
           - compiler: "clang"
             compiler-ver: "14"
           - compiler: "clang"
@@ -215,6 +217,7 @@ jobs:
       uses: aminya/setup-cpp@v1
       with:
         setup-cpp: true
+        compiler: ${{matrix.compiler}}-${{matrix.compiler-ver}}
 
     - name: Create Build Environment
       run: |
