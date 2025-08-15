@@ -43,7 +43,7 @@ public:
 
     static inline std::array<std::string, 9> blocks_ver_str{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"};
     static inline std::array<std::string, 9> blocks_hor_str{" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
-    static inline std::array<char32_t, 4> blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
+    static inline std::array<char32_t, 4>    blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
 
     // DATA
     static inline double filter_withinStdDevMultiple_default = 6.0;
@@ -51,7 +51,8 @@ public:
 
 
     // COLORS
-    static inline Color_CVTS color_Axes_enum  = Color_CVTS::Bright_Foreground_Black;
+    static inline Color_CVTS color_Axes_enum = Color_CVTS::Bright_Foreground_Black;
+
     static inline Color_CVTS color_Vals1_enum = Color_CVTS::Foreground_Green;
     static inline Color_CVTS color_Vals2_enum = Color_CVTS::Foreground_Blue;
     static inline Color_CVTS color_Vals3_enum = Color_CVTS::Foreground_Red;
@@ -59,13 +60,28 @@ public:
     static inline Color_CVTS color_Vals5_enum = Color_CVTS::Foreground_Yellow;
     static inline Color_CVTS color_Vals6_enum = Color_CVTS::Foreground_Magenta;
 
-    static inline std::string color_Axes  = TermColors::get_basicColor(color_Axes_enum);
+    static inline Color_CVTS color_Bckgrnd1_enum = Color_CVTS::Background_Green;
+    static inline Color_CVTS color_Bckgrnd2_enum = Color_CVTS::Background_Blue;
+    static inline Color_CVTS color_Bckgrnd3_enum = Color_CVTS::Background_Red;
+    static inline Color_CVTS color_Bckgrnd4_enum = Color_CVTS::Background_Cyan;
+    static inline Color_CVTS color_Bckgrnd5_enum = Color_CVTS::Background_Yellow;
+    static inline Color_CVTS color_Bckgrnd6_enum = Color_CVTS::Background_Magenta;
+
+    static inline std::string color_Axes = TermColors::get_basicColor(color_Axes_enum);
+
     static inline std::string color_Vals1 = TermColors::get_basicColor(color_Vals1_enum);
     static inline std::string color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
     static inline std::string color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
     static inline std::string color_Vals4 = TermColors::get_basicColor(color_Vals4_enum);
     static inline std::string color_Vals5 = TermColors::get_basicColor(color_Vals5_enum);
     static inline std::string color_Vals6 = TermColors::get_basicColor(color_Vals6_enum);
+
+    static inline std::string color_Bckgrnd1 = TermColors::get_basicColor(color_Bckgrnd1_enum);
+    static inline std::string color_Bckgrnd2 = TermColors::get_basicColor(color_Bckgrnd2_enum);
+    static inline std::string color_Bckgrnd3 = TermColors::get_basicColor(color_Bckgrnd3_enum);
+    static inline std::string color_Bckgrnd4 = TermColors::get_basicColor(color_Bckgrnd4_enum);
+    static inline std::string color_Bckgrnd5 = TermColors::get_basicColor(color_Bckgrnd5_enum);
+    static inline std::string color_Bckgrnd6 = TermColors::get_basicColor(color_Bckgrnd6_enum);
 
     static inline std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{
         {{19u, 161u, 14u}, {0u, 55u, 218u}, {197u, 15u, 31u}}};

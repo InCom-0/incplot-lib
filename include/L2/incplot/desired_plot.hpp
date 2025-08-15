@@ -71,6 +71,10 @@ public:
         Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
         Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
     };
+    std::array<Color_CVTS, 6> color_bckgrndPalette = {
+        Config::color_Bckgrnd1_enum, Config::color_Bckgrnd2_enum, Config::color_Bckgrnd3_enum,
+        Config::color_Bckgrnd4_enum, Config::color_Bckgrnd5_enum, Config::color_Bckgrnd6_enum,
+    };
 
     std::optional<bool> valAxesNames_bool  = std::nullopt;
     std::optional<bool> valAxesLabels_bool = std::nullopt;
@@ -92,6 +96,10 @@ public:
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
             Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
+        std::array<Color_CVTS, 6> color_bckgrnd = {
+            Config::color_Bckgrnd1_enum, Config::color_Bckgrnd2_enum, Config::color_Bckgrnd3_enum,
+            Config::color_Bckgrnd4_enum, Config::color_Bckgrnd5_enum, Config::color_Bckgrnd6_enum,
+        };
         std::optional<std::string> lts_colName           = std::nullopt;
         std::vector<std::string>   v_colNames            = {};
         std::optional<std::string> c_colName             = std::nullopt;
@@ -108,17 +116,17 @@ public:
           values_colNames(std::move(dp_struct.v_colNames)), targetWidth(std::move(dp_struct.tar_width)),
           targetHeight(std::move(dp_struct.tar_height)), availableWidth(std::move(dp_struct.availableWidth)),
           availableHeight(std::move(dp_struct.availableHeight)), color_basePalette(std::move(dp_struct.colors)),
+          color_bckgrndPalette(std::move(dp_struct.color_bckgrnd)),
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
           display_filtered_bool(std::move(dp_struct.display_filtered_bool)) {}
     DesiredPlot(DP_CtorStruct const &dp_struct)
-        : plot_type_name(dp_struct.plot_type_name), cat_colID(dp_struct.c_colID),
-          cat_colName(dp_struct.c_colName), labelTS_colID(dp_struct.lts_colID),
-          labelTS_colName(dp_struct.lts_colName), values_colIDs(dp_struct.v_colIDs),
-          values_colNames(dp_struct.v_colNames), targetWidth(dp_struct.tar_width),
-          targetHeight(dp_struct.tar_height), availableWidth(dp_struct.availableWidth),
-          availableHeight(dp_struct.availableHeight), color_basePalette(dp_struct.colors),
-          filter_outsideStdDev(dp_struct.filter_outsideStdDev),
-          display_filtered_bool(dp_struct.display_filtered_bool) {}
+        : plot_type_name(dp_struct.plot_type_name), cat_colID(dp_struct.c_colID), cat_colName(dp_struct.c_colName),
+          labelTS_colID(dp_struct.lts_colID), labelTS_colName(dp_struct.lts_colName), values_colIDs(dp_struct.v_colIDs),
+          values_colNames(dp_struct.v_colNames), targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
+          availableWidth(dp_struct.availableWidth), availableHeight(dp_struct.availableHeight),
+          color_basePalette(dp_struct.colors), color_bckgrndPalette(dp_struct.color_bckgrnd),
+          filter_outsideStdDev(dp_struct.filter_outsideStdDev), display_filtered_bool(dp_struct.display_filtered_bool) {
+    }
 
     // Create a new copy and guess_missingParams on it.
     std::expected<DesiredPlot, incerr::incerr_code> build_guessedParamsCPY(this DesiredPlot &self,

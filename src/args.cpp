@@ -42,6 +42,7 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
     if (inout_ap.get<bool>("-l")) { addOne(detail::TypeToString<plot_structures::Multiline>()); }
     if (inout_ap.get<bool>("-V")) { addOne(detail::TypeToString<plot_structures::BarVM>()); }
     if (inout_ap.get<bool>("-H")) { addOne(detail::TypeToString<plot_structures::BarHM>()); }
+    if (inout_ap.get<bool>("-S")) { addOne(detail::TypeToString<plot_structures::BarHS>()); }
     if (res.empty()) { addOne(std::nullopt); }
 
     return res;
@@ -65,6 +66,7 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
     out_ap.add_argument("-l", "--line").help("Draw (multi)line plot [flag]").flag().nargs(0);
     out_ap.add_argument("-V", "--barVM").help("Draw vertical multibar plot [flag]").flag().nargs(0);
     out_ap.add_argument("-H", "--barHM").help("Draw horizontal multibar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-S", "--barHS").help("Draw horizontal stacked bar plot [flag]").flag().nargs(0);
 
 
     out_ap.add_group("Values options");

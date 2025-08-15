@@ -10,8 +10,8 @@ namespace incom {
 namespace terminal_plot {
 
 // This is the only place where one 'selects' the plot types (ie. 'plot_structures') that will be used by the library.
-using var_plotTypes =
-    std::variant<plot_structures::BarV, plot_structures::BarVM, plot_structures::BarHM, plot_structures::Multiline, plot_structures::Scatter>;
+using var_plotTypes = std::variant<plot_structures::BarV, plot_structures::BarVM, plot_structures::Multiline,
+                                   plot_structures::Scatter, plot_structures::BarHM, plot_structures::BarHS>;
 
 using incerr_c = incerr::incerr_code;
 using enum Unexp_plotDrawer;

@@ -283,6 +283,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
+    // TODO: Inference for multibar plots
     auto useableValCols_tpl =
         std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &tpl) {
             bool arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
@@ -382,6 +383,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
+    // TODO: Inference for multibar plots
 
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) {

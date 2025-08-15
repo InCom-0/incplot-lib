@@ -1,6 +1,5 @@
 #pragma once
 
-#include "incplot/config.hpp"
 #include <algorithm>
 #include <cassert>
 #include <concepts>
@@ -953,15 +952,21 @@ auto Scatter::compute_axisName_vl(this auto &&self) -> std::expected<std::remove
 
 auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
+    using self_t = std::remove_cvref_t<decltype(self)>;
+
     auto getValLabels = [&](size_t areaLength, size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
         auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
         std::string filler(labelsWidth, Config::space);
 
+        bool const is_barHS = detail::TypeToString<self_t>() == detail::TypeToString<plot_structures::BarHS>();
+
         // Min and Max are not actually at the position of horizontal axes, but one smallStep below and above
+        // TODO: Technically speaking the min and max are not calculated correctly for inherited plot types
         auto [minVal, maxVal] = incom::standard::algos::compute_minMaxMulti(self.values_data);
-        auto stepSize         = (maxVal - minVal) / (areaLength - 0.25);
-        minVal                = minVal - (stepSize / 4);
-        maxVal                = maxVal + (stepSize / 4);
+
+        if (is_barHS) { minVal = 0; }
+        auto stepSize = (maxVal - minVal) / (areaLength - (not is_barHS ? 0.25 : 0));
+        maxVal        = maxVal + (stepSize / 4);
 
         // Construct with 'left padding' in place
         std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
@@ -1203,6 +1208,10 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
     else { self.axisName_verLeft_bool = true; }
     self.axisName_verRight_bool = false;
 
+    // Special case when the only one value column or when the plot type is 'stacked'
+    size_t const oneGroupWidth =
+        (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) ? 1 : self.values_data.size();
+
     // PLOT AREA
     // Plot area width (-2 is for the 2 vertical axes positions)
     self.areaWidth = self.dp.targetWidth.value() - self.pad_left -
@@ -1210,13 +1219,13 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
                      self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
                      self.pad_right;
     if (self.areaWidth < static_cast<long long>(Config::min_areaWidth_BarHM) ||
-        self.areaWidth < ((self.data_rowCount * self.values_data.size()) +
-                          (self.values_data.size() == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount - 2))) {
+        self.areaWidth < ((self.data_rowCount * oneGroupWidth) +
+                          (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount))) {
         return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
     }
     else {
-        self.areaWidth = ((self.data_rowCount * self.values_data.size()) +
-                          (self.values_data.size() == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount - 2));
+        self.areaWidth = ((self.data_rowCount * oneGroupWidth) +
+                          (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount));
     }
 
     // LABELS AND AXIS NAME HOR BOTTOM
@@ -1271,24 +1280,27 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
         else { static_assert(false); } // This should never be instantiated
     };
     auto const realMaxLabelSize = std::visit(olset, self.labelTS_data.value());
+    bool const is_barHS         = self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>();
 
     // If max label size is small enough we will make all 1 width vertical (usually used for arithmetic values)
-    bool const   pureVertical = realMaxLabelSize <= Config::max_sizeOfValueLabels;
+    bool const   pureVertical = (realMaxLabelSize <= Config::max_sizeOfValueLabels) || is_barHS;
     size_t const labelWidth   = pureVertical ? 1 : self.values_data.size();
 
     // '(realMaxLabelSize + labelWidth - 1) / labelWidth)' means rounded up to nearest integer
     size_t const labelHeight =
         std::min(Config::axisLabels_maxHeight_hb, (realMaxLabelSize + labelWidth - 1) / labelWidth);
 
-    size_t const labelCharCount = labelHeight * (pureVertical ? 1 : labelWidth);
-    bool const   doubleSpace    = self.values_data.size() > 1;
+    size_t const labelCharCount = labelHeight * ((pureVertical) ? 1 : labelWidth);
+    bool const   doubleSpace    = is_barHS ? false : self.values_data.size() > 1;
+
+    size_t const label_startHorPos = (is_barHS || (not pureVertical)) ? 0 : self.values_data.size() / 2;
 
     auto computeLabels = [&](auto &var) -> void {
-        size_t const label_startHorPos = pureVertical ? self.values_data.size() / 2 : 0;
-        size_t const label_horSize     = pureVertical ? 1 : self.values_data.size();
-
         std::ranges::fill_n(std::back_inserter(self.labels_horBottom), labelHeight, std::string{Config::color_Axes});
         for (auto &lab_line : self.labels_horBottom) { lab_line.push_back(Config::space); }
+        if (doubleSpace) {
+            for (auto &lab_line : self.labels_horBottom) { lab_line.push_back(Config::space); }
+        }
 
         std::vector<std::string> tmpHolder;
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -1307,18 +1319,20 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
         for (size_t startOffset = 0; auto &res_oneLine : self.labels_horBottom) {
             for (auto const &tmpLine : tmpHolder) {
                 res_oneLine.append(label_startHorPos, Config::space);
-                res_oneLine.append(tmpLine.begin() + startOffset, tmpLine.begin() + startOffset + label_horSize);
-                res_oneLine.append(self.values_data.size() - labelWidth - label_startHorPos + 1 + doubleSpace,
-                                   Config::space);
+                res_oneLine.append(tmpLine.begin() + startOffset, tmpLine.begin() + startOffset + labelWidth);
+                res_oneLine.append(label_startHorPos + 1 + doubleSpace, Config::space);
             }
             if (doubleSpace) { res_oneLine.pop_back(); }
-            startOffset += label_horSize;
+            startOffset += labelWidth;
         }
     };
     std::visit(computeLabels, self.labelTS_data.value());
 
     // Add one space at the end of each label line (aligned with vertical right axis)
     // Set terminal colour back to default on each line
+    if (self.values_data.size() > 1) {
+        for (auto &labelLine : self.labels_horBottom) { labelLine.push_back(Config::space); }
+    }
     for (auto &labelLine : self.labels_horBottom) {
         labelLine.push_back(Config::space);
         labelLine.append(Config::term_setDefault);
@@ -1331,16 +1345,20 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
 auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     auto [minV, maxV]        = incom::standard::algos::compute_minMaxMulti(self.values_data);
-    auto       bigStepSize   = (maxV - minV) / (self.areaHeight - 0.125);
+    auto const bigStepSize   = (maxV - minV) / (self.areaHeight - 0.125);
     auto const smallStepSize = bigStepSize / 8;
     minV                     = minV - (bigStepSize / 8);
 
     self.plotArea = std::vector(static_cast<size_t>(self.areaHeight), std::string{});
+    if (self.values_data.size() > 1) {
+        for (auto &pa_line : self.plotArea) { pa_line.push_back(Config::space); }
+    }
 
     // levels: 0 = valuesCols, 1 = rowIDs_inPlot, 2 = lineOfVals
     std::vector symbolVects(self.values_data.size(), std::vector(self.areaHeight, std::vector<size_t>{}));
 
     for (size_t valColID = 0; auto const &valCol : self.values_data) {
+
         auto symbolVectorCreator = [&](auto const &valCol) {
             if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(valCol)>>>) {
                 auto &symbolVecOfRows = symbolVects.at(valColID);
@@ -1363,26 +1381,192 @@ auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
 
     bool const doubleSpace = self.values_data.size() > 1;
 
-    for (size_t resLine_ID = 0; auto &resLine : self.plotArea) {
-        std::string &resLineRef = self.plotArea.at(resLine_ID);
-
+    for (size_t resLineID = 0; auto &resLine : self.plotArea) {
         for (size_t col_inPlotID = 0; col_inPlotID < self.data_rowCount; ++col_inPlotID) {
             for (size_t valColID = 0; valColID < self.values_data.size(); ++valColID) {
-
-                resLineRef.append(TermColors::get_basicColor(self.dp.color_basePalette.at(valColID)));
-                resLineRef.append(Config::blocks_ver_str.at(symbolVects[valColID][resLine_ID][col_inPlotID]));
+                resLine.append(TermColors::get_basicColor(self.dp.color_basePalette.at(valColID)));
+                resLine.append(Config::blocks_ver_str.at(symbolVects[valColID][resLineID][col_inPlotID]));
             }
-            for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLineRef.push_back(Config::space); }
+            for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLine.push_back(Config::space); }
         }
-        for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLineRef.pop_back(); }
-        resLineRef.append(Config::term_setDefault);
-        resLine_ID++;
+        for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLine.pop_back(); }
+        resLine.append(Config::term_setDefault);
+        resLineID++;
+    }
+    if (self.values_data.size() > 1) {
+        for (auto &pa_line : self.plotArea) { pa_line.push_back(Config::space); }
     }
 
 
     return self;
 }
 // ### END BAR HM ###
+
+
+// BAR HS
+
+auto BarHS::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    auto stackedIniRng = std::ranges::fold_left(
+        self.values_data, std::vector<double>(self.data_rowCount, 0.0), [](auto &&ini, auto const &oneVarCol) {
+            auto ol = [&](auto &vc) -> std::vector<double> {
+                if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(vc)>>>) {
+                    // TODO: All values need to be positive ... can't have negative values for stacked plots
+                    for (size_t i = 0; auto const &oneVal : vc) { ini[i++] += oneVal; }
+                    return ini;
+                }
+                else { assert(false); }
+                std::unreachable();
+            };
+
+            return std::visit(ol, oneVarCol);
+        });
+
+    auto       maxVal = std::ranges::max(std::vector<double>(std::from_range, stackedIniRng));
+    auto const minVal = 0.0;
+
+
+    auto getValLabels = [&](size_t areaLength, size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
+        auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
+        std::string filler(labelsWidth, Config::space);
+
+        auto stepSize = (maxVal - minVal) / (areaLength);
+        maxVal        = maxVal + (stepSize / 8);
+
+        // Construct with 'left padding' in place
+        std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
+
+        // Value label of 'zero point'
+        res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
+
+        for (size_t id = 0; id < self.axis_verLeftSteps; ++id) {
+            for (size_t fillID = 0; fillID < fillerLength; ++fillID) {
+                res.at(id * (fillerLength + 1) + fillID + 1).append(filler);
+            }
+            // Value label at the current position
+            res.at((id + 1) * (fillerLength + 1))
+                .append(detail::trim2Size_leading(
+                    detail::format_toMax5length(minVal + (stepSize * (id + 1) * (fillerLength + 1))), labelsWidth));
+        }
+
+        // Filler up to 'max point'
+        for (size_t i = self.axis_verLeftSteps * (fillerLength + 1) + 1; i < res.size() - 1; ++i) {
+            res.at(i).append(filler);
+        }
+
+        // Value label of 'max point'
+        res.back().append(detail::trim2Size_leading(detail::format_toMax5length(maxVal), labelsWidth));
+        for (auto &line : res) {
+            for (size_t i = 0; i < padRight; ++i) { line.push_back(Config::space); }
+        }
+        std::ranges::reverse(res);
+        return res;
+    };
+
+
+    self.labels_verLeft = getValLabels(self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
+
+    return (self);
+}
+
+auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+    std::vector<double>              stackedSums(self.data_rowCount, 0.0);
+    std::vector<std::vector<double>> doubleConverted{};
+
+    auto ol = [&](auto const &valCol) {
+        if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(valCol)>>>) {
+            // TODO: All values need to be positive ... can't have negative values for stacked plots
+            doubleConverted.push_back(std::vector<double>{});
+            for (size_t i = 0; auto const &value : valCol) {
+                stackedSums[i++] += value;
+                doubleConverted.back().push_back(value);
+            }
+        }
+        else { assert(false); }
+    };
+    for (auto const &valCol : self.values_data) { std::visit(ol, valCol); }
+
+
+    auto const maxV          = std::ranges::max(stackedSums);
+    auto const minV          = 0.0;
+    auto const bigStepSize   = (maxV - minV) / (self.areaHeight - 0.125);
+    auto const smallStepSize = bigStepSize / 8;
+
+    self.plotArea = std::vector(static_cast<size_t>(self.areaHeight), std::string{});
+
+    // levels: 0 = valuesCols, 1 = rowIDs_inPlot, 2 = lineOfVals
+    std::vector symbolVects(self.areaHeight, std::vector<size_t>{});
+
+    // Helper to deal with overlap of 'stacks' in one character (non-zero value means background needs to be set before
+    // 'block character' and later needs to be defaulted)
+    std::vector nextStart(self.data_rowCount, 0uz);
+    std::vector skippedSize_soFar(self.data_rowCount, 0.0);
+
+    std::vector currentValColIDs(self.data_rowCount, 0uz);
+
+    size_t const lastValColID = doubleConverted.size() - 1;
+
+
+    for (auto &resLine : std::views::reverse(self.plotArea)) {
+        for (size_t resColID = 0; resColID < self.data_rowCount; ++resColID) {
+            while (currentValColIDs[resColID] != doubleConverted.size() &&
+                   doubleConverted[currentValColIDs[resColID]][resColID] < smallStepSize) {
+                currentValColIDs[resColID]++;
+            }
+
+            // We exhausted this columm ... the rest is 'empty'
+            if (currentValColIDs[resColID] == doubleConverted.size()) { resLine.push_back(Config::space); }
+
+            // Full block of current color
+            else if (doubleConverted[currentValColIDs[resColID]][resColID] >= bigStepSize) {
+                resLine.append(TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                resLine.append(Config::blocks_ver_str[8uz]);
+                doubleConverted[currentValColIDs[resColID]][resColID] -= bigStepSize;
+            }
+
+            // Block of (possibly) mixed colours
+            else {
+                size_t const numOfSmallSteps =
+                    static_cast<size_t>(doubleConverted[currentValColIDs[resColID]][resColID] / smallStepSize);
+
+                if (currentValColIDs[resColID] == lastValColID) {
+                    resLine.append(
+                        TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                    resLine.append(Config::blocks_ver_str[numOfSmallSteps]);
+                    doubleConverted[currentValColIDs[resColID]][resColID] -= numOfSmallSteps * smallStepSize;
+                }
+                else {
+                    // Set the background to the next valCol colour only if it can fill the rest of the block
+                    if (doubleConverted[currentValColIDs[resColID] + 1][resColID] >= smallStepSize) {
+
+                        // Append the background color representing the next valCol
+                        resLine.append(TermColors::get_basicColor(
+                            self.dp.color_bckgrndPalette.at(currentValColIDs[resColID] + 1)));
+
+                        // Subtract from the next valCol value the remnant of this block
+                        doubleConverted[currentValColIDs[resColID] + 1][resColID] -=
+                            ((8uz - numOfSmallSteps) * smallStepSize);
+                    }
+
+                    resLine.append(
+                        TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                    resLine.append(Config::blocks_ver_str[numOfSmallSteps]);
+
+                    // We meed to revert colors to default
+                    resLine.append(Config::term_setDefault);
+                }
+
+                doubleConverted[currentValColIDs[resColID]][resColID] -= (numOfSmallSteps * smallStepSize);
+            }
+            resLine.push_back(Config::space);
+        }
+    }
+    for (auto &resLine : self.plotArea) { resLine.pop_back(); }
+    for (auto &resLine : self.plotArea) { resLine.append(Config::term_setDefault); }
+
+    return self;
+}
+// ### END BAR HS ###
 
 } // namespace plot_structures
 } // namespace terminal_plot
