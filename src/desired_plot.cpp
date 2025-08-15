@@ -160,7 +160,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     else if (dp.labelTS_colID.has_value()) {
         if (ds.m_data.at(dp.labelTS_colID.value()).colType == parsedVal_t::string_like) {
             if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
-            else { dp.plot_type_name = detail::TypeToString<plot_structures::BarVM>(); }
+            else { dp.plot_type_name = detail::TypeToString<plot_structures::BarHM>(); }
         }
         else {
             // If labelTSCol is value then select based on whether its is 'timeSeriesLike' or not
@@ -178,10 +178,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
             // No TSlikeCol and one useable val col
             if (useableValCols_count == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
             // No TSlikeCol and more than one useable val col
-            else { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
+            else { dp.plot_type_name = detail::TypeToString<plot_structures::BarHM>(); }
         }
         else if (dp.values_colIDs.size() == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
-        else { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
+        else { dp.plot_type_name = detail::TypeToString<plot_structures::BarHM>(); }
     }
     return dp;
 }
@@ -219,7 +219,8 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
 
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>() ||
              dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>()) {
+             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>() ||
+             dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
         for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.m_data), [](auto const &ct) {
                  return std::get<1>(ct).colType == parsedVal_t::string_like;
              })) {
@@ -229,7 +230,6 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
         // If there are none (therefore none of the for loops execute at all) then return unexpected
         return std::unexpected(incerr_c::make(GTSC_noStringLikeColumnForLabelsForBarPlot));
     }
-
     return std::unexpected(incerr_c::make(GTSC_unreachableCodeReached));
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(DesiredPlot &&dp, DataStore const &ds) {
@@ -241,8 +241,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
     size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
     // BAR PLOTS
     if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarV>() ||
-        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarVM>()) {
-        if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForBarV)); }
+        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarVM>() ||
+        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarHM>() ||
+        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarHS>()) {
+        if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForBarPlots)); }
         else { return dp; }
     }
     // SCATTER PLOT
@@ -336,9 +338,11 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
+    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>() ||
+             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>() ||
+             dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
         if (dp.values_colIDs.size() > 6) {
-            return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarVM));
+            return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
         }
         else if (dp.values_colIDs.size() == 1) {}
         else if (not addValColsUntil(2).has_value()) {
@@ -439,7 +443,6 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_filterFlags
 };
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams(this DesiredPlot &&self,
                                                                                  DataStore const   &ds) {
-    // Uses custom 'bind_back' to return the right callable form for and_then to use.
     // Guesses the missing 'desired parameters' and returns a DesiredPlot with those filled in
     // Variation on a 'builder pattern'
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue

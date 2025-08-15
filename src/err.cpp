@@ -36,7 +36,7 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
         case Unexp_plotSpecs::GTSC_noStringLikeColumnForLabelsForBarPlot:
             return "There is no string-like column to be used for label in vertical bar chart"sv;
         case Unexp_plotSpecs::GTSC_unreachableCodeReached: return "Hard library error, unreachable code path reached"sv;
-        case Unexp_plotSpecs::GCC_cantSpecifyCategoryForBarV:
+        case Unexp_plotSpecs::GCC_cantSpecifyCategoryForBarPlots:
             return "Category column cannot be specified for (potentially inferred) vertical bar chart"sv;
         case Unexp_plotSpecs::GCC_noSuitableCatColForBarVM:
             return "There is no suitable category column and it is required for the selected horizontal bar chart"sv;
@@ -65,7 +65,7 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                    "This usually happens because the column is 'string-like'"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV:
             return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) vertical bar plot"sv;
-        case Unexp_plotSpecs::GVC_selectedMoreThan6YvalColForBarVM:
+        case Unexp_plotSpecs::GVC_selectedMoreThan6YvalColForBarXM:
             return "It is not allowed to select more than six value columns (-y) for use in (potentially inferred) vertical multibar plot"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols:
             {

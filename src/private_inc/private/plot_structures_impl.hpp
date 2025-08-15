@@ -1049,14 +1049,20 @@ auto Scatter::compute_labels_vr(this auto &&self) -> std::expected<std::remove_c
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
+        // Small trick to reverse the order of labels for BarHS
+        bool const is_BarHS = self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>();
+        long long  changer  = (is_BarHS ? self.dp.values_colIDs.size() - 1 : 0);
+
         for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
             if (lineID < (self.dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
-                                                         self.labels_verRightWidth))
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID + changer)))
+                        .append(
+                            detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID + changer)).name,
+                                                     self.labels_verRightWidth))
                         .append(Config::term_setDefault));
+                changer -= (2 * is_BarHS);
             }
             else {
                 self.labels_verRight.push_back(
@@ -1486,26 +1492,13 @@ auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
     };
     for (auto const &valCol : self.values_data) { std::visit(ol, valCol); }
 
-
     auto const maxV          = std::ranges::max(stackedSums);
     auto const minV          = 0.0;
     auto const bigStepSize   = (maxV - minV) / (self.areaHeight - 0.125);
     auto const smallStepSize = bigStepSize / 8;
 
     self.plotArea = std::vector(static_cast<size_t>(self.areaHeight), std::string{});
-
-    // levels: 0 = valuesCols, 1 = rowIDs_inPlot, 2 = lineOfVals
-    std::vector symbolVects(self.areaHeight, std::vector<size_t>{});
-
-    // Helper to deal with overlap of 'stacks' in one character (non-zero value means background needs to be set before
-    // 'block character' and later needs to be defaulted)
-    std::vector nextStart(self.data_rowCount, 0uz);
-    std::vector skippedSize_soFar(self.data_rowCount, 0.0);
-
     std::vector currentValColIDs(self.data_rowCount, 0uz);
-
-    size_t const lastValColID = doubleConverted.size() - 1;
-
 
     for (auto &resLine : std::views::reverse(self.plotArea)) {
         for (size_t resColID = 0; resColID < self.data_rowCount; ++resColID) {
@@ -1529,34 +1522,33 @@ auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
                 size_t const numOfSmallSteps =
                     static_cast<size_t>(doubleConverted[currentValColIDs[resColID]][resColID] / smallStepSize);
 
-                if (currentValColIDs[resColID] == lastValColID) {
-                    resLine.append(
-                        TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                resLine.append(TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                doubleConverted[currentValColIDs[resColID]][resColID] -= numOfSmallSteps * smallStepSize;
+                currentValColIDs[resColID]++;
+
+                while (currentValColIDs[resColID] != doubleConverted.size() &&
+                       doubleConverted[currentValColIDs[resColID]][resColID] < smallStepSize) {
+                    currentValColIDs[resColID]++;
+                }
+
+                if (currentValColIDs[resColID] == doubleConverted.size()) {
                     resLine.append(Config::blocks_ver_str[numOfSmallSteps]);
-                    doubleConverted[currentValColIDs[resColID]][resColID] -= numOfSmallSteps * smallStepSize;
                 }
                 else {
-                    // Set the background to the next valCol colour only if it can fill the rest of the block
-                    if (doubleConverted[currentValColIDs[resColID] + 1][resColID] >= smallStepSize) {
-
-                        // Append the background color representing the next valCol
-                        resLine.append(TermColors::get_basicColor(
-                            self.dp.color_bckgrndPalette.at(currentValColIDs[resColID] + 1)));
-
-                        // Subtract from the next valCol value the remnant of this block
-                        doubleConverted[currentValColIDs[resColID] + 1][resColID] -=
-                            ((8uz - numOfSmallSteps) * smallStepSize);
-                    }
-
+                    // Append the background color representing the next valCol
                     resLine.append(
-                        TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                        TermColors::get_basicColor(self.dp.color_bckgrndPalette.at(currentValColIDs[resColID])));
+
+                    // Subtract from the next valCol value of the remnant of this block
+                    // Note_1: This is inaccurate as we may show the remnant bigger than it should be based on the data.
+                    // Note_2: Regardless, this is the most reasonable way to make stacked bar chart work for all
+                    // sensible cases
+                    doubleConverted[currentValColIDs[resColID]][resColID] -= ((8uz - numOfSmallSteps) * smallStepSize);
                     resLine.append(Config::blocks_ver_str[numOfSmallSteps]);
 
                     // We meed to revert colors to default
                     resLine.append(Config::term_setDefault);
                 }
-
-                doubleConverted[currentValColIDs[resColID]][resColID] -= (numOfSmallSteps * smallStepSize);
             }
             resLine.push_back(Config::space);
         }
