@@ -114,7 +114,7 @@ jobs:
         sys: [linux]
         runs-on: [ubuntu-24.04, ubuntu-24.04-arm]
         compiler: ["gcc"]
-        compiler-ver: ["15"]
+        compiler-ver: ["14"]
         build-type: ["Release", "Debug"]
         target : ["all"]
         cmake-override: [""]
@@ -126,11 +126,11 @@ jobs:
             platform: "arm64"
 
           - compiler: "gcc"
-            compiler-ver: "15"
+            compiler-ver: "14"
             install: |
-              sudo apt install gcc-15 g++-15
-              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-15 100 --slave /usr/bin/g++ g++ /usr/bin/g++-15 --slave /usr/bin/gcov gcov /usr/bin/gcov-15
-              sudo update-alternatives --set gcc /usr/bin/gcc-15
+              sudo apt install gcc-14 g++-14
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
+              sudo update-alternatives --set gcc /usr/bin/gcc-14
               
           # Temporarily disabled CLANG because libstc++ is not up to date
           # - compiler: "clang"
@@ -141,6 +141,8 @@ jobs:
         exclude:
           - compiler: "gcc"
             compiler-ver: "20"
+          - compiler: "gcc"
+            compiler-ver: "21"
           - compiler: "clang"
             compiler-ver: "14"
           - compiler: "clang"
@@ -178,7 +180,7 @@ jobs:
         sys: [macos]
         runs-on: [macos-14, macos-13]
         compiler: ["gcc"]
-        compiler-ver: ["14"]
+        compiler-ver: ["15"]
         build-type: ["Release", "Debug"]
         target : ["all"]
 
@@ -201,8 +203,6 @@ jobs:
         exclude:
           - compiler: "gcc"
             compiler-ver: "20"
-          - compiler: "gcc"
-            compiler-ver: "21"
           - compiler: "clang"
             compiler-ver: "14"
           - compiler: "clang"
@@ -222,10 +222,8 @@ jobs:
     - name: Create Build Environment
       run: |
         ${{matrix.install}}
-
     - name: Configure
       run: |
         cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
-
     - name: '🚧 Build'
       run: cmake --build build --target ${{matrix.target}}

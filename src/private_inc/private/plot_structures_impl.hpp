@@ -1488,11 +1488,10 @@ auto BarHS::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
         // Small trick to reverse the order of labels for BarHS
-        bool const is_BarHS = self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>();
-        long long  changer  = (is_BarHS ? self.dp.values_colIDs.size() - 1 : 0);
+        long long changer = self.dp.values_colIDs.size() - 1;
 
-        for (long long lineID = static_cast<size_t>(self.areaHeight) - 1; lineID > -1; --lineID) {
-            if (lineID > (static_cast<size_t>(self.areaHeight) - 1 - self.dp.values_colIDs.size())) {
+        for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
+            if (lineID < (self.dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
                         .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID + changer)))
@@ -1500,7 +1499,7 @@ auto BarHS::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
                             detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID + changer)).name,
                                                      self.labels_verRightWidth))
                         .append(Config::term_setDefault));
-                changer -= (2 * is_BarHS);
+                changer -= 2;
             }
             else {
                 self.labels_verRight.push_back(
