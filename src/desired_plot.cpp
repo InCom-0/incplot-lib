@@ -103,12 +103,25 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
         else { return false; }
     };
 
+    auto is_nonNeg = [&](auto const &vecRef) -> bool {
+        auto const &vec = vecRef;
+        if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
+            for (auto const &oneVal : vec) {
+                if (oneVal < 0) { return false; }
+            }
+            return true;
+        }
+        else { return false; }
+        std::unreachable();
+    };
+
     for (auto const &oneCol : ds.m_data) {
-        dp.m_colAssessments.push_back({0, false, false, false, false, false});
+        dp.m_colAssessments.push_back({0, false, false, false, false, false, false});
 
         std::visit(c_catParams, oneCol.variant_data);
         dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol.variant_data);
         dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol.variant_data);
+        dp.m_colAssessments.back().is_allValuesNonNegative      = std::visit(is_nonNeg, oneCol.variant_data);
     }
     return dp;
 }
@@ -177,6 +190,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
         else if (dp.values_colIDs.size() == 0) {
             // No TSlikeCol and one useable val col
             if (useableValCols_count == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
+
             // No TSlikeCol and more than one useable val col
             else { dp.plot_type_name = detail::TypeToString<plot_structures::BarHM>(); }
         }
@@ -298,18 +312,33 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
             return (arithmeticCol && notExcluded);
         });
 
+    // Special logic to check if selected cols are useable and only have non-negative values in case of BarHS
+    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
+        for (auto const &selColID : dp.values_colIDs) {
+            if (std::ranges::find_if(useableValCols_tpl, [&](auto const &tpl) {
+                    return (std::get<0>(tpl) == selColID) && std::get<2>(tpl).is_allValuesNonNegative;
+                }) == useableValCols_tpl.end()) {
+                return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+            }
+        }
+    }
     // Check if selected cols are actually useable
-    for (auto const &selColID : dp.values_colIDs) {
-        if (std::ranges::find_if(useableValCols_tpl, [&](auto const &tpl) { return std::get<0>(tpl) == selColID; }) ==
-            useableValCols_tpl.end()) {
-            return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+    else {
+        for (auto const &selColID : dp.values_colIDs) {
+            if (std::ranges::find_if(useableValCols_tpl, [&](auto const &tpl) {
+                    return std::get<0>(tpl) == selColID;
+                }) == useableValCols_tpl.end()) {
+                return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+            }
         }
     }
 
-    auto addValColsUntil = [&](size_t minAllowed, size_t addUntil_ifAvailable = 1) -> std::expected<size_t, incerr_c> {
+    auto addValColsUntil = [&](size_t minAllowed, size_t addUntil_ifAvailable = 1,
+                               bool nonNegOnly = false) -> std::expected<size_t, incerr_c> {
         auto getAnotherValColID = [&]() -> std::expected<size_t, incerr_c> {
             for (auto const &tpl : useableValCols_tpl) {
-                if (std::ranges::find(dp.values_colIDs, std::get<0>(tpl)) == dp.values_colIDs.end()) {
+                if ((std::ranges::find(dp.values_colIDs, std::get<0>(tpl)) == dp.values_colIDs.end()) &&
+                    (nonNegOnly ? std::get<2>(tpl).is_allValuesNonNegative : true)) {
                     return std::get<0>(tpl);
                 }
             }
@@ -339,16 +368,25 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
         }
     }
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
+             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>()) {
         if (dp.values_colIDs.size() > 6) {
             return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
         }
-        else if (dp.values_colIDs.size() == 1) {}
+        else if (dp.values_colIDs.size() > 0) {}
         else if (not addValColsUntil(2, 6).has_value()) {
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }
+    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
+        if (dp.values_colIDs.size() > 6) {
+            return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
+        }
+        else if (dp.values_colIDs.size() > 0) {}
+        else if (not addValColsUntil(2, 6, true).has_value()) {
+            return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
+        }
+    }
+
 
     // SCATTER PLOT
     else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {

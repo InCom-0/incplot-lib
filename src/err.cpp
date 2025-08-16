@@ -115,7 +115,7 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
     }
 }
 
-// COMMENTED OUT UNTILL ERROR TYPE IS DOCUMENTED
+// COMMENTED OUT UNTILL THIS ERROR TYPE IS DOCUMENTED
 // TODO: Implement the method below
 // std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e) {
 //     switch (e) {

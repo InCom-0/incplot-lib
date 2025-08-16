@@ -325,7 +325,6 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
     }
 
     // LABELS AND AXIS NAME HOR BOTTOM
-    // TODO: Proper assessment for Multiline
     self.axisName_horBottom_bool = true;
 
 
@@ -951,22 +950,24 @@ auto Scatter::compute_axisName_vl(this auto &&self) -> std::expected<std::remove
 }
 
 auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-
     using self_t = std::remove_cvref_t<decltype(self)>;
+
+    size_t const characterVerResolution =
+        ((detail::TypeToString<self_t>() == detail::TypeToString<plot_structures::Scatter>() ||
+          detail::TypeToString<self_t>() == detail::TypeToString<plot_structures::Multiline>())
+             ? 4
+             : 8);
 
     auto getValLabels = [&](size_t areaLength, size_t const &labelsWidth, size_t const padRight, size_t const padLeft) {
         auto const  fillerLength = detail::get_axisFillerSize(areaLength, self.axis_verLeftSteps);
         std::string filler(labelsWidth, Config::space);
 
-        bool const is_barHS = detail::TypeToString<self_t>() == detail::TypeToString<plot_structures::BarHS>();
-
         // Min and Max are not actually at the position of horizontal axes, but one smallStep below and above
-        // TODO: Technically speaking the min and max are not calculated correctly for inherited plot types
         auto [minVal, maxVal] = incom::standard::algos::compute_minMaxMulti(self.values_data);
 
-        if (is_barHS) { minVal = 0; }
-        auto stepSize = (maxVal - minVal) / (areaLength - (not is_barHS ? 0.25 : 0));
-        maxVal        = maxVal + (stepSize / 4);
+        auto stepSize = (maxVal - minVal) / (areaLength - (1 / characterVerResolution));
+        minVal        = minVal - (stepSize / characterVerResolution);
+        maxVal        = maxVal + (stepSize / characterVerResolution);
 
         // Construct with 'left padding' in place
         std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
@@ -998,9 +999,7 @@ auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_c
         return res;
     };
 
-
     self.labels_verLeft = getValLabels(self.areaHeight, self.labels_verLeftWidth, Config::axisLabels_padRight_vl, 0);
-
     return (self);
 }
 // labels_vr are actually the legend here
@@ -1049,20 +1048,14 @@ auto Scatter::compute_labels_vr(this auto &&self) -> std::expected<std::remove_c
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
-        // Small trick to reverse the order of labels for BarHS
-        bool const is_BarHS = self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>();
-        long long  changer  = (is_BarHS ? self.dp.values_colIDs.size() - 1 : 0);
-
         for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
             if (lineID < (self.dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID + changer)))
-                        .append(
-                            detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID + changer)).name,
-                                                     self.labels_verRightWidth))
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
+                                                         self.labels_verRightWidth))
                         .append(Config::term_setDefault));
-                changer -= (2 * is_BarHS);
             }
             else {
                 self.labels_verRight.push_back(
