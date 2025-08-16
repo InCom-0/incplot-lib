@@ -62,12 +62,12 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
         "are optional");
 
     out_ap.add_group("Plot type options");
-    out_ap.add_argument("-b", "--barV").help("Draw vertical bar plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-s", "--scatter").help("Draw scatter plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-l", "--line").help("Draw (multi)line plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-V", "--barVM").help("Draw vertical multibar plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-H", "--barHM").help("Draw horizontal multibar plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-S", "--barHS").help("Draw horizontal stacked bar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-b", "--barV").help("Draw vertical [b]ar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-s", "--scatter").help("Draw [s]catter plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-l", "--line").help("Draw (multi)[l]ine plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-V", "--barVM").help("Draw [V]ertical multibar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-H", "--barHM").help("Draw [H]orizontal multibar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-S", "--barHS").help("Draw horizontal [S]tacked bar plot [flag]").flag().nargs(0);
 
 
     out_ap.add_group("Values options");
