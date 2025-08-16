@@ -9,14 +9,7 @@
                 "_gcc",
                 "_debug",
                 "MSYS_ucrt_PATH"
-            ],
-            "vendor": {
-                "visualStudio": {
-                    "cmake.debugConfig": {
-                        "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe"
-                    }
-                }
-            }
+            ]
         },
         {
             "name": "MSYS2_ucrt_gcc_Release",
@@ -26,14 +19,7 @@
                 "_gcc",
                 "_release",
                 "MSYS_ucrt_PATH"
-            ],
-            "vendor": {
-                "visualStudio": {
-                    "cmake.debugConfig": {
-                        "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe"
-                    }
-                }
-            }
+            ]
         },
         {
             "name": "MSVC_Debug",
@@ -145,6 +131,13 @@
             "toolchainFile": "toolchain/Windows.MSVC.toolchain.cmake",
             "cacheVariables": {
                 "CMAKE_CXX_FLAGS": "/utf-8 /EHsc"
+            },
+            "vendor": {
+                "visualStudio": {
+                    "cmake.debugConfig": {
+                        "miDebuggerPath": ""
+                    }
+                }
             }
         },
         {
@@ -152,6 +145,13 @@
             "hidden": true,
             "environment": {
                 "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
+            },
+            "vendor": {
+                "visualStudio": {
+                    "cmake.debugConfig": {
+                        "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe"
+                    }
+                }
             }
         }
     ]
