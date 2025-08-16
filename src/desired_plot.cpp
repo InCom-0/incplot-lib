@@ -172,37 +172,37 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     // labelTS_colID was specified
     else if (dp.labelTS_colID.has_value()) {
         if (ds.m_data.at(dp.labelTS_colID.value()).colType == parsedVal_t::string_like) {
-            if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
-            else { dp.plot_type_name = detail::TypeToString<plot_structures::BarHM>(); }
+            if (dp.values_colIDs.size() < 2) { dp.plot_type_name = detail::get_typeIndex<plot_structures::BarV>(); }
+            else { dp.plot_type_name = detail::get_typeIndex<plot_structures::BarHM>(); }
         }
         else {
             // If labelTSCol is value then select based on whether its is 'timeSeriesLike' or not
             if (dp.m_colAssessments.at(dp.labelTS_colID.value()).is_timeSeriesLikeIndex == true) {
-                dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>();
+                dp.plot_type_name = detail::get_typeIndex<plot_structures::Multiline>();
             }
-            else { dp.plot_type_name = detail::TypeToString<plot_structures::Scatter>(); }
+            else { dp.plot_type_name = detail::get_typeIndex<plot_structures::Scatter>(); }
         }
     }
 
     // labelTS_colID is not specified
     else {
-        if (tsLikeIndexCols_count != 0) { dp.plot_type_name = detail::TypeToString<plot_structures::Multiline>(); }
+        if (tsLikeIndexCols_count != 0) { dp.plot_type_name = detail::get_typeIndex<plot_structures::Multiline>(); }
         else if (dp.values_colIDs.size() == 0) {
             // No TSlikeCol and one useable val col
-            if (useableValCols_count == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
+            if (useableValCols_count == 1) { dp.plot_type_name = detail::get_typeIndex<plot_structures::BarV>(); }
 
             // No TSlikeCol and more than one useable val col
-            else { dp.plot_type_name = detail::TypeToString<plot_structures::BarHM>(); }
+            else { dp.plot_type_name = detail::get_typeIndex<plot_structures::BarHM>(); }
         }
-        else if (dp.values_colIDs.size() == 1) { dp.plot_type_name = detail::TypeToString<plot_structures::BarV>(); }
-        else { dp.plot_type_name = detail::TypeToString<plot_structures::BarHM>(); }
+        else if (dp.values_colIDs.size() == 1) { dp.plot_type_name = detail::get_typeIndex<plot_structures::BarV>(); }
+        else { dp.plot_type_name = detail::get_typeIndex<plot_structures::BarHM>(); }
     }
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
     if (dp.labelTS_colID.has_value()) { return dp; }
 
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+    if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {
         for (auto const &fvItem : std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
                  return std::get<1>(ca).is_timeSeriesLikeIndex &&
                         (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
@@ -215,7 +215,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
         // If there are none (therefore none of the for loops execute at all) then return unexpected
         return std::unexpected(incerr_c::make(GTSC_noTimeSeriesLikeColumnForMultiline));
     }
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+    else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Scatter>()) {
         for (auto const &fvItem : std::views::filter(
                  std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
                      return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
@@ -231,10 +231,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
         return std::unexpected(incerr_c::make(GTSC_noUnusedXvalColumnForScatter));
     }
 
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
+    else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>() ||
+             dp.plot_type_name == detail::get_typeIndex<plot_structures::BarVM>() ||
+             dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHM>() ||
+             dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>()) {
         for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.m_data), [](auto const &ct) {
                  return std::get<1>(ct).colType == parsedVal_t::string_like;
              })) {
@@ -254,15 +254,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
         });
     size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
     // BAR PLOTS
-    if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarV>() ||
-        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarVM>() ||
-        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarHM>() ||
-        dp.plot_type_name.value() == detail::TypeToString<plot_structures::BarHS>()) {
-        if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForBarPlots)); }
+    if (dp.plot_type_name.value() != detail::get_typeIndex<plot_structures::Scatter>()) {
+        if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForOtherThanScatter)); }
         else { return dp; }
     }
     // SCATTER PLOT
-    else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Scatter>()) {
+    else if (dp.plot_type_name.value() == detail::get_typeIndex<plot_structures::Scatter>()) {
         if (dp.cat_colID.has_value()) {
             if (useableCatCols_tpl_sz == 0) {
                 return std::unexpected(incerr_c::make(GCC_specifiedCatColCantBeUsedAsCatCol));
@@ -289,7 +286,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
         }
     }
     // MULTILINE PLOT
-    else if (dp.plot_type_name.value() == detail::TypeToString<plot_structures::Multiline>()) {
+    else if (dp.plot_type_name.value() == detail::get_typeIndex<plot_structures::Multiline>()) {
         if (dp.cat_colID.has_value()) {
             return std::unexpected(incerr_c::make(GCC_categoryColumnIsNotAllowedForMultiline, "Custom Test"sv));
         }
@@ -313,7 +310,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
         });
 
     // Special logic to check if selected cols are useable and only have non-negative values in case of BarHS
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
+    if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>()) {
         for (auto const &selColID : dp.values_colIDs) {
             if (std::ranges::find_if(useableValCols_tpl, [&](auto const &tpl) {
                     return (std::get<0>(tpl) == selColID) && std::get<2>(tpl).is_allValuesNonNegative;
@@ -359,7 +356,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
     };
 
     // BAR PLOTS
-    if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         if (dp.values_colIDs.size() > 1) {
             return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV));
         }
@@ -367,8 +364,8 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>() ||
-             dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>()) {
+    else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarVM>() ||
+             dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHM>()) {
         if (dp.values_colIDs.size() > 6) {
             return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
         }
@@ -377,7 +374,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) {
+    else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>()) {
         if (dp.values_colIDs.size() > 6) {
             return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
         }
@@ -389,7 +386,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
 
 
     // SCATTER PLOT
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+    else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Scatter>()) {
         if (dp.values_colIDs.size() > Config::max_numOfValCols) {
             return std::unexpected(incerr_c::make(GVC_selectedMoreThanMaxNumOfYvalCols));
         }
@@ -411,7 +408,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
     }
 
     // MULTILINE PLOT
-    else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+    else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {
         if (dp.values_colIDs.size() > Config::max_maxNumOfLinesInMultiline) {
             return std::unexpected(incerr_c::make(GVC_selectedMoreThanAllowedOfYvalColsForMultiline));
         }
@@ -444,11 +441,11 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(Desired
 
     // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
     if (not dp.targetHeight.has_value()) {
-        // if (dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {}
-        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {}
-        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {}
-        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {}
-        // else if (dp.plot_type_name == detail::TypeToString<plot_structures::BarHM>()) {}
+        // if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Scatter>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarVM>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHM>()) {}
         // else { dp.targetHeight = dp.targetWidth.value() / 2; }
     }
 

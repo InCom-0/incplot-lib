@@ -1,5 +1,6 @@
 #include <incplot.hpp>
 #include <incstd.hpp>
+#include <typeindex>
 
 
 
@@ -27,7 +28,7 @@ int main(int argc, char *argv[]) {
     auto dpCtor_Structs                         = incplot::CL_Args::get_dpCtorStruct();
     dpCtor_Structs.front().tar_width = 250uz;
     dpCtor_Structs.front().tar_height = 15uz;
-    dpCtor_Structs.front().plot_type_name       = "BarHS";
+    dpCtor_Structs.front().plot_type_name       = std::type_index(typeid(plot_structures::BarHS));
     // dpCtor_Structs.front().tar_width = 100;
     // dpCtor_Structs.front().availableWidth  = 200;
     // dpCtor_Structs.front().availableHeight = 15;

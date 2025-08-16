@@ -5,6 +5,7 @@
 
 #include <incplot.hpp>
 #include <tests_config.hpp>
+#include <typeindex>
 
 
 using namespace incom::terminal_plot::testing;
@@ -242,7 +243,7 @@ TEST(DP_guess_TSCol, penguins_possible) {
 
     EXPECT_EQ(dp.values_colIDs.size(), 2);
     EXPECT_EQ(dp.labelTS_colID.has_value(), true);
-    EXPECT_EQ(dp.labelTS_colID.value(), 2);
+    EXPECT_EQ(dp.labelTS_colID.value(), 0);
 }
 TEST(DP_guess_TSCol, penguins_impossible) {
     using enum incplot::Unexp_plotSpecs;
@@ -256,10 +257,11 @@ TEST(DP_guess_TSCol, penguins_impossible) {
     auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
                       .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
                       .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
-                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()));
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()));
 
     EXPECT_FALSE(dp_res.has_value());
-    EXPECT_EQ(dp_res.error(), GTSC_noUnusedXvalColumnForScatter);
+    EXPECT_EQ(dp_res.error(), GCC_cantSpecifyCategoryForOtherThanScatter);
 }
 
 TEST(DP_guess_TSCol, wine_quality_possible) {
@@ -281,7 +283,7 @@ TEST(DP_guess_TSCol, wine_quality_possible) {
 
     EXPECT_EQ(dp.values_colIDs.size(), 3);
     EXPECT_EQ(dp.labelTS_colID.has_value(), true);
-    EXPECT_EQ(dp.labelTS_colID.value(), 1);
+    EXPECT_EQ(dp.labelTS_colID.value(), 12);
 }
 TEST(DP_guess_TSCol, wine_quality_impossible) {
     using enum incplot::Unexp_plotSpecs;
@@ -299,10 +301,12 @@ TEST(DP_guess_TSCol, wine_quality_impossible) {
     auto dp_res = incplot::DesiredPlot::compute_colAssessments(dpctrs, ds.value())
                       .and_then(std::bind_back(incplot::DesiredPlot::transform_namedColsIntoIDs, ds.value()))
                       .and_then(std::bind_back(incplot::DesiredPlot::guess_plotType, ds.value()))
-                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()));
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_TSCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_catCol, ds.value()))
+                      .and_then(std::bind_back(incplot::DesiredPlot::guess_valueCols, ds.value()));
 
     EXPECT_FALSE(dp_res.has_value());
-    EXPECT_EQ(dp_res.error(), GTSC_noUnusedXvalColumnForScatter);
+    EXPECT_EQ(dp_res.error(), GVC_selectedMoreThan6YvalColForBarXM);
 }
 
 
@@ -326,9 +330,8 @@ TEST(DP_guess_catCol, penguins_possible) {
 
     EXPECT_EQ(dp.values_colIDs.size(), 0);
     EXPECT_EQ(dp.labelTS_colID.has_value(), true);
-    EXPECT_EQ(dp.labelTS_colID.value(), 2);
-    EXPECT_EQ(dp.cat_colID.has_value(), true);
-    EXPECT_EQ(dp.cat_colID.value(), 0);
+    EXPECT_EQ(dp.labelTS_colID.value(), 0);
+    EXPECT_EQ(dp.cat_colID.has_value(), false);
 }
 TEST(DP_guess_catCol, penguins_impossible) {
     using enum incplot::Unexp_plotSpecs;
@@ -350,7 +353,7 @@ TEST(DP_guess_catCol, penguins_impossible) {
 
     EXPECT_EQ(dp.values_colIDs.size(), 4);
     EXPECT_EQ(dp.labelTS_colID.has_value(), true);
-    EXPECT_EQ(dp.labelTS_colID.value(), 2);
+    EXPECT_EQ(dp.labelTS_colID.value(), 0);
     EXPECT_EQ(dp.cat_colID.has_value(), false);
 }
 
@@ -374,9 +377,8 @@ TEST(DP_guess_catCol, wine_quality_possible) {
 
     EXPECT_EQ(dp.values_colIDs.size(), 0);
     EXPECT_EQ(dp.labelTS_colID.has_value(), true);
-    EXPECT_EQ(dp.labelTS_colID.value(), 0);
-    EXPECT_EQ(dp.cat_colID.has_value(), true);
-    EXPECT_EQ(dp.cat_colID.value(), 12);
+    EXPECT_EQ(dp.labelTS_colID.value(), 12);
+    EXPECT_EQ(dp.cat_colID.has_value(), false);
 }
 TEST(DP_guess_catCol, wine_quality_impossible) {
     using enum incplot::Unexp_plotSpecs;
@@ -422,9 +424,9 @@ TEST(DP_guess_valueCols, penguins_default) {
     EXPECT_TRUE(dp_res.has_value());
     auto dp = dp_res.value();
 
-    std::vector exp_res{3uz};
+    std::vector<size_t> exp_res{2,3,4,5,7};
 
-    EXPECT_EQ(dp.values_colIDs.size(), 1);
+    EXPECT_EQ(dp.values_colIDs.size(), 5);
     EXPECT_EQ(dp.values_colIDs, exp_res);
 }
 TEST(DP_guess_valueCols, wine_quality_default) {
@@ -446,9 +448,9 @@ TEST(DP_guess_valueCols, wine_quality_default) {
     EXPECT_TRUE(dp_res.has_value());
     auto dp = dp_res.value();
 
-    std::vector exp_res{1uz};
+    std::vector<size_t> exp_res{0,1,2,3,4,5};
 
-    EXPECT_EQ(dp.values_colIDs.size(), 1);
+    EXPECT_EQ(dp.values_colIDs.size(), 6);
     EXPECT_EQ(dp.values_colIDs, exp_res);
 }
 
@@ -571,7 +573,7 @@ TEST(DP_guess_plotTypes, plotTypeName_nile_default) {
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
     //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
-    EXPECT_EQ(dp_res->plot_type_name.value(), "Multiline");
+    EXPECT_EQ(dp_res->plot_type_name.value(), std::type_index(typeid(incom::terminal_plot::plot_structures::Multiline)));
 }
 TEST(DP_guess_plotTypes, plotTypeName_flights_default) {
     using enum incplot::Unexp_plotSpecs;
@@ -588,7 +590,7 @@ TEST(DP_guess_plotTypes, plotTypeName_flights_default) {
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
     //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
-    EXPECT_EQ(dp_res->plot_type_name.value(), "Multiline");
+    EXPECT_EQ(dp_res->plot_type_name.value(), std::type_index(typeid(incom::terminal_plot::plot_structures::Multiline)));
 }
 TEST(DP_guess_plotTypes, plotTypeName_penguins_default) {
     using enum incplot::Unexp_plotSpecs;
@@ -605,7 +607,7 @@ TEST(DP_guess_plotTypes, plotTypeName_penguins_default) {
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
     //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
-    EXPECT_EQ(dp_res->plot_type_name.value(), "Scatter");
+    EXPECT_EQ(dp_res->plot_type_name.value(), std::type_index(typeid(incom::terminal_plot::plot_structures::BarHM)));
 }
 TEST(DP_guess_plotTypes, plotTypeName_wine_quality_default) {
     using enum incplot::Unexp_plotSpecs;
@@ -622,5 +624,5 @@ TEST(DP_guess_plotTypes, plotTypeName_wine_quality_default) {
     EXPECT_TRUE(dp_res.has_value());
     EXPECT_TRUE(dp_res->plot_type_name.has_value());
     //TODO: Need to correctly reflect the type_id instead of hardcoding plot type name as string.
-    EXPECT_EQ(dp_res->plot_type_name.value(), "Scatter");
+    EXPECT_EQ(dp_res->plot_type_name.value(), std::type_index(typeid(incom::terminal_plot::plot_structures::BarHM)));
 }

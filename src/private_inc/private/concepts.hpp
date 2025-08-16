@@ -1,8 +1,8 @@
 #pragma once
 
 #include <incstd/views.hpp>
-#include <source_location>
-#include <string>
+
+#include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
 #include <utility>
@@ -15,10 +15,12 @@ namespace terminal_plot {
 namespace detail {
 // Quasi compile time reflection for typenames
 template <typename T>
-constexpr auto TypeToString() {
-    auto EmbeddingSignature = std::string{std::source_location::current().function_name()};
-    auto firstPos           = EmbeddingSignature.rfind("::") + 2;
-    return EmbeddingSignature.substr(firstPos, EmbeddingSignature.size() - firstPos - 1);
+constexpr auto get_typeIndex() {
+    return std::type_index(typeid(T));
+}
+template <typename T>
+constexpr auto get_typeIndex(T) {
+    return std::type_index(typeid(T));
 }
 
 template <typename... Ts>
@@ -42,14 +44,14 @@ struct VariantUtility {
     // PTC = Types To Pass To Constructors
     template <typename... PTC>
     static constexpr inline auto gen_typeMap(PTC const &...ptc) {
-        std::unordered_map<std::string, std::variant<Ts...>> res;
-        (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts(std::forward<decltype(ptc)>(ptc)...))}), ...);
+        std::unordered_map<std::type_index, std::variant<Ts...>> res;
+        (res.insert({detail::get_typeIndex<Ts>(), std::variant<Ts...>(Ts(std::forward<decltype(ptc)>(ptc)...))}), ...);
         return res;
     };
 
     static constexpr inline auto gen_typeMap() {
-        std::unordered_map<std::string, std::variant<Ts...>> res;
-        (res.insert({detail::TypeToString<Ts>(), std::variant<Ts...>(Ts())}), ...);
+        std::unordered_map<std::type_index, std::variant<Ts...>> res;
+        (res.insert({detail::get_typeIndex<Ts>(), std::variant<Ts...>(Ts())}), ...);
         return res;
     };
 };

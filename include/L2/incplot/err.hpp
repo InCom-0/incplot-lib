@@ -19,7 +19,7 @@ enum class Unexp_plotSpecs {
     GTSC_noUnusedXvalColumnForScatter,
     GTSC_noStringLikeColumnForLabelsForBarPlot,
     GTSC_unreachableCodeReached,
-    GCC_cantSpecifyCategoryForBarPlots,
+    GCC_cantSpecifyCategoryForOtherThanScatter,
     GCC_noSuitableCatColForBarVM,
     GCC_specifiedCatColCantBeUsedAsCatCol,
     GCC_cantSelectCatColAndMultipleYCols,

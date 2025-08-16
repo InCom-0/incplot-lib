@@ -237,7 +237,7 @@ auto BarV::initialize_data_views(this auto &&self) -> std::expected<std::remove_
 auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
 
     // VERTICAL LEFT LABELS SIZE
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         // auto &labelColVarRef = self.ds.m_data.at(self.dp.labelTS_colID.value()).variant_data;
 
         auto olset = [](auto &var) -> size_t {
@@ -259,7 +259,7 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
 
     // VERTICAL RIGHT LABELS SIZE
     // Will be used as 'legend' for some types of Plots
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::Scatter>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::Scatter>()) {
         // catCol is specified meaning the legend will be uniqued values from that column
         if (self.dp.cat_colID.has_value()) {
             auto create_catIDs_vec = [&](auto &vec) -> std::vector<std::string> {
@@ -289,7 +289,7 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
         }
         else { self.labels_verRightWidth = 0; }
     }
-    else if (self.dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+    else if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {
         if (self.dp.values_colIDs.size() > 1) {
             size_t maxSize = 0;
             for (auto const &colID : self.dp.values_colIDs) {
@@ -301,7 +301,7 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
     else { self.labels_verRightWidth = 0; }
 
     // VERTICAL AXES NAMES ... LEFT always, RIGHT never
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         self.axisName_verLeft_bool  = false;
         self.axisName_verRight_bool = false;
     }
@@ -332,14 +332,14 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
     // ...
 
     // Plot area height (-2 is for the 2 horizontal axes positions)
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
 
 
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
                                      self.values_data.at(0));
     }
     else if (not self.dp.targetHeight.has_value()) {
-        if (self.dp.plot_type_name == detail::TypeToString<plot_structures::Multiline>()) {
+        if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {
             //
             if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
                 self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
@@ -369,13 +369,13 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
     }
 
     // Axes steps
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         self.axis_verLeftSteps = self.areaHeight;
     }
     else { self.axis_verLeftSteps = detail::guess_stepsOnVerAxis(self.areaHeight); }
 
 
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarVM>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarVM>()) {
         self.axis_horBottomSteps = self.areaWidth;
     }
     else { self.axis_horBottomSteps = detail::guess_stepsOnHorAxis(self.areaWidth); }
@@ -387,7 +387,7 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
 
 auto BarV::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     if (self.axisName_verLeft_bool) {
-        if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+        if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
             self.axisName_verLeft =
                 detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
         }
@@ -438,7 +438,7 @@ auto BarV::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvre
 }
 
 auto BarV::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         self.axis_verLeft =
             detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight, self.areaHeight);
     }
@@ -591,7 +591,7 @@ auto BarV::compute_corner_br(this auto &&self) -> std::expected<std::remove_cvre
     return self;
 }
 auto BarV::compute_areaCorners(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    if (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarV>()) {
+    if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         self.areaCorner_tl = Config::areaCorner_tl_barV;
         self.areaCorner_bl = Config::areaCorner_bl_barV;
         self.areaCorner_tr = Config::areaCorner_tr;
@@ -953,8 +953,8 @@ auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_c
     using self_t = std::remove_cvref_t<decltype(self)>;
 
     size_t const characterVerResolution =
-        ((detail::TypeToString<self_t>() == detail::TypeToString<plot_structures::Scatter>() ||
-          detail::TypeToString<self_t>() == detail::TypeToString<plot_structures::Multiline>())
+        ((detail::get_typeIndex<self_t>() == detail::get_typeIndex<plot_structures::Scatter>() ||
+          detail::get_typeIndex<self_t>() == detail::get_typeIndex<plot_structures::Multiline>())
              ? 4
              : 8);
 
@@ -1209,7 +1209,7 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
     // Special case when the only one value column or when the plot type is 'stacked'
     size_t const oneGroupWidth =
-        (self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>()) ? 1 : self.values_data.size();
+        (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>()) ? 1 : self.values_data.size();
 
     // PLOT AREA
     // Plot area width (-2 is for the 2 vertical axes positions)
@@ -1279,7 +1279,7 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
         else { static_assert(false); } // This should never be instantiated
     };
     auto const realMaxLabelSize = std::visit(olset, self.labelTS_data.value());
-    bool const is_barHS         = self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>();
+    bool const is_barHS         = self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>();
 
     // If max label size is small enough we will make all 1 width vertical (usually used for arithmetic values)
     bool const   pureVertical = (realMaxLabelSize <= Config::max_sizeOfValueLabels) || is_barHS;

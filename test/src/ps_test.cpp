@@ -4,6 +4,7 @@
 
 #include <incplot.hpp>
 #include <tests_config.hpp>
+#include <typeindex>
 
 
 using namespace incom::terminal_plot::testing;
@@ -17,10 +18,13 @@ TEST(PS, penguins_default) {
 
     // TODO: Need to fix new defaults of 'guess_missingParams'
     // TODO: Also need to finally stop using plain string for selecting plot types ... it is just stupid :-)
-    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
-    auto                                dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{
+        .plot_type_name = std::type_index(typeid(incom::terminal_plot::plot_structures::Scatter))};
+    auto dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
 
     auto ar = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value()).build_self();
+
+    EXPECT_TRUE(ar.has_value());
 
     EXPECT_EQ(ar.value().areaWidth, 43);
     EXPECT_EQ(ar.value().areaHeight, 14);
@@ -43,8 +47,9 @@ TEST(PS, wine_quality_default) {
     auto ds = incplot::DataStore::get_DS(DataSets_FN::wine_quality.at(0));
     EXPECT_TRUE(ds.has_value());
 
-    incplot::DesiredPlot::DP_CtorStruct dpctrs{};
-    auto                                dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
+    incplot::DesiredPlot::DP_CtorStruct dpctrs{
+        .plot_type_name = std::type_index(typeid(incom::terminal_plot::plot_structures::Scatter))};
+    auto dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
 
     auto ar = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value()).build_self();
 

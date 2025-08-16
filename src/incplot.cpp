@@ -67,8 +67,6 @@ std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &d
         },
         std::make_index_sequence<std::variant_size_v<var_plotTypes>>());
 
-    // TODO: The type names inside mp_names2Types are wrong on MSVC ... need to somehow make it the same as on GCC
-    // TODO: Begin using std::type_index instead
     auto varCpy = mp_names2Types.at(dp.plot_type_name.value());
 
     auto ol = [&](auto &&var) -> std::expected<var_plotTypes, incerr_c> {

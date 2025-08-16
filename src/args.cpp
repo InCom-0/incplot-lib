@@ -3,6 +3,7 @@
 #include <incstd/typegen.hpp>
 #include <optional>
 #include <private/detail.hpp>
+#include <typeindex>
 
 
 namespace incom {
@@ -19,7 +20,7 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
     }
     std::vector<DesiredPlot::DP_CtorStruct> res;
 
-    auto addOne = [&](std::optional<std::string_view> const &&sv_opt) {
+    auto addOne = [&](std::optional<std::type_index> const &&sv_opt) {
         res.push_back(DesiredPlot::DP_CtorStruct());
         if (auto wdt = inout_ap.present<int>("-w")) { res.back().tar_width = wdt.value(); }
         if (auto hgt = inout_ap.present<int>("-t")) { res.back().tar_height = hgt.value(); }
@@ -37,12 +38,12 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
         if (auto optVal = inout_ap.present<int>("-c")) { res.back().c_colID = optVal.value(); }
     };
 
-    if (inout_ap.get<bool>("-b")) { addOne(detail::TypeToString<plot_structures::BarV>()); }
-    if (inout_ap.get<bool>("-s")) { addOne(detail::TypeToString<plot_structures::Scatter>()); }
-    if (inout_ap.get<bool>("-l")) { addOne(detail::TypeToString<plot_structures::Multiline>()); }
-    if (inout_ap.get<bool>("-V")) { addOne(detail::TypeToString<plot_structures::BarVM>()); }
-    if (inout_ap.get<bool>("-H")) { addOne(detail::TypeToString<plot_structures::BarHM>()); }
-    if (inout_ap.get<bool>("-S")) { addOne(detail::TypeToString<plot_structures::BarHS>()); }
+    if (inout_ap.get<bool>("-b")) { addOne(detail::get_typeIndex<plot_structures::BarV>()); }
+    if (inout_ap.get<bool>("-s")) { addOne(detail::get_typeIndex<plot_structures::Scatter>()); }
+    if (inout_ap.get<bool>("-l")) { addOne(detail::get_typeIndex<plot_structures::Multiline>()); }
+    if (inout_ap.get<bool>("-V")) { addOne(detail::get_typeIndex<plot_structures::BarVM>()); }
+    if (inout_ap.get<bool>("-H")) { addOne(detail::get_typeIndex<plot_structures::BarHM>()); }
+    if (inout_ap.get<bool>("-S")) { addOne(detail::get_typeIndex<plot_structures::BarHS>()); }
     if (res.empty()) { addOne(std::nullopt); }
 
     return res;

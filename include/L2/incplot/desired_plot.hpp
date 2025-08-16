@@ -6,6 +6,7 @@
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/err.hpp>
+#include <typeindex>
 #include <utility>
 
 
@@ -49,7 +50,7 @@ public:
     static std::expected<DesiredPlot, incerr::incerr_code> compute_filterFlags(DesiredPlot &&dp, DataStore const &ds);
 
 
-    std::optional<std::string> plot_type_name = std::nullopt;
+    std::optional<std::type_index> plot_type_name = std::nullopt;
 
     // Category column ID
     std::optional<size_t>      cat_colID   = std::nullopt; // ID in m_data
@@ -87,13 +88,13 @@ public:
 
     // TODO: Provide some compile time programmatic way to set the default sizes here
     struct DP_CtorStruct {
-        std::optional<size_t>      tar_width      = std::nullopt;
-        std::optional<size_t>      tar_height     = std::nullopt;
-        std::optional<std::string> plot_type_name = std::nullopt;
-        std::optional<size_t>      lts_colID      = std::nullopt;
-        std::vector<size_t>        v_colIDs       = {};
-        std::optional<size_t>      c_colID        = std::nullopt;
-        std::array<Color_CVTS, 6>  colors         = {
+        std::optional<size_t>          tar_width      = std::nullopt;
+        std::optional<size_t>          tar_height     = std::nullopt;
+        std::optional<std::type_index> plot_type_name = std::nullopt;
+        std::optional<size_t>          lts_colID      = std::nullopt;
+        std::vector<size_t>            v_colIDs       = {};
+        std::optional<size_t>          c_colID        = std::nullopt;
+        std::array<Color_CVTS, 6>      colors         = {
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
             Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
