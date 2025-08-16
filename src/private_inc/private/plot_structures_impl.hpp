@@ -1478,7 +1478,6 @@ auto BarHS::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvr
     return (self);
 }
 auto BarHS::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-
     // We know that catCol must be nullopt here (from 'DesiredPlot::guess_catCol')
 
     // Categories must be specified by column names
@@ -1487,24 +1486,22 @@ auto BarHS::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
-        // Small trick to reverse the order of labels for BarHS
-        long long changer = self.dp.values_colIDs.size() - 1;
+        size_t lineID_start = 0;
+        for (auto const [bp, colID] : std::views::zip(
+                 (std::views::reverse(std::views::take(self.dp.color_basePalette, self.dp.values_colIDs.size()))),
+                 std::views::reverse(self.dp.values_colIDs))) {
 
-        for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
-            if (lineID < (self.dp.values_colIDs.size())) {
-                self.labels_verRight.push_back(
-                    std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID + changer)))
-                        .append(
-                            detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID + changer)).name,
-                                                     self.labels_verRightWidth))
-                        .append(Config::term_setDefault));
-                changer -= 2;
-            }
-            else {
-                self.labels_verRight.push_back(
-                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
-            }
+            self.labels_verRight.push_back(
+                std::string(Config::axisLabels_padLeft_vr, Config::space)
+                    .append(TermColors::get_basicColor(bp))
+                    .append(detail::trim2Size_ending(self.ds.m_data.at(colID).name, self.labels_verRightWidth))
+                    .append(Config::term_setDefault));
+            lineID_start++;
+        }
+
+        for (size_t lineID = lineID_start; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
         }
         // horBottom axis line
         self.labels_verRight.push_back(
