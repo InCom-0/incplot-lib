@@ -1477,6 +1477,48 @@ auto BarHS::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvr
 
     return (self);
 }
+auto BarHS::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+
+    // We know that catCol must be nullopt here (from 'DesiredPlot::guess_catCol')
+
+    // Categories must be specified by column names
+    if (self.dp.values_colIDs.size() > 1) {
+        // horTop axis line
+        self.labels_verRight.push_back(
+            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+
+        // Small trick to reverse the order of labels for BarHS
+        bool const is_BarHS = self.dp.plot_type_name == detail::TypeToString<plot_structures::BarHS>();
+        long long  changer  = (is_BarHS ? self.dp.values_colIDs.size() - 1 : 0);
+
+        for (long long lineID = static_cast<size_t>(self.areaHeight) - 1; lineID > -1; --lineID) {
+            if (lineID > (static_cast<size_t>(self.areaHeight) - 1 - self.dp.values_colIDs.size())) {
+                self.labels_verRight.push_back(
+                    std::string(Config::axisLabels_padLeft_vr, Config::space)
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID + changer)))
+                        .append(
+                            detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID + changer)).name,
+                                                     self.labels_verRightWidth))
+                        .append(Config::term_setDefault));
+                changer -= (2 * is_BarHS);
+            }
+            else {
+                self.labels_verRight.push_back(
+                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+            }
+        }
+        // horBottom axis line
+        self.labels_verRight.push_back(
+            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+    }
+
+    // If there is just one category then the labels_verRight are empty strings (the series label is on axisName_vl)
+    else {
+        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
+    }
+
+    return self;
+}
 
 auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     std::vector<double>              stackedSums(self.data_rowCount, 0.0);

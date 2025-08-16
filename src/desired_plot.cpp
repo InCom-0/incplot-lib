@@ -306,7 +306,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
         }
     }
 
-    auto addValColsUntil = [&](size_t minAllowed, size_t maxAllowed = 1) -> std::expected<size_t, incerr_c> {
+    auto addValColsUntil = [&](size_t minAllowed, size_t addUntil_ifAvailable = 1) -> std::expected<size_t, incerr_c> {
         auto getAnotherValColID = [&]() -> std::expected<size_t, incerr_c> {
             for (auto const &tpl : useableValCols_tpl) {
                 if (std::ranges::find(dp.values_colIDs, std::get<0>(tpl)) == dp.values_colIDs.end()) {
@@ -321,7 +321,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
             if (expID.has_value()) { dp.values_colIDs.push_back(expID.value()); }
             else { return std::unexpected(expID.error()); }
         }
-        while (dp.values_colIDs.size() < maxAllowed) {
+        while (dp.values_colIDs.size() < addUntil_ifAvailable) {
             auto expID = getAnotherValColID();
             if (expID.has_value()) { dp.values_colIDs.push_back(expID.value()); }
             else { break; }
@@ -345,7 +345,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
             return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
         }
         else if (dp.values_colIDs.size() == 1) {}
-        else if (not addValColsUntil(2).has_value()) {
+        else if (not addValColsUntil(2, 6).has_value()) {
             return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
         }
     }

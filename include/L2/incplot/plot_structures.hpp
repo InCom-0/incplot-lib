@@ -265,6 +265,7 @@ class BarHS : public BarHM {
 
 protected:
     auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
