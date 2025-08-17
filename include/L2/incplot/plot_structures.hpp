@@ -343,6 +343,18 @@ protected:
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
 
+extern template std::expected<incom::terminal_plot::plot_structures::BarV, incerr_c> incom::terminal_plot::plot_structures::
+    Base::build_self(incom::terminal_plot::plot_structures::BarV &&);
+extern template std::expected<incom::terminal_plot::plot_structures::BarVM, incerr_c> incom::terminal_plot::plot_structures::
+    Base::build_self(incom::terminal_plot::plot_structures::BarVM &&);
+extern template std::expected<incom::terminal_plot::plot_structures::Scatter, incerr_c> incom::terminal_plot::plot_structures::
+    Base::build_self(incom::terminal_plot::plot_structures::Scatter &&);
+extern template std::expected<incom::terminal_plot::plot_structures::Multiline, incerr_c> incom::terminal_plot::plot_structures::
+    Base::build_self(incom::terminal_plot::plot_structures::Multiline &&);
+extern template std::expected<incom::terminal_plot::plot_structures::BarHM, incerr_c> incom::terminal_plot::plot_structures::
+    Base::build_self(incom::terminal_plot::plot_structures::BarHM &&);
+extern template std::expected<incom::terminal_plot::plot_structures::BarHS, incerr_c> incom::terminal_plot::plot_structures::
+    Base::build_self(incom::terminal_plot::plot_structures::BarHS &&);
 
 } // namespace plot_structures
 } // namespace terminal_plot

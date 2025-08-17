@@ -22,6 +22,7 @@ TEST(PS, penguins_default) {
         .plot_type_name = std::type_index(typeid(incom::terminal_plot::plot_structures::Scatter))};
     auto dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
 
+    
     auto ar = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value()).build_self();
 
     EXPECT_TRUE(ar.has_value());

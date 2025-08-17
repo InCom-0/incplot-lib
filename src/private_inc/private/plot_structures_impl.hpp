@@ -1,5 +1,3 @@
-#pragma once
-
 #include <algorithm>
 #include <cassert>
 #include <concepts>
@@ -1617,6 +1615,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
     return self;
 }
 // ### END BAR HS ###
+
 
 } // namespace plot_structures
 } // namespace terminal_plot
