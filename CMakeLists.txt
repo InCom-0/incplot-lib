@@ -15,7 +15,8 @@ set(INCPLOT_LIB_SRC
     desired_plot.cpp
     err.cpp
     incplot.cpp
-    parser_inc.cpp)
+    parser_inc.cpp
+    plot_structures_eval.cpp)
 list(TRANSFORM INCPLOT_LIB_SRC PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 
 target_sources(incplot-lib PRIVATE ${INCPLOT_LIB_SRC})

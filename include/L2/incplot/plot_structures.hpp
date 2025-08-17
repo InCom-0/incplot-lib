@@ -254,6 +254,14 @@ class BarVM : public BarV {
     friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
+    static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_catCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_valueCols(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds);
+
+protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -275,6 +283,14 @@ class Scatter : public BarV {
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
     friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+protected:
+    static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_catCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_valueCols(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds);
 
 protected:
     auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -304,6 +320,14 @@ class Multiline : public Scatter {
     friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
+    static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_catCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_valueCols(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds);
+
+protected:
     auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -318,6 +342,14 @@ class BarHM : public Multiline {
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
     friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+protected:
+    static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_catCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_valueCols(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds);
 
 protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -337,24 +369,19 @@ class BarHS : public BarHM {
     friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
+    static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_catCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_valueCols(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds);
+
+protected:
     auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
     auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
-
-extern template std::expected<incom::terminal_plot::plot_structures::BarV, incerr_c> incom::terminal_plot::plot_structures::
-    Base::build_self(incom::terminal_plot::plot_structures::BarV &&);
-extern template std::expected<incom::terminal_plot::plot_structures::BarVM, incerr_c> incom::terminal_plot::plot_structures::
-    Base::build_self(incom::terminal_plot::plot_structures::BarVM &&);
-extern template std::expected<incom::terminal_plot::plot_structures::Scatter, incerr_c> incom::terminal_plot::plot_structures::
-    Base::build_self(incom::terminal_plot::plot_structures::Scatter &&);
-extern template std::expected<incom::terminal_plot::plot_structures::Multiline, incerr_c> incom::terminal_plot::plot_structures::
-    Base::build_self(incom::terminal_plot::plot_structures::Multiline &&);
-extern template std::expected<incom::terminal_plot::plot_structures::BarHM, incerr_c> incom::terminal_plot::plot_structures::
-    Base::build_self(incom::terminal_plot::plot_structures::BarHM &&);
-extern template std::expected<incom::terminal_plot::plot_structures::BarHS, incerr_c> incom::terminal_plot::plot_structures::
-    Base::build_self(incom::terminal_plot::plot_structures::BarHS &&);
 
 } // namespace plot_structures
 } // namespace terminal_plot
