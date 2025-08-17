@@ -1,10 +1,14 @@
 #pragma once
 
+#include <expected>
+#include <functional>
 #include <incplot/datastore.hpp>
 #include <incplot/desired_plot.hpp>
 #include <limits>
 #include <optional>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 
@@ -12,7 +16,13 @@ namespace incom {
 namespace terminal_plot {
 namespace plot_structures {
 
-using incerr_c = incerr::incerr_code;
+using incerr_c             = incerr::incerr_code;
+using guess_firstParamType = std::pair<std::reference_wrapper<DesiredPlot>, size_t>;
+using guess_retType        = std::expected<guess_firstParamType, incerr_c>;
+
+
+template <typename... PSs>
+auto evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
 
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter
 // etc.)
@@ -23,6 +33,8 @@ using incerr_c = incerr::incerr_code;
 // You always have to make the 'Base' class a friend ... this enables really nice static compile-time polymorphism
 // coupled with 'deducing this' feature of C++23
 class Base {
+
+
 protected:
     // LEGACY WAY TO ACCESS DATA ... local views into the data held in DataStore
 
@@ -110,6 +122,27 @@ public:
     std::string build_plotAsString() const;
 
 protected:
+    template <typename SELF_T>
+    static size_t evaluate_selfTAsPossibility(DesiredPlot dp, DataStore const &ds) {
+
+        auto res = SELF_T::guess_sizes(guess_firstParamType{std::ref(dp), 0uz}, ds)
+                       .and_then(std::bind_back(SELF_T::guess_plotType, ds))
+                       .and_then(std::bind_back(SELF_T::guess_TSCol, ds))
+                       .and_then(std::bind_back(SELF_T::guess_catCol, ds))
+                       .and_then(std::bind_back(SELF_T::guess_valueCols, ds))
+                       .and_then(std::bind_back(SELF_T::guess_TFfeatures, ds));
+
+        return res.has_value() ? res.value().second : 0uz;
+    }
+
+    static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds)      = delete;
+    static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds)   = delete;
+    static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds)      = delete;
+    static guess_retType guess_catCol(guess_firstParamType &&dp, DataStore const &ds)     = delete;
+    static guess_retType guess_valueCols(guess_firstParamType &&dp, DataStore const &ds)  = delete;
+    static guess_retType guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) = delete;
+
+
     // TODO: Implement validate_descriptors for 'plot_structures'
     auto validate_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
         return self;
@@ -155,6 +188,17 @@ class BarV : public Base {
     friend class Base;
     using Base::Base;
 
+    template <typename... PSs>
+    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+
+protected:
+    static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_catCol(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_valueCols(guess_firstParamType &&dp, DataStore const &ds);
+    static guess_retType guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds);
+
 protected:
     auto initialize_data_views(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
@@ -196,6 +240,9 @@ class BarVM : public BarV {
     friend class Base;
     using BarV::BarV;
 
+    template <typename... PSs>
+    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+
 protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
@@ -214,6 +261,9 @@ protected:
 class Scatter : public BarV {
     friend class Base;
     using BarV::BarV;
+
+    template <typename... PSs>
+    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -238,6 +288,9 @@ class Multiline : public Scatter {
     friend class Base;
     using Scatter::Scatter;
 
+    template <typename... PSs>
+    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+
 protected:
     auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
@@ -249,6 +302,9 @@ protected:
 class BarHM : public Multiline {
     friend class Base;
     using Multiline::Multiline;
+
+    template <typename... PSs>
+    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -263,12 +319,16 @@ class BarHS : public BarHM {
     friend class Base;
     using BarHM::BarHM;
 
+    template <typename... PSs>
+    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+    
 protected:
     auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
     auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     auto compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 };
+
 
 } // namespace plot_structures
 } // namespace terminal_plot

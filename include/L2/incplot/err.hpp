@@ -33,7 +33,8 @@ enum class Unexp_plotSpecs {
     GVC_cantSelectCatColAndMultipleYCols,
     GZS_widthTooSmall,
     GZS_widthTooLarge,
-    GZS_heightTooSmall
+    GZS_heightTooSmall,
+    TEST_t1
 };
 
 enum class Unexp_plotDrawer {

@@ -147,6 +147,40 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::transform_namedCols
     dp.values_colNames.clear();
     return dp;
 }
+std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
+    // TODO: Inference for multibar plots
+
+    // Width always need to be provided, otherwise the whole thing doesn't work
+    if (not dp.targetWidth.has_value()) {
+        // Is unknown ... defaulting to Config specified width
+        if (not dp.availableWidth.has_value()) { dp.targetWidth = Config::default_targetWidth; }
+        // Is known ... using it after scaling down a little
+        else { dp.targetWidth = static_cast<size_t>(dp.availableWidth.value() * Config::scale_availablePlotWidth); }
+    }
+
+    // Check for unreasonable width sizes
+    if (dp.targetWidth.value() < Config::min_plotWidth) { return std::unexpected(incerr_c::make(GZS_widthTooSmall)); }
+    else if (dp.targetWidth.value() > Config::max_plotWidth) {
+        return std::unexpected(incerr_c::make(GZS_widthTooLarge));
+    }
+
+
+    // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
+    if (not dp.targetHeight.has_value()) {
+        // if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Scatter>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarVM>()) {}
+        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHM>()) {}
+        // else { dp.targetHeight = dp.targetWidth.value() / 2; }
+    }
+
+    // Impossible to print with height <5 under all circumstances
+    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
+        return std::unexpected(incerr_c::make(GZS_heightTooSmall));
+    }
+    return dp;
+}
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(DesiredPlot &&dp, DataStore const &ds) {
     if (dp.plot_type_name.has_value()) { return dp; }
 
@@ -255,7 +289,9 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
     size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
     // BAR PLOTS
     if (dp.plot_type_name.value() != detail::get_typeIndex<plot_structures::Scatter>()) {
-        if (dp.cat_colID.has_value()) { return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForOtherThanScatter)); }
+        if (dp.cat_colID.has_value()) {
+            return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForOtherThanScatter));
+        }
         else { return dp; }
     }
     // SCATTER PLOT
@@ -421,40 +457,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
 
     return dp;
 }
-std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
-    // TODO: Inference for multibar plots
 
-    // Width always need to be provided, otherwise the whole thing doesn't work
-    if (not dp.targetWidth.has_value()) {
-        // Is unknown ... defaulting to Config specified width
-        if (not dp.availableWidth.has_value()) { dp.targetWidth = Config::default_targetWidth; }
-        // Is known ... using it after scaling down a little
-        else { dp.targetWidth = static_cast<size_t>(dp.availableWidth.value() * Config::scale_availablePlotWidth); }
-    }
-
-    // Check for unreasonable width sizes
-    if (dp.targetWidth.value() < Config::min_plotWidth) { return std::unexpected(incerr_c::make(GZS_widthTooSmall)); }
-    else if (dp.targetWidth.value() > Config::max_plotWidth) {
-        return std::unexpected(incerr_c::make(GZS_widthTooLarge));
-    }
-
-
-    // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
-    if (not dp.targetHeight.has_value()) {
-        // if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Scatter>()) {}
-        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {}
-        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {}
-        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarVM>()) {}
-        // else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHM>()) {}
-        // else { dp.targetHeight = dp.targetWidth.value() / 2; }
-    }
-
-    // Impossible to print with height <5 under all circumstances
-    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
-        return std::unexpected(incerr_c::make(GZS_heightTooSmall));
-    }
-    return dp;
-}
 // This method doesn't do anything useful (yet)
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds) {
     if (not dp.valAxesNames_bool.has_value()) { dp.valAxesNames_bool = false; }
@@ -493,6 +496,10 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams
         .and_then(std::bind_back(DesiredPlot::compute_filterFlags, ds));
 }
 
+template <typename... PSs>
+std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_mostLikely() {
+    return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+}
 
 } // namespace terminal_plot
 } // namespace incom
