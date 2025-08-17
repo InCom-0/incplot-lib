@@ -20,9 +20,32 @@ using incerr_c             = incerr::incerr_code;
 using guess_firstParamType = std::pair<std::reference_wrapper<DesiredPlot>, size_t>;
 using guess_retType        = std::expected<guess_firstParamType, incerr_c>;
 
+// Forward declaration
+class Base;
+
+template <typename PS>
+requires(std::is_base_of_v<Base, PS>)
+size_t evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds) {
+    auto res = PS::guess_sizes(guess_firstParamType{std::ref(dp), 0uz}, ds)
+                   .and_then(std::bind_back(PS::guess_plotType, ds))
+                   .and_then(std::bind_back(PS::guess_TSCol, ds))
+                   .and_then(std::bind_back(PS::guess_catCol, ds))
+                   .and_then(std::bind_back(PS::guess_valueCols, ds))
+                   .and_then(std::bind_back(PS::guess_TFfeatures, ds));
+
+    return res.has_value() ? res.value().second : 0uz;
+}
 
 template <typename... PSs>
-auto evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds) {
+    auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
+                      .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
+
+    std::array<std::pair<std::type_index, size_t>, sizeof...(PSs)> res{
+        {{std::type_index(typeid(PSs)), evaluate_PS_asPossibility<PSs>(dp_exp.value(), ds)}...}};
+    return res;
+}
 
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter
 // etc.)
@@ -33,8 +56,6 @@ auto evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
 // You always have to make the 'Base' class a friend ... this enables really nice static compile-time polymorphism
 // coupled with 'deducing this' feature of C++23
 class Base {
-
-
 protected:
     // LEGACY WAY TO ACCESS DATA ... local views into the data held in DataStore
 
@@ -122,19 +143,6 @@ public:
     std::string build_plotAsString() const;
 
 protected:
-    template <typename SELF_T>
-    static size_t evaluate_selfTAsPossibility(DesiredPlot dp, DataStore const &ds) {
-
-        auto res = SELF_T::guess_sizes(guess_firstParamType{std::ref(dp), 0uz}, ds)
-                       .and_then(std::bind_back(SELF_T::guess_plotType, ds))
-                       .and_then(std::bind_back(SELF_T::guess_TSCol, ds))
-                       .and_then(std::bind_back(SELF_T::guess_catCol, ds))
-                       .and_then(std::bind_back(SELF_T::guess_valueCols, ds))
-                       .and_then(std::bind_back(SELF_T::guess_TFfeatures, ds));
-
-        return res.has_value() ? res.value().second : 0uz;
-    }
-
     static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds)      = delete;
     static guess_retType guess_plotType(guess_firstParamType &&dp, DataStore const &ds)   = delete;
     static guess_retType guess_TSCol(guess_firstParamType &&dp, DataStore const &ds)      = delete;
@@ -188,8 +196,9 @@ class BarV : public Base {
     friend class Base;
     using Base::Base;
 
-    template <typename... PSs>
-    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_sizes(guess_firstParamType &&dp, DataStore const &ds);
@@ -240,8 +249,9 @@ class BarVM : public BarV {
     friend class Base;
     using BarV::BarV;
 
-    template <typename... PSs>
-    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -262,8 +272,9 @@ class Scatter : public BarV {
     friend class Base;
     using BarV::BarV;
 
-    template <typename... PSs>
-    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
     auto compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -288,8 +299,9 @@ class Multiline : public Scatter {
     friend class Base;
     using Scatter::Scatter;
 
-    template <typename... PSs>
-    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
     auto compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -303,8 +315,9 @@ class BarHM : public Multiline {
     friend class Base;
     using Multiline::Multiline;
 
-    template <typename... PSs>
-    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
 
 protected:
     auto compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
@@ -319,9 +332,10 @@ class BarHS : public BarHM {
     friend class Base;
     using BarHM::BarHM;
 
-    template <typename... PSs>
-    friend auto incom::terminal_plot::plot_structures::evaluate_possibilities(DesiredPlot dp, DataStore const &ds);
-    
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    friend size_t incom::terminal_plot::plot_structures::evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
 protected:
     auto compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
     auto compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;

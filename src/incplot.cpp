@@ -7,7 +7,7 @@
 
 #include <incplot.hpp>
 #include <private/detail.hpp>
-#include <private/plot_structures_impl.hpp>
+#include <incplot/plot_structures.hpp>
 
 #include <magic_enum/magic_enum.hpp>
 

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "incplot/err.hpp"
 #include <algorithm>
 #include <cassert>
 #include <concepts>
@@ -208,22 +207,22 @@ inline std::string Base::build_plotAsString() const {
 // ### END BASE ###
 // BAR V
 
-inline guess_retType BarV::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType BarV::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-inline guess_retType BarV::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType BarV::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-inline guess_retType BarV::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType BarV::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-inline guess_retType BarV::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType BarV::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-inline guess_retType BarV::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType BarV::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-inline guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
 
@@ -1618,27 +1617,6 @@ auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
     return self;
 }
 // ### END BAR HS ###
-
-template <typename... PSs>
-requires(std::is_base_of_v<Base, PSs>, ...) && detail::types_noneSame_v<PSs...> && (sizeof...(PSs) > 1)
-auto evaluate_possibilities(DesiredPlot dp, DataStore const &ds) {
-    auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
-                      .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
-
-    std::array<std::pair<std::type_index, size_t>, sizeof...(PSs)> res{
-        {{std::type_index(typeid(PSs)), PSs::template evaluate_selfTAsPossbility<PSs>(dp_exp.value(), ds)}...}};
-    return res;
-}
-
-template <typename PS>
-requires(std::is_base_of_v<Base, PS>)
-auto evaluate_possibilities(DesiredPlot dp, DataStore const &ds) {
-    auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
-                      .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
-
-    return std::pair<std::type_index, size_t>{std::type_index(typeid(PS)),
-                                              PS::template evaluate_selfTAsPossbility<PS>(dp_exp.value(), ds)};
-}
 
 } // namespace plot_structures
 } // namespace terminal_plot
