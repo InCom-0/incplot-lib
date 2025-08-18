@@ -1,4 +1,6 @@
+#include <expected>
 #include <incplot/plot_structures.hpp>
+#include <utility>
 
 
 namespace incom {
@@ -153,139 +155,247 @@ std::string Base::build_plotAsString() const {
 
 // BAR V
 
-guess_retType BarV::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
+
+    if (dp.labelTS_colID.has_value()) { return std::unexpected(incerr_c::make(GTSC_cantSpecifyTScolForOtherThanMultiline)); }
+    else { return dp_pr; }
+    std::unreachable();
 }
-guess_retType BarV::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarV::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
+
+    if (dp.cat_colID.has_value()) {
+        return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForOtherThanScatter));
+    }
+    else { return dp_pr; }
+    std::unreachable();
 }
-guess_retType BarV::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
+
+    if (dp.values_colIDs.size() > 1) { return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV)); }
+
+    // Verify that the selected column can actually be used for this plot
+    else if (dp.values_colIDs.size() == 1) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV));
+    }
+
+    // Select one column for this plot
+    else { return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV)); }
+    std::unreachable();
 }
-guess_retType BarV::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
+    // Width always need to be provided, otherwise the whole thing doesn't work
+    if (not dp.targetWidth.has_value()) {
+        // Is unknown ... defaulting to Config specified width
+        if (not dp.availableWidth.has_value()) { dp.targetWidth = Config::default_targetWidth; }
+        // Is known ... using it after scaling down a little
+        else { dp.targetWidth = static_cast<size_t>(dp.availableWidth.value() * Config::scale_availablePlotWidth); }
+    }
+
+    if (dp.availableWidth.has_value()) {
+        if (dp.targetWidth.value() > dp.availableWidth.value()) {
+            return std::unexpected(incerr_c::make(GSZ_tarWidthLargerThanAvailableWidth));
+        }
+    }
+
+    // Check for unreasonable width sizes
+    if (dp.targetWidth.value() < Config::min_plotWidth) { return std::unexpected(incerr_c::make(GZS_widthTooSmall)); }
+    else if (dp.targetWidth.value() > Config::max_plotWidth) {
+        return std::unexpected(incerr_c::make(GZS_widthTooLarge));
+    }
+
+    // Height is generally inferred later in 'compute_descriptors' from computed actual 'areaWidth'
+    // Impossible to print with height <5 under all circumstances
+    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
+        return std::unexpected(incerr_c::make(GZS_heightTooSmall));
+    }
+    return dp_pr;
 }
-guess_retType BarV::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
+    if (not dp.valAxesNames_bool.has_value()) { dp.valAxesNames_bool = false; }
+    if (not dp.valAxesLabels_bool.has_value()) { dp.valAxesLabels_bool = false; }
+    if (not dp.valAutoFormat_bool.has_value()) { dp.valAutoFormat_bool = true; }
+    if (not dp.legend_bool.has_value()) { dp.legend_bool = false; }
+
+    return dp_pr;
 }
 // ### END BAR V ###
 
 
 // BAR VM
 
-guess_retType BarVM::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType BarVM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TSCol(std::move(dp_pr), ds);
+}
+guess_retType BarVM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_catCol(std::move(dp_pr), ds);
+}
+guess_retType BarVM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-guess_retType BarVM::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarVM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_sizes(std::move(dp_pr), ds);
 }
-guess_retType BarVM::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarVM::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarVM::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarVM::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarVM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
 }
 
 // ### END BAR VM ###
 
 
 // SCATTER
-guess_retType Scatter::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TSCol(std::move(dp_pr), ds);
+}
+guess_retType Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-guess_retType Scatter::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType Scatter::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_sizes(std::move(dp_pr), ds);
 }
-guess_retType Scatter::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType Scatter::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType Scatter::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
 }
 
 // ### END SCATTER ###
 
 
 // MULTILINE
-
-guess_retType Multiline::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-guess_retType Multiline::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
+guess_retType Multiline::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_catCol(std::move(dp_pr), ds);
+}
+guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType Multiline::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_sizes(std::move(dp_pr), ds);
 }
-guess_retType Multiline::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType Multiline::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType Multiline::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
 }
 // ### END MULTILINE ###
 
 
 // BAR HM
+guess_retType BarHM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TSCol(std::move(dp_pr), ds);
+}
+guess_retType BarHM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_catCol(std::move(dp_pr), ds);
+}
+guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
 
-guess_retType BarHM::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
+    if (dp.values_colIDs.size() < 1) { return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols)); }
     return std::unexpected(incerr_c::make(TEST_t1));
 }
-guess_retType BarHM::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
+
+    // Compute rowCount as it is required to evaluate whether there is enough 'width' to fit the plot
+    auto compute_rowCount = [&](auto &var) -> size_t { return std::ranges::to<std::vector>(var).size(); };
+
+    auto         dataViews = ds.get_filteredViewOfData(dp.values_colIDs, dp.filterFlags);
+    size_t const rowCount  = std::visit(compute_rowCount, dataViews.front());
+
+    size_t const desired_areaWidth =
+        ((rowCount * dp.values_colIDs.size()) + (dp.values_colIDs.size() == 1 ? rowCount - 1 : 2 * rowCount));
+
+    // +2ll for the 2 vertical axes
+    long long const desired_targetWidth =
+        desired_areaWidth + Config::ps_padLeft + Config::ps_padRight + 2ll + Config::max_valLabelSize +
+        Config::axisLabels_padRight_vl +
+        (dp.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_minWidth_legend_vr
+                                     : Config::axis_verName_width_vl);
+
+    if (dp.targetWidth.has_value() && desired_targetWidth > dp.targetWidth) {
+        return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+    }
+    else if (dp.availableWidth.has_value() && desired_targetWidth > dp.availableWidth) {
+        return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+    }
+    // Neither targetWidth, neither availableWidth was specified ... fallback to some default value
+    else {
+        if (desired_targetWidth > Config::default_targetWidth) {
+            return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+        }
+    }
+    dp.targetWidth = desired_targetWidth;
+
+    // Height
+    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
+        return std::unexpected(incerr_c::make(GZS_heightTooSmall));
+    }
+
+    return dp_pr;
 }
-guess_retType BarHM::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarHM::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarHM::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarHM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
 }
 // ### END BAR HM ###
 
 
 // BAR HS
+guess_retType BarHS::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TSCol(std::move(dp_pr), ds);
+}
+guess_retType BarHS::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_catCol(std::move(dp_pr), ds);
+}
+guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return std::unexpected(incerr_c::make(TEST_t1));
+}
+guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.first.get();
 
-guess_retType BarHS::guess_sizes(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+    // Compute rowCount as it is required to evaluate whether there is enough 'width' to fit the plot
+    auto compute_rowCount = [&](auto &var) -> size_t { return std::ranges::to<std::vector>(var).size(); };
+
+    auto         dataViews = ds.get_filteredViewOfData(dp.values_colIDs, dp.filterFlags);
+    size_t const rowCount  = std::visit(compute_rowCount, dataViews.front());
+
+    size_t const desired_areaWidth = (2 * rowCount) - 1;
+
+    // +2ll for the 2 vertical axes
+    long long const desired_targetWidth =
+        desired_areaWidth + Config::ps_padLeft + Config::ps_padRight + 2ll + Config::max_valLabelSize +
+        Config::axisLabels_padRight_vl +
+        (dp.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_minWidth_legend_vr
+                                     : Config::axis_verName_width_vl);
+
+    if (dp.targetWidth.has_value() && desired_targetWidth > dp.targetWidth) {
+        return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+    }
+    else if (dp.availableWidth.has_value() && desired_targetWidth > dp.availableWidth) {
+        return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+    }
+    // Neither targetWidth, neither availableWidth was specified ... fallback to some default value
+    else {
+        if (desired_targetWidth > Config::default_targetWidth) {
+            return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+        }
+    }
+    dp.targetWidth = desired_targetWidth;
+
+    // Height
+    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
+        return std::unexpected(incerr_c::make(GZS_heightTooSmall));
+    }
+
+    return dp_pr;
 }
-guess_retType BarHS::guess_plotType(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarHS::guess_TSCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarHS::guess_catCol(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
-}
-guess_retType BarHS::guess_TFfeatures(guess_firstParamType &&dp, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+guess_retType BarHS::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
 }
 
 // ### END BAR HS ###

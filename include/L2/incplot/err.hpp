@@ -13,9 +13,11 @@ using namespace std::literals;
 enum class Unexp_plotSpecs {
     // No value '0'
     TNCII_colByNameNotExist = 1,
+    GPT_explicitlySpecifiedDifferentPlotType,
     GPT_zeroUseableValueColumns,
     GPT_xValTypeStringWhileMoreThan1YvalCols,
     GTSC_noTimeSeriesLikeColumnForMultiline,
+    GTSC_cantSpecifyTScolForOtherThanMultiline,
     GTSC_noUnusedXvalColumnForScatter,
     GTSC_noStringLikeColumnForLabelsForBarPlot,
     GTSC_unreachableCodeReached,
@@ -33,9 +35,13 @@ enum class Unexp_plotSpecs {
     GVC_cantSelectCatColAndMultipleYCols,
     GZS_widthTooSmall,
     GZS_widthTooLarge,
+    GSZ_tarWidthLargerThanAvailableWidth,
+    GSZ_iferredTargetWidthLargerThanAvailableWidth,
+    GSZ_iferredTargetWidthLargerThanDefaultWidth,
     GZS_heightTooSmall,
     TEST_t1
 };
+
 
 enum class Unexp_plotDrawer {
     // No value '0'

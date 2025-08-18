@@ -48,6 +48,7 @@ public:
 
     static std::expected<DesiredPlot, incerr::incerr_code> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds);
 
+    static void compute_filterFlags_r_void(DesiredPlot &dp, DataStore const &ds);
     static std::expected<DesiredPlot, incerr::incerr_code> compute_filterFlags(DesiredPlot &&dp, DataStore const &ds);
 
 
@@ -143,7 +144,7 @@ public:
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
     std::expected<DesiredPlot, incerr::incerr_code> guess_missingParams(this DesiredPlot &&self, DataStore const &ds);
 
-    template <typename ...PSs>
+    template <typename... PSs>
     std::expected<DesiredPlot, incerr::incerr_code> guess_mostLikely();
 };
 

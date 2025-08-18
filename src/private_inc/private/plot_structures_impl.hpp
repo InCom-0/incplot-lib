@@ -24,6 +24,7 @@ using incerr_c = incerr::incerr_code;
 using enum Unexp_plotSpecs;
 using enum Unexp_plotDrawer;
 
+
 // BASE
 auto Base::build_self(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // Can only build it from rvalue ...
@@ -199,15 +200,19 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
     // Plot area height (-2 is for the 2 horizontal axes positions)
     if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
 
-
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
                                      self.values_data.at(0));
+        if (self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
+                                  self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
+                                  self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom) {
+            return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
+        }
     }
     else if (not self.dp.targetHeight.has_value()) {
         if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {
             //
             if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-                self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
+                self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio_Multiline;
             }
             else {
                 self.areaHeight = self.areaWidth * (static_cast<double>(self.dp.availableHeight.value()) /
@@ -216,7 +221,7 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
         }
         else {
             if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-                self.areaHeight = self.areaWidth / 3;
+                self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
             }
             else {
                 self.areaHeight = self.areaWidth * (static_cast<double>(self.dp.availableHeight.value()) /
@@ -609,7 +614,10 @@ auto BarVM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
     // PLOT AREA HEIGHT
     self.areaHeight = (self.data_rowCount * self.dp.values_colIDs.size()) + (self.data_rowCount - 1);
-    if (self.areaHeight < static_cast<long long>(Config::min_areaHeight)) {
+    if (self.areaHeight < static_cast<long long>(Config::min_areaHeight) ||
+        self.areaHeight < (static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
+                           self.axisName_horTop_bool - self.labels_horTop.size() - 2ll - self.labels_horBottom.size() -
+                           self.axisName_horBottom_bool - self.pad_bottom)) {
         return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
     }
 
@@ -1101,7 +1109,7 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
     // PLOT AREA HEIGHT
     if (not self.dp.targetHeight.has_value()) {
         if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-            self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio_BarHM;
+            self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
         }
         else {
             self.areaHeight = self.areaWidth *

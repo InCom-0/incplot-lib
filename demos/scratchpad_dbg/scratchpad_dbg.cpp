@@ -1,3 +1,4 @@
+#include "incplot/plot_structures.hpp"
 #include <incplot.hpp>
 #include <incstd.hpp>
 #include <typeindex>

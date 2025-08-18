@@ -148,7 +148,6 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::transform_namedCols
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(DesiredPlot &&dp, DataStore const &ds) {
-    // TODO: Inference for multibar plots
 
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) {
@@ -156,6 +155,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_sizes(Desired
         if (not dp.availableWidth.has_value()) { dp.targetWidth = Config::default_targetWidth; }
         // Is known ... using it after scaling down a little
         else { dp.targetWidth = static_cast<size_t>(dp.availableWidth.value() * Config::scale_availablePlotWidth); }
+    }
+
+    if (dp.availableWidth.has_value()) {
+        if (dp.targetWidth.value() > dp.availableWidth.value()) {
+            return std::unexpected(incerr_c::make(GSZ_tarWidthLargerThanAvailableWidth));
+        }
     }
 
     // Check for unreasonable width sizes
@@ -332,7 +337,6 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(DesiredPlot &&dp, DataStore const &ds) {
-    // TODO: Inference for multibar plots
     auto useableValCols_tpl =
         std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &tpl) {
             bool arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
@@ -467,6 +471,14 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TFfeatures(De
 
     return dp;
 }
+void DesiredPlot::compute_filterFlags_r_void(DesiredPlot &dp, DataStore const &ds) {
+    std::vector<size_t> colIDs;
+    if (dp.labelTS_colID.has_value()) { colIDs.push_back(dp.labelTS_colID.value()); }
+    if (dp.cat_colID.has_value()) { colIDs.push_back(dp.cat_colID.value()); }
+    for (auto const &colID : dp.values_colIDs) { colIDs.push_back(colID); }
+
+    dp.filterFlags = ds.compute_filterFlags(colIDs, dp.filter_outsideStdDev);
+};
 
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_filterFlags(DesiredPlot    &&dp,
                                                                                  DataStore const &ds) {
@@ -479,6 +491,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_filterFlags
 
     return dp;
 };
+
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams(this DesiredPlot &&self,
                                                                                  DataStore const   &ds) {
     // Guesses the missing 'desired parameters' and returns a DesiredPlot with those filled in
