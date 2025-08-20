@@ -59,16 +59,10 @@ requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
 auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds) {
     auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
                       .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
-    if constexpr (sizeof...(PSs) == 1) {
-        std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>> res(
-            {std::type_index(typeid(PSs)), evaluate_PS_asPossibility<PSs>(dp_exp.value(), ds)}...);
-        return res;
-    }
-    else {
-        std::array<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>, sizeof...(PSs)>
-            res{{{std::type_index(typeid(PSs)), evaluate_PS_asPossibility<PSs>(dp_exp.value(), ds)}...}};
-        return res;
-    }
+
+    std::array<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>, sizeof...(PSs)> res{
+        {{std::type_index(typeid(PSs)), evaluate_PS_asPossibility<PSs>(dp_exp.value(), ds)}...}};
+    return res;
 }
 
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter

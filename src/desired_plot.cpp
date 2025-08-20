@@ -291,6 +291,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
             return (std::get<2>(colType).is_categoryLike &&
                     std::get<2>(colType).categoryCount <= Config::max_maxNumOfCategories);
         });
+
     size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
     // BAR PLOTS
     if (dp.plot_type_name.value() != detail::get_typeIndex<plot_structures::Scatter>()) {

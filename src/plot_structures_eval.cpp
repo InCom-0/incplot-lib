@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <expected>
 #include <incplot/plot_structures.hpp>
 #include <utility>
@@ -158,9 +159,36 @@ std::string Base::build_plotAsString() const {
 guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.first.get();
 
-    if (dp.labelTS_colID.has_value()) { return std::unexpected(incerr_c::make(GTSC_cantSpecifyTScolForOtherThanMultiline)); }
-    else { return dp_pr; }
-    std::unreachable();
+    if (dp.labelTS_colID.has_value()) {
+        if (dp.labelTS_colID.value() >= ds.m_data.size()) {
+            return std::unexpected(incerr_c::make(GTSC_selectedTScolNotFoundInData));
+        }
+    }
+    else {
+        // Suitable: 1) string_like AND 2) not selected as catCol AND 3) not selected as valCol
+        auto filter2 = std::views::filter(
+            std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
+                return (std::get<0>(std::get<1>(ca)).colType == parsedVal_t::string_like) &&
+                       (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                       std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+            });
+
+        // Best == the one with the most "categories" ie. least number of identical strings in rows
+        auto bestForLabels = std::ranges::max_element(filter2, [](auto const &lhs, auto const &rhs) {
+            double const l_val = std::get<1>(std::get<1>(lhs)).categoryCount /
+                                 static_cast<double>(std::get<0>(std::get<1>(lhs)).itemFlags.size());
+            double const r_val = std::get<1>(std::get<1>(rhs)).categoryCount /
+                                 static_cast<double>(std::get<0>(std::get<1>(rhs)).itemFlags.size());
+
+            return l_val < r_val;
+        });
+
+        if (bestForLabels == filter2.end()) {
+            return std::unexpected(incerr_c::make(GTSC_noStringLikeColumnForLabelsForBarPlot));
+        }
+        else { dp.labelTS_colID = std::get<0>(*bestForLabels); }
+    }
+    return dp_pr;
 }
 guess_retType BarV::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.first.get();
@@ -249,10 +277,70 @@ guess_retType BarVM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore co
 
 // SCATTER
 guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TSCol(std::move(dp_pr), ds);
+    DesiredPlot &dp = dp_pr.first.get();
+
+    // If TScol specified then verify if it is legit.
+    if (dp.labelTS_colID.has_value()) {
+        if (dp.labelTS_colID.value() >= ds.m_data.size()) {
+            return std::unexpected(incerr_c::make(GTSC_selectedTScolNotFoundInData));
+        }
+        else if ((dp.cat_colID.has_value() ? dp.labelTS_colID.value() == dp.cat_colID.value() : false)) {
+            return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeTheSameAsCatCol));
+        }
+        else if (std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == dp.labelTS_colID.value(); })) {
+            return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeOneOfTheValCols));
+        }
+        return dp_pr;
+    }
+
+    // If TScol not specified then find a suitable one (the first one from the left)
+    else {
+        for (auto const &fvItem : std::views::filter(
+                 std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
+                     return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
+                            (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                            (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
+                            std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+                 })) {
+
+            dp.labelTS_colID = std::get<0>(fvItem);
+            return dp_pr;
+        }
+        // If there are none (therefore none of the for loops execute at all) then return unexpected
+        return std::unexpected(incerr_c::make(GTSC_noUnusedXvalColumnForScatter));
+    }
+    std::unreachable();
 }
 guess_retType Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+    DesiredPlot &dp = dp_pr.first.get();
+
+    auto useableCatCols_tpl = std::views::filter(
+        std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &colType) {
+            return (std::get<2>(colType).is_categoryLike &&
+                    std::get<2>(colType).categoryCount <= Config::max_maxNumOfCategories);
+        });
+
+    // size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
+    size_t useableCatCols_tpl_sz = std::ranges::distance(useableCatCols_tpl.begin(), useableCatCols_tpl.end());
+
+    // Impossible if there is no useable catCol or if the are more than 1 selected valCol
+    if (useableCatCols_tpl_sz == 0) { return std::unexpected(incerr_c::make(GCC_specifiedCatColCantBeUsedAsCatCol)); }
+    if (dp.values_colIDs.size() > 1) { return std::unexpected(incerr_c::make(GCC_cantSelectCatColAndMultipleYCols)); }
+
+    // catCol specified need to verify that it is legit to use
+    if (dp.cat_colID.has_value()) {
+        bool calColID_found = std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
+                                  return std::get<0>(tpl) == dp.cat_colID.value();
+                              }) != useableCatCols_tpl.end();
+
+        // If the existing catColID cant be found then its wrong
+        if (not calColID_found) { return std::unexpected(incerr_c::make(GCC_specifiedCatColCantBeUsedAsCatCol)); }
+    }
+
+    // catCol isn't specified ... select first one of the useable catCols
+    else { dp.cat_colID = std::get<0>(useableCatCols_tpl.front()); }
+
+    return dp_pr;
 }
 guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
@@ -269,7 +357,40 @@ guess_retType Scatter::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore 
 
 // MULTILINE
 guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+    DesiredPlot &dp = dp_pr.first.get();
+
+    // If TScol specified then verify if it is legit.
+    if (dp.labelTS_colID.has_value()) {
+        if (dp.labelTS_colID.value() >= ds.m_data.size()) {
+            return std::unexpected(incerr_c::make(GTSC_selectedTScolNotFoundInData));
+        }
+        else if (not dp.m_colAssessments.at(dp.labelTS_colID.value()).is_timeSeriesLikeIndex) {
+            return std::unexpected(incerr_c::make(GTSC_selectedTScolIsNotTimeSeriesLike));
+        }
+        else if ((dp.cat_colID.has_value() ? dp.labelTS_colID.value() == dp.cat_colID.value() : false)) {
+            return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeTheSameAsCatCol));
+        }
+        else if (std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == dp.labelTS_colID.value(); })) {
+            return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeOneOfTheValCols));
+        }
+        return dp_pr;
+    }
+
+    // If TScol not specified then find a suitable one (the first one from the left)
+    else {
+        for (auto const &fvItem : std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
+                 return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                        (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                        std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+             })) {
+
+            dp.labelTS_colID = std::get<0>(fvItem);
+            return dp_pr;
+        }
+        // If there are none (therefore none of the for loops execute at all) then return unexpected
+        return std::unexpected(incerr_c::make(GTSC_noTimeSeriesLikeColumnForMultiline));
+    }
+    std::unreachable();
 }
 guess_retType Multiline::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_catCol(std::move(dp_pr), ds);
