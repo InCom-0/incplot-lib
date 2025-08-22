@@ -20,6 +20,7 @@ class DesiredPlot {
 private:
     struct ColumnParams {
         size_t categoryCount;
+        double standDev;
 
         bool is_categoriesSameSize;
         bool is_categoryLike;
@@ -31,7 +32,7 @@ private:
 
 
 public:
-    std::vector<unsigned int> filterFlags;
+    std::vector<unsigned int> filterFlags      = {};
     std::vector<ColumnParams> m_colAssessments = {};
 
     // BUILDING METHODS

@@ -2,9 +2,9 @@
 #include <expected>
 #include <functional>
 #include <incplot/plot_structures.hpp>
+#include <incstd/algos.hpp>
 #include <optional>
 #include <ranges>
-#include <tuple>
 #include <utility>
 
 
@@ -17,57 +17,6 @@ using enum Unexp_plotSpecs;
 using enum Unexp_plotDrawer;
 
 namespace detail {
-
-// func_filter operates on tuples of <size_t, RNGs...>. Means the first element is automatically added to be the index.
-// func_sorterComp operates on tuples of <const & RNGs...> (through projection) but physically sorts tuples of <size_t,
-// std::reference_wrapper()...> Outputs sorted indices into the original rngs
-template <typename... RNGs>
-requires(sizeof...(RNGs) > 0)
-std::vector<size_t> compute_filterSortedIDXs(auto func_filter, auto func_sorterComp, RNGs const &...rngs) {
-    auto lam_IS = [&]<size_t... idxs>(std::index_sequence<idxs...>) -> std::vector<size_t> {
-        auto filteredVec = std::views::zip(std::views::iota(0uz), rngs...) | std::views::filter(func_filter) |
-                           std::views::transform([](auto const &tpl) {
-                               return std::tuple(std::get<0>(tpl), std::ref(std::get<idxs + 1>(tpl))...);
-                           }) |
-                           std::ranges::to<std::vector>();
-
-        std::ranges::sort(filteredVec, func_sorterComp,
-                          [&](auto const &tpl) { return std::tie(std::get<idxs + 1>(tpl).get()...); });
-
-        return std::views::transform(filteredVec, [](auto const &tpl_item) { return std::get<0>(tpl_item); }) |
-               std::ranges::to<std::vector>();
-    };
-
-    return lam_IS(std::make_index_sequence<sizeof...(RNGs)>{});
-}
-
-
-std::vector<size_t> compute_useableValCols(auto const &rng_input, auto func_filter, auto func_sorterComp) {
-
-    auto first_filter = std::views::transform(rng_input, [](auto &tpl_l1) { return std::ref(tpl_l1); }) |
-                        std::views::filter(func_filter);
-    std::vector newVec(first_filter.begin(), first_filter.end());
-
-    std::ranges::sort(newVec, func_sorterComp);
-    auto res = std::views::transform(newVec, [](auto &tpl_l2) { return std::get<0>(tpl_l2); }) |
-               std::ranges::to<std::vector>();
-
-    // std::vector<size_t> res = std::views::transform(rng_input, [](auto &tpl_l1) { return std::ref(tpl_l1); }) |
-    //                           std::views::filter(func_filter) |
-    //                           std::views::transform([](auto &tpl_l2) { return std::get<0>(tpl_l2); }) |
-    //                           std::ranges::to<std::vector>();
-    // std::ranges::sort(res, func_sorterComp);
-    return res;
-}
-std::vector<size_t> compute_useableValCols(auto &&rng_input, auto func_filter, auto func_sorterComp) {
-    return compute_useableValCols(rng_input, func_filter, func_sorterComp);
-}
-
-std::vector<size_t> compute_useableValCols(auto const &rng_input, auto func_filter) {
-    return std::views::filter(rng_input, func_filter) |
-           std::views::transform([](auto &someTuple) { return std::get<0>(someTuple); }) |
-           std::ranges::to<std::vector>();
-}
 
 std::expected<size_t, incerr_c> addColsUntil(std::vector<size_t> &out_dp_valCol, std::vector<size_t> useableValCols,
                                              size_t minAllowed, size_t addUntil_ifAvailable = 1) {
@@ -97,6 +46,9 @@ std::expected<size_t, incerr_c> addColsUntil(std::vector<size_t> &out_dp_valCol,
 }
 
 } // namespace detail
+
+
+using namespace incom::standard::algos;
 
 // BASE
 
@@ -296,7 +248,8 @@ guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore cons
         // Not timeSeriesLike and Not categoryLike
         bool const notExcluded = (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
                                  (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
-        return (arithmeticCol && notExcluded);
+
+        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike));
     };
     auto useableValCols_tpl =
         std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), lam_filter);
@@ -307,15 +260,16 @@ guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore cons
             return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
         }
     }
-    auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) { return true; };
+    auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
+        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+    };
 
-    auto withProj = detail::compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
-
+    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
 
     // Verify that the selected column can actually be used for this plot
     if (dp.values_colIDs.size() == 1) { return dp_pr; }
 
-    if (auto retExp{detail::addColsUntil(dp.values_colIDs, withProj, 1)}) { return dp_pr; }
+    if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1)}) { return dp_pr; }
     else { return std::unexpected(retExp.error()); }
 }
 guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {

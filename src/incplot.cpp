@@ -1,3 +1,4 @@
+#include "incplot/desired_plot.hpp"
 #include <format>
 #include <functional>
 #include <string>
@@ -18,10 +19,8 @@ using incerr_c = incerr::incerr_code;
 using enum Unexp_plotDrawer;
 
 
-// MAIN SIMPLIFIED INTERFACE OF THE LIBRARY
-
-std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData) {
-
+namespace detail {
+std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp_ctrs, std::string_view inputData) {
     using namespace incom::terminal_plot;
     auto ds = parsers::Parser::parse(inputData);
     if (not ds.has_value()) { return std::unexpected(ds.error()); }
@@ -29,20 +28,31 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const 
     // 1) Guess missing plot parameters
     // 2) Build the right plot_structure inside a variant
     // 3) Generate plotAsString from the plot_structure variant created in step 2
-    return DesiredPlot(dp_ctrs)
+    return std::move(dp_ctrs)
         .guess_missingParams(ds.value())
         .and_then(std::bind_back(build_plot_structure, ds.value()))
         .transform([](auto &&ps_var) {
             return std::visit([&](auto &&ps) -> std::string { return ps.build_plotAsString(); }, ps_var);
         });
 }
+} // namespace detail
 
-std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct &&dp_ctrs, std::string_view inputData) {
-    return make_plot(dp_ctrs, inputData);
+
+// MAIN SIMPLIFIED INTERFACE OF THE LIBRARY
+
+std::expected<std::string, incerr_c> make_plot(DesiredPlot const &dp_ctrs, std::string_view inputData) {
+    return detail::_make_plot(DesiredPlot(dp_ctrs), inputData);
+}
+std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::string_view inputData) {
+    return detail::_make_plot(std::forward<decltype(dp_ctrs)>(dp_ctrs), inputData);
 }
 
-std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData) {
-    auto res = make_plot(dp_ctrs, inputData);
+// std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::string_view inputData) {
+//     return make_plot(dp_ctrs, inputData);
+// }
+
+std::string make_plot_collapseUnExp(DesiredPlot &&dp_ctrs, std::string_view inputData) {
+    auto res = make_plot(std::forward<decltype(dp_ctrs)>(dp_ctrs), inputData);
     if (res.has_value()) { return res.value(); }
     else {
         return std::format("{}{}\n\n{}\n{}{}", "Error encoutered. Error category is: "sv, res.error().category().name(),
@@ -52,9 +62,11 @@ std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, s
                                : std::string("\n\nAdditional context:\n").append(res.error().get_customMessage()));
     }
 }
-std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct &&dp_ctrs, std::string_view inputData) {
-    return make_plot_collapseUnExp(dp_ctrs, inputData);
+
+std::string make_plot_collapseUnExp(DesiredPlot const &dp_ctrs, std::string_view inputData) {
+    return make_plot_collapseUnExp(DesiredPlot(dp_ctrs), inputData);
 }
+
 
 std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &dp, DataStore const &ds) {
     // This is a map of default constructed 'plot_structures' inside an std::variant
@@ -74,9 +86,6 @@ std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &d
     };
     return std::visit(ol, varCpy);
 };
-
-
-
 
 
 } // namespace terminal_plot

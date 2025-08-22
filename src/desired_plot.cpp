@@ -7,6 +7,7 @@
 
 #include <incplot/desired_plot.hpp>
 #include <incplot/plot_structures.hpp>
+#include <incstd/numeric.hpp>
 #include <private/concepts.hpp>
 #include <private/detail.hpp>
 
@@ -22,6 +23,15 @@ using incerr_c = incerr::incerr_code;
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessments(DesiredPlot    &&dp,
                                                                                     DataStore const &ds) {
+
+
+    auto c_standDev = [&](auto const &vecRef) -> double {
+        auto const &vec = vecRef;
+        if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
+            return incom::standard::numeric::compute_stdDeviation(vec);
+        }
+        else { return std::numeric_limits<double>::max(); }
+    };
 
     auto c_catParams = [&](auto const &vecRef) -> void {
         auto vecCpy = vecRef;
@@ -119,6 +129,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
         dp.m_colAssessments.push_back({0, false, false, false, false, false, false});
 
         std::visit(c_catParams, oneCol.variant_data);
+        dp.m_colAssessments.back().standDev                     = std::visit(c_standDev, oneCol.variant_data);
         dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol.variant_data);
         dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol.variant_data);
         dp.m_colAssessments.back().is_allValuesNonNegative      = std::visit(is_nonNeg, oneCol.variant_data);

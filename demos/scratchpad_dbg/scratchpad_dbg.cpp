@@ -1,4 +1,3 @@
-#include "incplot/plot_structures.hpp"
 #include <incplot.hpp>
 #include <incstd.hpp>
 #include <typeindex>
@@ -26,9 +25,9 @@ int main(int argc, char *argv[]) {
     set_cocp();
 
     auto dpCtor = incplot::CL_Args::get_dpCtorStruct().front();
-    dpCtor.tar_width = 250uz;
+    // dpCtor.tar_width = 250uz;
     dpCtor.tar_height = 15uz;
-    dpCtor.plot_type_name       = std::type_index(typeid(plot_structures::BarHS));
+    dpCtor.plot_type_name       = std::type_index(typeid(plot_structures::BarV));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
     // dpCtor.availableHeight = 15;
@@ -55,10 +54,10 @@ int main(int argc, char *argv[]) {
     auto dp = DesiredPlot(dpCtor);
 
 
-    auto test_possibilities = plot_structures::evaluate_PSs_asPossibilities<plot_structures::BarV>(dp, ds.value());
+    auto test_possibilities = plot_structures::evaluate_PSs_asPossibilities<plot_structures::BarV>(dpCtor, ds.value());
 
 
-    // std::cout << incplot::make_plot_collapseUnExp(dpCtor, data.value()) << '\n';
+    std::cout << incplot::make_plot_collapseUnExp(dpCtor, data.value()) << '\n';
 
 
     return 0;

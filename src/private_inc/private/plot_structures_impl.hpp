@@ -202,7 +202,7 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
 
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
                                      self.values_data.at(0));
-        if (self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
+        if (self.dp.availableHeight.has_value() && self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
                                   self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
                                   self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom) {
             return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));

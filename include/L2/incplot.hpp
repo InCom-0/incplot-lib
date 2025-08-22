@@ -18,11 +18,11 @@ using enum Unexp_plotDrawer;
 
 // MAIN SIMPLIFIED INTERFACE OF THE LIBRARY
 
-std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData);
-std::expected<std::string, incerr_c> make_plot(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData);
+std::expected<std::string, incerr_c> make_plot(DesiredPlot const &dp_ctrs, std::string_view inputData);
+std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::string_view inputData);
 
-std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &dp_ctrs, std::string_view inputData);
-std::string make_plot_collapseUnExp(DesiredPlot::DP_CtorStruct const &&dp_ctrs, std::string_view inputData);
+std::string make_plot_collapseUnExp(DesiredPlot const &dp_ctrs, std::string_view inputData);
+std::string make_plot_collapseUnExp(DesiredPlot &&dp_ctrs, std::string_view inputData);
 
 std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &dp, DataStore const &ds);
 

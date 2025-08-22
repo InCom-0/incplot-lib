@@ -107,18 +107,6 @@ public:
             return std::visit(visi, variant_data);
         }
     };
-
-
-    // Data descriptors
-    // std::vector<std::string>                    colNames;
-    // std::vector<std::pair<parsedVal_t, size_t>> colTypes;
-    // std::vector<std::vector<unsigned char>>     itemFlags;
-
-    // Actual data storage
-    // std::vector<std::vector<std::string>> stringCols;
-    // std::vector<std::vector<long long>>   llCols;
-    // std::vector<std::vector<double>>      doubleCols;
-
     std::vector<Column> m_data;
 
 
