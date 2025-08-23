@@ -26,49 +26,52 @@ using enum Unexp_plotDrawer;
 
 
 // BASE
-auto Base::build_self(this auto &self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Base::build_self(this auto &self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     // Can only build it from rvalue ...
 
-    using self_t = std::remove_cvref_t<decltype(self)>;
+    using self_t       = std::remove_cvref_t<decltype(self)>;
+    using self_t_lvref = std::add_lvalue_reference_t<self_t>;
 
-    return std::move(self)
+    return self
         .initialize_data_views()
 
-        .and_then(&self_t::template compute_descriptors<self_t>)
-        .and_then(&self_t::template validate_descriptors<self_t>)
+        .and_then(&self_t::template compute_descriptors<self_t_lvref>)
+        .and_then(&self_t::template validate_descriptors<self_t_lvref>)
 
-        .and_then(&self_t::template compute_axisName_vl<self_t>)
-        .and_then(&self_t::template compute_axisName_vr<self_t>)
+        .and_then(&self_t::template compute_axisName_vl<self_t_lvref>)
+        .and_then(&self_t::template compute_axisName_vr<self_t_lvref>)
 
-        .and_then(&self_t::template compute_labels_vl<self_t>)
-        .and_then(&self_t::template compute_labels_vr<self_t>)
+        .and_then(&self_t::template compute_labels_vl<self_t_lvref>)
+        .and_then(&self_t::template compute_labels_vr<self_t_lvref>)
 
-        .and_then(&self_t::template compute_axis_vl<self_t>)
-        .and_then(&self_t::template compute_axis_vr<self_t>)
+        .and_then(&self_t::template compute_axis_vl<self_t_lvref>)
+        .and_then(&self_t::template compute_axis_vr<self_t_lvref>)
 
-        .and_then(&self_t::template compute_axis_ht<self_t>)
-        .and_then(&self_t::template compute_axisName_ht<self_t>)
-        .and_then(&self_t::template compute_labels_ht<self_t>)
+        .and_then(&self_t::template compute_axis_ht<self_t_lvref>)
+        .and_then(&self_t::template compute_axisName_ht<self_t_lvref>)
+        .and_then(&self_t::template compute_labels_ht<self_t_lvref>)
 
-        .and_then(&self_t::template compute_axis_hb<self_t>)
-        .and_then(&self_t::template compute_axisName_hb<self_t>)
-        .and_then(&self_t::template compute_labels_hb<self_t>)
+        .and_then(&self_t::template compute_axis_hb<self_t_lvref>)
+        .and_then(&self_t::template compute_axisName_hb<self_t_lvref>)
+        .and_then(&self_t::template compute_labels_hb<self_t_lvref>)
 
-        .and_then(&self_t::template compute_corner_tl<self_t>)
-        .and_then(&self_t::template compute_corner_bl<self_t>)
-        .and_then(&self_t::template compute_corner_br<self_t>)
-        .and_then(&self_t::template compute_corner_tr<self_t>)
-        .and_then(&self_t::template compute_areaCorners<self_t>)
+        .and_then(&self_t::template compute_corner_tl<self_t_lvref>)
+        .and_then(&self_t::template compute_corner_bl<self_t_lvref>)
+        .and_then(&self_t::template compute_corner_br<self_t_lvref>)
+        .and_then(&self_t::template compute_corner_tr<self_t_lvref>)
+        .and_then(&self_t::template compute_areaCorners<self_t_lvref>)
 
-        .and_then(&self_t::template compute_plot_area<self_t>)
-        .and_then(&self_t::template compute_footer<self_t>);
+        .and_then(&self_t::template compute_plot_area<self_t_lvref>)
+        .and_then(&self_t::template compute_footer<self_t_lvref>);
 }
 
 // ### END BASE ###
 
 
 // BAR V
-auto BarV::initialize_data_views(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::initialize_data_views(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     if (self.dp.labelTS_colID.has_value()) {
         auto dataView = self.ds.get_filteredViewOfData(self.dp.labelTS_colID.value(), self.dp.filterFlags);
@@ -96,10 +99,11 @@ auto BarV::initialize_data_views(this auto &&self) -> std::expected<std::remove_
         self.data_rowCount = std::visit([&](auto &&varVec) { return varVec.size(); }, self.values_data.at(0));
         if (self.data_rowCount == 0) { return std::unexpected(incerr_c::make(INI_values_rowCount_isZero)); }
     }
-    return self;
+    return std::ref(self);
 }
 
-auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_descriptors(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     // VERTICAL LEFT LABELS SIZE
     if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
@@ -201,7 +205,8 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
 
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
                                      self.values_data.at(0));
-        if (self.dp.availableHeight.has_value() && self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
+        if (self.dp.availableHeight.has_value() &&
+            self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
                                   self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
                                   self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom) {
             return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
@@ -251,10 +256,11 @@ auto BarV::compute_descriptors(this auto &&self) -> std::expected<std::remove_cv
 
     // Top and Right axes steps keeping as-is
 
-    return self;
+    return std::ref(self);
 }
 
-auto BarV::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axisName_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.axisName_verLeft_bool) {
         if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
             self.axisName_verLeft =
@@ -265,13 +271,15 @@ auto BarV::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cv
                 detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaHeight);
         }
     }
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_axisName_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    return self;
+auto BarV::compute_axisName_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
+    return std::ref(self);
 }
 
-auto BarV::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_labels_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     // Empty label at the top
     self.labels_verLeft.push_back(
@@ -301,12 +309,14 @@ auto BarV::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvre
 
     return (self);
 }
-auto BarV::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_labels_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
-    return self;
+    return std::ref(self);
 }
 
-auto BarV::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axis_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         self.axis_verLeft =
             detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight, self.areaHeight);
@@ -318,39 +328,46 @@ auto BarV::compute_axis_vl(this auto &&self) -> std::expected<std::remove_cvref_
         std::ranges::reverse(tmpAxis);
         self.axis_verLeft = std::move(tmpAxis);
     }
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axis_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
-    return self;
+    return std::ref(self);
 }
 
 
-auto BarV::compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axis_ht(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_axisName_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    return self;
+auto BarV::compute_axisName_ht(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
+    return std::ref(self);
 }
-auto BarV::compute_labels_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
-    return self;
+auto BarV::compute_labels_ht(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
+    return std::ref(self);
 }
 
 
-auto BarV::compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axis_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     // Axis with ticks is contructed according to num of 'steps' which is the num of ticks and the areaWidth
     self.axis_horBottom = detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b,
                                                         self.axis_horBottomSteps, self.areaWidth);
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_axisName_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     // Name of the FIRST value column
     self.axisName_horBottom =
         detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaWidth);
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_labels_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto computeLabels = [&](auto &var) -> void {
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -392,13 +409,14 @@ auto BarV::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvre
     };
 
     std::visit(computeLabels, self.values_data.at(0));
-    return self;
+    return std::ref(self);
 }
 
 
 // All corners are simply empty as default ... but can possibly be used for something later if overriden in
 // derived
-auto BarV::compute_corner_tl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_tl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.axisName_horTop_bool) {
         self.corner_topLeft.push_back(std::string(self.labels_verLeftWidth +
                                                       (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
@@ -412,9 +430,10 @@ auto BarV::compute_corner_tl(this auto &&self) -> std::expected<std::remove_cvre
                                                   Config::space));
     }
 
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_corner_bl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_bl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.axisName_horBottom_bool) {
         self.corner_bottomLeft.push_back(std::string(self.labels_verLeftWidth +
                                                          (Config::axis_verName_width_vl * self.axisName_verLeft_bool) +
@@ -427,9 +446,10 @@ auto BarV::compute_corner_bl(this auto &&self) -> std::expected<std::remove_cvre
                                                          Config::axisLabels_padRight_vl,
                                                      Config::space));
     }
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_corner_tr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_tr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.axisName_horTop_bool) {
         self.corner_topRight.push_back(std::string(self.labels_verRightWidth +
                                                        (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
@@ -442,9 +462,10 @@ auto BarV::compute_corner_tr(this auto &&self) -> std::expected<std::remove_cvre
                                                        Config::axisLabels_padRight_vl,
                                                    Config::space));
     }
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_corner_br(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_corner_br(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.axisName_horBottom_bool) {
         self.corner_bottomRight.push_back(
             std::string(self.labels_verRightWidth + (Config::axis_verName_width_vr * self.axisName_verRight_bool) +
@@ -457,9 +478,10 @@ auto BarV::compute_corner_br(this auto &&self) -> std::expected<std::remove_cvre
                             Config::axisLabels_padRight_vl,
                         Config::space));
     }
-    return self;
+    return std::ref(self);
 }
-auto BarV::compute_areaCorners(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_areaCorners(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarV>()) {
         self.areaCorner_tl = Config::areaCorner_tl_barV;
         self.areaCorner_bl = Config::areaCorner_bl_barV;
@@ -472,11 +494,12 @@ auto BarV::compute_areaCorners(this auto &&self) -> std::expected<std::remove_cv
         self.areaCorner_tr = Config::areaCorner_tr;
         self.areaCorner_br = Config::areaCorner_br;
     }
-    return self;
+    return std::ref(self);
 }
 
 
-auto BarV::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_plot_area(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto computePA = [&](auto &var) -> void {
         if constexpr (not std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -512,16 +535,17 @@ auto BarV::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvre
     };
 
     std::visit(computePA, self.values_data.at(0));
-    return self;
+    return std::ref(self);
 }
 
-auto BarV::compute_footer(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarV::compute_footer(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if ((not self.dp.display_filtered_bool.has_value()) || self.dp.display_filtered_bool.value() == false) {
-        return self;
+        return std::ref(self);
     }
 
     auto filteredCount = std::ranges::count_if(self.dp.filterFlags, [](auto const &ff) { return ff != 0; });
-    if (filteredCount == 0) { return self; }
+    if (filteredCount == 0) { return std::ref(self); }
 
     std::string res1{};
     if (std::ranges::any_of(self.dp.filterFlags, [](auto const &ff) { return ff & 0b1; })) {
@@ -559,13 +583,14 @@ auto BarV::compute_footer(this auto &&self) -> std::expected<std::remove_cvref_t
         res1.push_back('\n');
     }
     self.footer = res1;
-    return self;
+    return std::ref(self);
 }
 // ### END BAR V ###
 
 
 // BAR VM
-auto BarVM::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_descriptors(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     // VERTICAL LEFT LABELS SIZE
     auto olset = [](auto &var) -> size_t {
@@ -626,16 +651,18 @@ auto BarVM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
     // Top and Right axes steps keeping as-is
 
-    return self;
+    return std::ref(self);
 }
-auto BarVM::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_axisName_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.axisName_verLeft_bool) {
         self.axisName_verLeft =
             detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
     }
-    return self;
+    return std::ref(self);
 }
-auto BarVM::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_labels_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto olset = [&](auto &var) -> void {
         size_t const cycleSize = self.dp.values_colIDs.size();
@@ -676,7 +703,8 @@ auto BarVM::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvr
     return (self);
 }
 // labels_vr are actually the legend here
-auto BarVM::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_labels_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     // Categories are specified by column names
     if (self.dp.values_colIDs.size() > 1) {
@@ -708,10 +736,11 @@ auto BarVM::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
         for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
     }
 
-    return self;
+    return std::ref(self);
 }
 
-auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_labels_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto computeLabels = [&](double const &minV, double const &maxV) -> void {
         size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
@@ -751,9 +780,10 @@ auto BarVM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
     auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.values_data);
     computeLabels(minV, maxV);
 
-    return self;
+    return std::ref(self);
 }
-auto BarVM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarVM::compute_plot_area(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto const [minV, maxV]         = incom::standard::algos::compute_minMaxMulti(self.values_data);
     auto const        bigStepSize   = (maxV - minV) / (self.areaWidth);
@@ -805,23 +835,25 @@ auto BarVM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
     for (auto const &varVec : self.values_data) { std::visit(computePA, varVec); }
 
 
-    return self;
+    return std::ref(self);
 }
 // ### END BAR VM ###
 
 
 // SCATTER
-auto Scatter::compute_axisName_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axisName_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     if (self.axisName_verLeft_bool) {
         if (self.dp.values_colIDs.size() == 1) {
             self.axisName_verLeft =
                 detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaHeight);
         }
     }
-    return self;
+    return std::ref(self);
 }
 
-auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_labels_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     using self_t = std::remove_cvref_t<decltype(self)>;
 
     size_t const characterVerResolution =
@@ -875,7 +907,8 @@ auto Scatter::compute_labels_vl(this auto &&self) -> std::expected<std::remove_c
     return (self);
 }
 // labels_vr are actually the legend here
-auto Scatter::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_labels_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     // Categories are specified by catColID
     if (self.dp.cat_colID.has_value()) {
@@ -944,26 +977,30 @@ auto Scatter::compute_labels_vr(this auto &&self) -> std::expected<std::remove_c
         for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
     }
 
-    return self;
+    return std::ref(self);
 }
 
-auto Scatter::compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axis_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     self.axis_verRight = detail::create_tickMarkedAxis(Config::axisFiller_r, Config::axisTick_r, 0, self.areaHeight);
-    return self;
+    return std::ref(self);
 }
 
-auto Scatter::compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axis_ht(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     for (long long i = 0; i < self.areaWidth; ++i) { self.axis_horTop.push_back(Config::axisFiller_t); }
-    return self;
+    return std::ref(self);
 }
 
-auto Scatter::compute_axisName_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_axisName_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     // Name of the TS column
     self.axisName_horBottom =
         detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaWidth);
-    return self;
+    return std::ref(self);
 }
-auto Scatter::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_labels_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto computeLabels = [&](double const &minV, double const &maxV) -> void {
         size_t const fillerSize  = detail::get_axisFillerSize(self.areaWidth, self.axis_horBottomSteps);
@@ -1003,9 +1040,10 @@ auto Scatter::compute_labels_hb(this auto &&self) -> std::expected<std::remove_c
     auto [minV, maxV] = incom::standard::algos::compute_minMaxMulti(self.labelTS_data.value());
     computeLabels(minV, maxV);
 
-    return self;
+    return std::ref(self);
 }
-auto Scatter::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Scatter::compute_plot_area(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     std::optional<std::vector<size_t>> opt_catIDs_vec = std::nullopt;
     if (self.dp.cat_colID.has_value()) {
@@ -1027,7 +1065,7 @@ auto Scatter::compute_plot_area(this auto &&self) -> std::expected<std::remove_c
     self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_data,
                                                       self.values_data, opt_catIDs_vec, self.dp.color_basePalette);
 
-    return self;
+    return std::ref(self);
 }
 
 // ### END SCATTER ###
@@ -1035,31 +1073,35 @@ auto Scatter::compute_plot_area(this auto &&self) -> std::expected<std::remove_c
 
 // MULTILINE
 
-auto Multiline::compute_axis_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Multiline::compute_axis_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     self.axis_verRight = std::vector(self.areaHeight, std::string(" "));
-    return self;
+    return std::ref(self);
 }
 
-auto Multiline::compute_axis_ht(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Multiline::compute_axis_ht(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     // Below is a trick to call a member function as if 'self' was its parent type
     // return (&BarV::template compute_axis_ht<std::remove_cvref_t<decltype(self)>>)(std::move(self));
 
     self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
-    return self;
+    return std::ref(self);
 }
 
-auto Multiline::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Multiline::compute_plot_area(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     self.plotArea = detail::BrailleDrawer::drawLines(self.areaWidth, self.areaHeight, self.labelTS_data.value(),
                                                      self.values_data, self.dp.color_basePalette);
-    return self;
+    return std::ref(self);
 }
 // ### END MULTILINE ###
 
 
 // BAR HM
-auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarHM::compute_descriptors(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     // VERTICAL LEFT LABELS SIZE
     self.labels_verLeftWidth = Config::max_valLabelSize;
@@ -1131,15 +1173,17 @@ auto BarHM::compute_descriptors(this auto &&self) -> std::expected<std::remove_c
 
     // Top and Right axes steps keeping as-is
 
-    return self;
+    return std::ref(self);
 }
 
-auto BarHM::compute_axis_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarHM::compute_axis_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     self.axis_horBottom.push_back(Config::color_Axes);
     for (size_t id = 0; id < self.areaWidth; ++id) { self.axis_horBottom.push_back(Config::axisFiller_b); }
-    return self;
+    return std::ref(self);
 };
-auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarHM::compute_labels_hb(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto olset = [](auto &var) -> size_t {
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
@@ -1213,10 +1257,11 @@ auto BarHM::compute_labels_hb(this auto &&self) -> std::expected<std::remove_cvr
     }
 
 
-    return self;
+    return std::ref(self);
 }
 
-auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarHM::compute_plot_area(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto [minV, maxV]        = incom::standard::algos::compute_minMaxMulti(self.values_data);
     auto const bigStepSize   = (maxV - minV) / (self.areaHeight - 0.125);
@@ -1272,14 +1317,15 @@ auto BarHM::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
     }
 
 
-    return self;
+    return std::ref(self);
 }
 // ### END BAR HM ###
 
 
 // BAR HS
 
-auto BarHS::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarHS::compute_labels_vl(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
     auto stackedIniRng = std::ranges::fold_left(
         self.values_data, std::vector<double>(self.data_rowCount, 0.0), [](auto &&ini, auto const &oneVarCol) {
@@ -1342,7 +1388,8 @@ auto BarHS::compute_labels_vl(this auto &&self) -> std::expected<std::remove_cvr
 
     return (self);
 }
-auto BarHS::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarHS::compute_labels_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     // We know that catCol must be nullopt here (from 'DesiredPlot::guess_catCol')
 
     // Categories must be specified by column names
@@ -1378,10 +1425,11 @@ auto BarHS::compute_labels_vr(this auto &&self) -> std::expected<std::remove_cvr
         for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
     }
 
-    return self;
+    return std::ref(self);
 }
 
-auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto BarHS::compute_plot_area(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
     std::vector<double>              stackedSums(self.data_rowCount, 0.0);
     std::vector<std::vector<double>> doubleConverted{};
 
@@ -1462,7 +1510,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> std::expected<std::remove_cvr
     for (auto &resLine : self.plotArea) { resLine.pop_back(); }
     for (auto &resLine : self.plotArea) { resLine.append(Config::term_setDefault); }
 
-    return self;
+    return std::ref(self);
 }
 // ### END BAR HS ###
 

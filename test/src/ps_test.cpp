@@ -27,15 +27,15 @@ TEST(PS, penguins_default) {
 
     EXPECT_TRUE(ar.has_value());
 
-    EXPECT_EQ(ar.value().areaWidth, 43);
-    EXPECT_EQ(ar.value().areaHeight, 14);
-    EXPECT_EQ(ar.value().labels_verLeftWidth, 5);
-    EXPECT_EQ(ar.value().labels_verRightWidth, 9);
-    EXPECT_EQ(ar.value().axis_verLeftSteps, 2);
-    EXPECT_EQ(ar.value().axis_horBottomSteps, 3);
-    EXPECT_EQ(ar.value().axisName_horBottom_bool, true);
-    EXPECT_EQ(ar.value().axisName_verLeft_bool, true);
-    EXPECT_EQ(ar.value().labels_horBottom.size(), 1uz);
+    EXPECT_EQ(ar.value().get().areaWidth, 43);
+    EXPECT_EQ(ar.value().get().areaHeight, 14);
+    EXPECT_EQ(ar.value().get().labels_verLeftWidth, 5);
+    EXPECT_EQ(ar.value().get().labels_verRightWidth, 9);
+    EXPECT_EQ(ar.value().get().axis_verLeftSteps, 2);
+    EXPECT_EQ(ar.value().get().axis_horBottomSteps, 3);
+    EXPECT_EQ(ar.value().get().axisName_horBottom_bool, true);
+    EXPECT_EQ(ar.value().get().axisName_verLeft_bool, true);
+    EXPECT_EQ(ar.value().get().labels_horBottom.size(), 1uz);
 
 
     EXPECT_EQ(true, true);
@@ -57,15 +57,15 @@ TEST(PS, wine_quality_default) {
 
     EXPECT_TRUE(ar.has_value());
 
-    EXPECT_EQ(ar.value().areaWidth, 47);
-    EXPECT_EQ(ar.value().areaHeight, 15);
-    EXPECT_EQ(ar.value().labels_verLeftWidth, 5);
-    EXPECT_EQ(ar.value().labels_verRightWidth, 5);
-    EXPECT_EQ(ar.value().axis_verLeftSteps, 2);
-    EXPECT_EQ(ar.value().axis_horBottomSteps, 4);
-    EXPECT_EQ(ar.value().axisName_horBottom_bool, true);
-    EXPECT_EQ(ar.value().axisName_verLeft_bool, true);
-    EXPECT_EQ(ar.value().labels_horBottom.size(), 1uz);
+    EXPECT_EQ(ar.value().get().areaWidth, 47);
+    EXPECT_EQ(ar.value().get().areaHeight, 15);
+    EXPECT_EQ(ar.value().get().labels_verLeftWidth, 5);
+    EXPECT_EQ(ar.value().get().labels_verRightWidth, 5);
+    EXPECT_EQ(ar.value().get().axis_verLeftSteps, 2);
+    EXPECT_EQ(ar.value().get().axis_horBottomSteps, 4);
+    EXPECT_EQ(ar.value().get().axisName_horBottom_bool, true);
+    EXPECT_EQ(ar.value().get().axisName_verLeft_bool, true);
+    EXPECT_EQ(ar.value().get().labels_horBottom.size(), 1uz);
 
 
     EXPECT_EQ(true, true);
