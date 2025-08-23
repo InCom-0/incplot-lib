@@ -74,7 +74,7 @@ std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &d
     // variantTypeMap with the right types inside it based on var_plotTypes defined elsewhere
     static const auto mp_names2Types = std::invoke(
         [&]<typename T, T... ints>(std::integer_sequence<T, ints...>) {
-            return detail::VariantUtility<plot_structures::Base,
+            return detail::VariantTypeMap<plot_structures::Base,
                                           std::variant_alternative_t<ints, var_plotTypes>...>::gen_typeMap(dp, ds);
         },
         std::make_index_sequence<std::variant_size_v<var_plotTypes>>());
