@@ -26,9 +26,8 @@ using enum Unexp_plotDrawer;
 
 
 // BASE
-auto Base::build_self(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
+auto Base::build_self(this auto &self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c> {
     // Can only build it from rvalue ...
-    if constexpr (std::is_lvalue_reference_v<decltype(self)>) { static_assert(false); }
 
     using self_t = std::remove_cvref_t<decltype(self)>;
 

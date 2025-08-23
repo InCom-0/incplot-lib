@@ -1,4 +1,4 @@
-#include "incplot/desired_plot.hpp"
+#include <expected>
 #include <format>
 #include <functional>
 #include <string>
@@ -78,11 +78,12 @@ std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &d
                                           std::variant_alternative_t<ints, var_plotTypes>...>::gen_typeMap(dp, ds);
         },
         std::make_index_sequence<std::variant_size_v<var_plotTypes>>());
+    if (not dp.plot_type_name.has_value()) { return std::unexpected(incerr_c::make(BPS_dpIsNullopt)); }
 
     auto varCpy = mp_names2Types.at(dp.plot_type_name.value());
 
-    auto ol = [&](auto &&var) -> std::expected<var_plotTypes, incerr_c> {
-        return std::move(var).build_self().transform([](auto &&ps) -> var_plotTypes { return var_plotTypes(ps); });
+    auto ol = [&](auto &var) -> std::expected<var_plotTypes, incerr_c> {
+        return var.build_self().transform([](auto &&ps) -> var_plotTypes { return var_plotTypes(ps); });
     };
     return std::visit(ol, varCpy);
 };

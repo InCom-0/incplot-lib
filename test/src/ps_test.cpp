@@ -22,8 +22,8 @@ TEST(PS, penguins_default) {
         .plot_type_name = std::type_index(typeid(incom::terminal_plot::plot_structures::Scatter))};
     auto dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
 
-
-    auto ar = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value()).build_self();
+    auto ps = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value());
+    auto ar = ps.build_self();
 
     EXPECT_TRUE(ar.has_value());
 
@@ -52,7 +52,10 @@ TEST(PS, wine_quality_default) {
         .plot_type_name = std::type_index(typeid(incom::terminal_plot::plot_structures::Scatter))};
     auto dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());
 
-    auto ar = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value()).build_self();
+    auto ps = incom::terminal_plot::plot_structures::Scatter(dp.value(), ds.value());
+    auto ar = ps.build_self();
+
+    EXPECT_TRUE(ar.has_value());
 
     EXPECT_EQ(ar.value().areaWidth, 47);
     EXPECT_EQ(ar.value().areaHeight, 15);

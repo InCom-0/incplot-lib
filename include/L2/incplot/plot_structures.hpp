@@ -154,7 +154,7 @@ public:
     Base(DesiredPlot const &dp_ext, DataStore const &ds_ext) : dp(dp_ext), ds(ds_ext) {};
 
     // This needs to get called after default construction
-    auto build_self(this auto &&self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
+    auto build_self(this auto &self) -> std::expected<std::remove_cvref_t<decltype(self)>, incerr_c>;
 
     // TODO: Implement 'valiate_self()' ... consider if it is even needed or if its not already done elsewhere
     bool        validate_self() const { return true; }
