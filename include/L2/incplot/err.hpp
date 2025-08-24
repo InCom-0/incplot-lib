@@ -43,6 +43,7 @@ enum class Unexp_plotSpecs {
     GSZ_iferredTargetWidthLargerThanAvailableWidth,
     GSZ_iferredTargetWidthLargerThanDefaultWidth,
     GZS_heightTooSmall,
+    CAPF_unhandledError,
     TEST_t1
 };
 

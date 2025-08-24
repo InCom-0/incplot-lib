@@ -1,4 +1,3 @@
-#include <expected>
 #include <format>
 #include <functional>
 #include <string>
@@ -87,6 +86,25 @@ std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &d
     };
     return std::visit(ol, varCpy);
 };
+
+std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
+evaluate_allPSpossibilities(DesiredPlot const &dp, DataStore const &ds) {
+    return std::invoke(
+        [&]<typename T, T... ints>(std::integer_sequence<T, ints...>) {
+            return plot_structures::evaluate_PSs_asPossibilities<std::variant_alternative_t<ints, var_plotTypes>...>(
+                dp, ds);
+        },
+        std::make_index_sequence<std::variant_size_v<var_plotTypes>>());
+}
+std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
+evaluate_allPSpossibilities(DesiredPlot &&dp, DataStore const &ds) {
+    return std::invoke(
+        [&]<typename T, T... ints>(std::integer_sequence<T, ints...>) {
+            return plot_structures::evaluate_PSs_asPossibilities<std::variant_alternative_t<ints, var_plotTypes>...>(
+                std::forward<decltype(dp)>(dp), ds);
+        },
+        std::make_index_sequence<std::variant_size_v<var_plotTypes>>());
+}
 
 
 } // namespace terminal_plot

@@ -195,7 +195,7 @@ std::string Base::build_plotAsString() const {
 // BAR V
 
 guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     if (dp.labelTS_colID.has_value()) {
         if (dp.labelTS_colID.value() >= ds.m_data.size()) {
@@ -229,7 +229,7 @@ guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &d
     return dp_pr;
 }
 guess_retType BarV::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     if (dp.cat_colID.has_value()) {
         return std::unexpected(incerr_c::make(GCC_cantSpecifyCategoryForOtherThanScatter));
@@ -238,7 +238,7 @@ guess_retType BarV::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &
     std::unreachable();
 }
 guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() > 1) { return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV)); }
 
@@ -273,7 +273,7 @@ guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore cons
     else { return std::unexpected(retExp.error()); }
 }
 guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) {
         // Is unknown ... defaulting to Config specified width
@@ -302,13 +302,20 @@ guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &d
     return dp_pr;
 }
 guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
     if (not dp.valAxesNames_bool.has_value()) { dp.valAxesNames_bool = false; }
     if (not dp.valAxesLabels_bool.has_value()) { dp.valAxesLabels_bool = false; }
     if (not dp.valAutoFormat_bool.has_value()) { dp.valAutoFormat_bool = true; }
     if (not dp.legend_bool.has_value()) { dp.legend_bool = false; }
 
     return dp_pr;
+}
+
+std::pair<incom::terminal_plot::DesiredPlot, size_t> BarV::compute_priorityFactor(
+    incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+
+
+    return std::make_pair(dp_pr, 0uz);
 }
 // ### END BAR V ###
 
@@ -336,7 +343,7 @@ guess_retType BarVM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore co
 
 // SCATTER
 guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     // If TScol specified then verify if it is legit.
     if (dp.labelTS_colID.has_value()) {
@@ -371,7 +378,7 @@ guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const
     std::unreachable();
 }
 guess_retType Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     auto useableCatCols_tpl = std::views::filter(
         std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), [&](auto const &colType) {
@@ -416,7 +423,7 @@ guess_retType Scatter::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore 
 
 // MULTILINE
 guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     // If TScol specified then verify if it is legit.
     if (dp.labelTS_colID.has_value()) {
@@ -474,13 +481,13 @@ guess_retType BarHM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const 
     return BarV::guess_catCol(std::move(dp_pr), ds);
 }
 guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() < 1) { return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols)); }
     return std::unexpected(incerr_c::make(TEST_t1));
 }
 guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     // Compute rowCount as it is required to evaluate whether there is enough 'width' to fit the plot
     auto compute_rowCount = [&](auto &var) -> size_t { return std::ranges::to<std::vector>(var).size(); };
@@ -536,7 +543,7 @@ guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
     return std::unexpected(incerr_c::make(TEST_t1));
 }
 guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    DesiredPlot &dp = dp_pr.first.get();
+    DesiredPlot &dp = dp_pr.get();
 
     // Compute rowCount as it is required to evaluate whether there is enough 'width' to fit the plot
     auto compute_rowCount = [&](auto &var) -> size_t { return std::ranges::to<std::vector>(var).size(); };

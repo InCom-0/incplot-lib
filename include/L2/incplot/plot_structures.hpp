@@ -18,7 +18,7 @@ namespace terminal_plot {
 namespace plot_structures {
 
 using incerr_c             = incerr::incerr_code;
-using guess_firstParamType = std::pair<std::reference_wrapper<DesiredPlot>, size_t>;
+using guess_firstParamType = std::reference_wrapper<DesiredPlot>;
 using guess_retType        = std::expected<guess_firstParamType, incerr_c>;
 
 // Forward declaration
@@ -26,23 +26,23 @@ class Base;
 
 template <typename PS>
 requires(std::is_base_of_v<Base, PS>)
-std::expected<std::pair<DesiredPlot, size_t>, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds) {
+std::expected<DesiredPlot, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds) {
 
     using enum incom::terminal_plot::Unexp_plotSpecs;
     auto isNot_differentPS = [&](guess_firstParamType &&dp_pr, DataStore const &ds) -> guess_retType {
-        if (dp_pr.first.get().plot_type_name.has_value()) {
-            if (dp_pr.first.get().plot_type_name.value() != std::type_index(typeid(PS))) {
+        if (dp_pr.get().plot_type_name.has_value()) {
+            if (dp_pr.get().plot_type_name.value() != std::type_index(typeid(PS))) {
                 return std::unexpected(incerr_c::make(GPT_explicitlySpecifiedDifferentPlotType));
             }
         }
         return dp_pr;
     };
     auto c_fflags = [&](guess_firstParamType &&dp_pr) -> guess_retType {
-        DesiredPlot::compute_filterFlags_r_void(dp_pr.first.get(), ds);
+        DesiredPlot::compute_filterFlags_r_void(dp_pr.get(), ds);
         return dp_pr;
     };
 
-    auto res = isNot_differentPS(guess_firstParamType{std::ref(dp), 0uz}, ds)
+    auto res = isNot_differentPS(guess_firstParamType{std::ref(dp)}, ds)
                    .and_then(std::bind_back(PS::guess_TSCol, ds))
                    .and_then(std::bind_back(PS::guess_catCol, ds))
                    .and_then(std::bind_back(PS::guess_valueCols, ds))
@@ -50,7 +50,7 @@ std::expected<std::pair<DesiredPlot, size_t>, incerr_c> evaluate_PS_asPossibilit
                    .and_then(std::bind_back(PS::guess_sizes, ds))
                    .and_then(std::bind_back(PS::guess_TFfeatures, ds));
 
-    if (res.has_value()) { return std::make_pair(std::move(res.value().first.get()), res.value().second); }
+    if (res.has_value()) { return std::move(res.value().get()); }
     else { return std::unexpected(res.error()); }
 }
 
@@ -60,8 +60,9 @@ auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds) {
     auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
                       .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
 
-    std::array<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>, sizeof...(PSs)> res{
-        {{std::type_index(typeid(PSs)), evaluate_PS_asPossibility<PSs>(dp_exp.value(), ds)}...}};
+    std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>> res{
+        {{std::type_index(typeid(PSs)), evaluate_PS_asPossibility<PSs>(dp_exp.value(), ds)
+                                            .transform(std::bind_back(PSs::compute_priorityFactor, ds))}...}};
     return res;
 }
 
@@ -168,9 +169,13 @@ protected:
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds)      = delete;
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) = delete;
 
+    static std::pair<incom::terminal_plot::DesiredPlot, size_t> compute_priorityFactor(
+        incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) = delete;
+
 protected:
     // TODO: Implement validate_descriptors for 'plot_structures'
-    auto validate_descriptors(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
+    auto validate_descriptors(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
         return self;
     }
 
@@ -180,34 +185,54 @@ protected:
     auto initialize_data_views(this auto &&self)
         -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_descriptors(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_descriptors(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_axisName_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
-    auto compute_axisName_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_axisName_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_axisName_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_labels_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
-    auto compute_labels_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_labels_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_labels_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_axis_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
-    auto compute_axis_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_axis_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_axis_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_axis_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>     = delete;
-    auto compute_axisName_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
-    auto compute_labels_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>   = delete;
+    auto compute_axis_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_axisName_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_labels_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_axis_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>     = delete;
-    auto compute_axisName_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
-    auto compute_labels_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>   = delete;
+    auto compute_axis_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_axisName_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_corner_tl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>   = delete;
-    auto compute_corner_bl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>   = delete;
-    auto compute_corner_br(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>   = delete;
-    auto compute_corner_tr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>   = delete;
-    auto compute_areaCorners(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_corner_tl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_corner_bl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_corner_br(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_corner_tr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_areaCorners(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_plot_area(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 
-    auto compute_footer(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
+    auto compute_footer(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> = delete;
 };
 
 class BarV : public Base {
@@ -216,8 +241,11 @@ class BarV : public Base {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<std::pair<DesiredPlot, size_t>, incerr_c> incom::terminal_plot::plot_structures::
-        evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+    template <typename... PSs>
+    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+    friend auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -226,41 +254,65 @@ protected:
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
+    static std::pair<incom::terminal_plot::DesiredPlot, size_t> compute_priorityFactor(
+        incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds);
+
 protected:
-    auto initialize_data_views(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto initialize_data_views(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_descriptors(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_descriptors(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_axisName_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_axisName_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axisName_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axisName_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_labels_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_axis_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_axis_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-
-
-    auto compute_corner_tl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_corner_bl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_corner_tr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_corner_br(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_areaCorners(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-
-
-    auto compute_axis_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_axisName_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
 
-    auto compute_axis_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_axisName_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_corner_tl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_corner_bl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_corner_tr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_corner_br(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_areaCorners(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
 
-    auto compute_plot_area(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axisName_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_footer(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+
+    auto compute_axis_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axisName_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+
+
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+
+    auto compute_footer(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 };
 
 class BarVM : public BarV {
@@ -269,8 +321,11 @@ class BarVM : public BarV {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<std::pair<DesiredPlot, size_t>, incerr_c> incom::terminal_plot::plot_structures::
-        evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+    template <typename... PSs>
+    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+    friend auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -280,17 +335,23 @@ protected:
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
 protected:
-    auto compute_descriptors(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_descriptors(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_axisName_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axisName_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_labels_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_labels_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
 
-    auto compute_plot_area(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 };
 
 
@@ -300,8 +361,11 @@ class Scatter : public BarV {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<std::pair<DesiredPlot, size_t>, incerr_c> incom::terminal_plot::plot_structures::
-        evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+    template <typename... PSs>
+    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+    friend auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -311,22 +375,30 @@ protected:
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
 protected:
-    auto compute_axisName_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axisName_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
     // labels_vr are actually the legend here
-    auto compute_labels_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_axis_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
 
-    auto compute_axis_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
 
-    auto compute_axisName_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axisName_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
 
-    auto compute_plot_area(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 };
 
 class Multiline : public Scatter {
@@ -335,8 +407,11 @@ class Multiline : public Scatter {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<std::pair<DesiredPlot, size_t>, incerr_c> incom::terminal_plot::plot_structures::
-        evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+    template <typename... PSs>
+    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+    friend auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -346,11 +421,14 @@ protected:
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
 protected:
-    auto compute_axis_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_axis_ht(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_ht(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_plot_area(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 };
 
 class BarHM : public Multiline {
@@ -359,8 +437,11 @@ class BarHM : public Multiline {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<std::pair<DesiredPlot, size_t>, incerr_c> incom::terminal_plot::plot_structures::
-        evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+    template <typename... PSs>
+    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+    friend auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -370,12 +451,16 @@ protected:
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
 protected:
-    auto compute_descriptors(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_descriptors(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_axis_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_hb(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_axis_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_hb(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_plot_area(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 };
 
 class BarHS : public BarHM {
@@ -384,8 +469,11 @@ class BarHS : public BarHM {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<std::pair<DesiredPlot, size_t>, incerr_c> incom::terminal_plot::plot_structures::
-        evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> evaluate_PS_asPossibility(DesiredPlot dp, DataStore const &ds);
+
+    template <typename... PSs>
+    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+    friend auto evaluate_PSs_asPossibilities(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -395,10 +483,13 @@ protected:
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
 protected:
-    auto compute_labels_vl(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
-    auto compute_labels_vr(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vl(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 
-    auto compute_plot_area(this auto &&self) -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_plot_area(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 };
 
 } // namespace plot_structures

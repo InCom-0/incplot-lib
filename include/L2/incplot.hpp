@@ -26,6 +26,16 @@ std::string make_plot_collapseUnExp(DesiredPlot &&dp_ctrs, std::string_view inpu
 
 std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &dp, DataStore const &ds);
 
+std::expected<std::pair<DesiredPlot, size_t>, incerr_c>
+evaluate_onePSpossibility(DesiredPlot const &dp, DataStore const &ds);
+
+std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
+evaluate_allPSpossibilities(DesiredPlot const &dp, DataStore const &ds);
+
+std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
+evaluate_allPSpossibilities(DesiredPlot &&dp, DataStore const &ds);
+
+
 } // namespace terminal_plot
 } // namespace incom
 
