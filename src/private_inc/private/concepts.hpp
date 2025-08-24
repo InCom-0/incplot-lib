@@ -26,11 +26,12 @@ struct VariantTypeMap {
     // PTC = Types To Pass To Constructors
     template <typename... PTC>
     static constexpr inline auto gen_typeMap(PTC const &...ptc) {
-        return incom::standard::variant_utils::VariantUtility<Ts...>::gen_typeMap(ptc...);
-    };
-
-    static constexpr inline auto gen_typeMap() {
-        return incom::standard::variant_utils::VariantUtility<Ts...>::gen_typeMap();
+        // return incom::standard::variant_utils::VariantUtility<Ts...>::gen_typeMap(ptc...);
+        std::unordered_map<std::type_index, const std::variant<Ts...>> res;
+        (res.insert({incom::standard::typegen::get_typeIndex<Ts>(),
+                     std::variant<Ts...>(Ts(std::forward<decltype(ptc)>(ptc)...))}),
+         ...);
+        return res;
     };
 };
 

@@ -24,6 +24,61 @@ using incerr_c = incerr::incerr_code;
 using enum Unexp_plotSpecs;
 using enum Unexp_plotDrawer;
 
+namespace detail_ps {
+inline std::expected<DesiredPlot, incerr::incerr_code> evaluate_prepDP(DesiredPlot &&dp, DataStore const &ds) {
+    return DesiredPlot::compute_colAssessments(std::forward<decltype(dp)>(dp), ds)
+        .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
+}
+
+template <typename PS>
+requires(std::is_base_of_v<Base, PS>)
+std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataStore const &ds) {
+
+    using enum incom::terminal_plot::Unexp_plotSpecs;
+    auto isNot_differentPS = [&](guess_firstParamType &&dp_pr, DataStore const &ds) -> guess_retType {
+        if (dp_pr.get().plot_type_name.has_value()) {
+            if (dp_pr.get().plot_type_name.value() != std::type_index(typeid(PS))) {
+                return std::unexpected(incerr_c::make(GPT_explicitlySpecifiedDifferentPlotType));
+            }
+        }
+        return dp_pr;
+    };
+    auto c_fflags = [&](guess_firstParamType &&dp_pr) -> guess_retType {
+        DesiredPlot::compute_filterFlags_r_void(dp_pr.get(), ds);
+        return dp_pr;
+    };
+
+    auto res = isNot_differentPS(guess_firstParamType{std::ref(dp)}, ds)
+                   .and_then(std::bind_back(PS::guess_TSCol, ds))
+                   .and_then(std::bind_back(PS::guess_catCol, ds))
+                   .and_then(std::bind_back(PS::guess_valueCols, ds))
+                   .and_then(c_fflags)
+                   .and_then(std::bind_back(PS::guess_sizes, ds))
+                   .and_then(std::bind_back(PS::guess_TFfeatures, ds));
+
+    if (res.has_value()) { return std::move(res.value().get()); }
+    else { return std::unexpected(res.error()); }
+}
+
+template <typename PS>
+requires(std::is_base_of_v<Base, PS>)
+std::expected<DesiredPlot, incerr_c> evaluate_PS(DesiredPlot dp, DataStore const &ds) {
+    return evaluate_prepDP(std::move(dp), ds).and_then(std::bind_back(evaluate_guessing<PS>, ds));
+}
+
+template <typename... PSs>
+requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+auto evaluate_PSs(DesiredPlot dp, DataStore const &ds) {
+    auto dp_exp = evaluate_prepDP(std::move(dp), ds);
+
+    std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>> res{
+        {{std::type_index(typeid(PSs)), std::expected<DesiredPlot, incerr::incerr_code>(dp_exp)
+                                            .and_then(std::bind_back(evaluate_guessing<PSs>, ds))
+                                            .transform(std::bind_back(PSs::compute_priorityFactor, ds))}...}};
+    return res;
+}
+} // namespace detail_ps
+
 
 // BASE
 auto Base::build_self(this auto &self)

@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <expected>
-#include <functional>
 #include <incplot/plot_structures.hpp>
 #include <incstd/algos.hpp>
 #include <optional>
@@ -313,7 +312,6 @@ guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore con
 
 std::pair<incom::terminal_plot::DesiredPlot, size_t> BarV::compute_priorityFactor(
     incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
-
 
     return std::make_pair(dp_pr, 0uz);
 }

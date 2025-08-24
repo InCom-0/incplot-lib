@@ -51,6 +51,10 @@ enum class Unexp_plotSpecs {
 enum class Unexp_plotDrawer {
     // No value '0'
     BPS_dpIsNullopt = 1,
+    BPS_typeIndexInDPisNotIn_var_plotTypes,
+    EVAPS_dpIsNullopt,
+    EVAPS_typeIndexInDPisNotIn_var_plotTypes,
+    EVAPS_impossibleToDrawAnyPlot,
     INI_labelTS_colID_isNull,
     INI_values_colIDs_isEmpty,
     INI_values_rowCount_isZero,

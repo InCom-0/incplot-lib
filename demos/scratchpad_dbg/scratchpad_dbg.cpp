@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     auto dp = DesiredPlot(dpCtor);
 
 
-    auto test_possibilities = plot_structures::evaluate_PSs_asPossibilities<plot_structures::BarV>(dpCtor, ds.value());
+    // auto test_possibilities = evaluate_onePSpossibility(dpCtor, ds.value());
 
 
     std::cout << incplot::make_plot_collapseUnExp(dpCtor, data.value()) << '\n';
