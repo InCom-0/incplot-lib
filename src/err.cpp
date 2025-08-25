@@ -71,7 +71,7 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
             {
                 static std::string GVC_mnyvc_r{
                     std::format("The user selected more than a maximum number of value columns (-y) which is: {}",
-                                Config::max_numOfValCols)};
+                                Config::max_numOfValColsScatter)};
                 return std::string_view(GVC_mnyvc_r);
             }
 

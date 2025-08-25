@@ -15,14 +15,6 @@
 #include <csv2/reader.hpp>
 #include <nlohmann/json.hpp>
 
-// #include <cppcoro/filesystem.hpp>
-// #include <cppcoro/io_service.hpp>
-// #include <cppcoro/read_only_file.hpp>
-// #include <cppcoro/static_thread_pool.hpp>
-// #include <cppcoro/sync_wait.hpp>
-// #include <cppcoro/task.hpp>
-// #include <cppcoro/when_all.hpp>
-
 #include <incplot/parsers_inc.hpp>
 
 namespace incom {
@@ -158,7 +150,7 @@ std::expected<input_t, incerr_c> Parser::assess_inputType(std::string_view const
 
     // CSV / TSV?
     if ((std::get<3>(count_symbols) != 0) && (std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
-        // No brace at the beginning ... not idea but good enough
+        // No brace at the beginning ... not ideal but good enough
         // TODO: Possibly improve this heuristic
         if (sv.front() != '{' && sv.front() != '[') { return input_t::CSV; }
     }

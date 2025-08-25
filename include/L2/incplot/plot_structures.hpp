@@ -308,6 +308,9 @@ protected:
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
+    static std::pair<incom::terminal_plot::DesiredPlot, size_t> compute_priorityFactor(
+        incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds);
+
 protected:
     auto compute_descriptors(this auto &&self)
         -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
@@ -347,6 +350,9 @@ protected:
     static guess_retType guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
+
+    static std::pair<incom::terminal_plot::DesiredPlot, size_t> compute_priorityFactor(
+        incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds);
 
 protected:
     auto compute_axisName_vl(this auto &&self)
@@ -394,6 +400,9 @@ protected:
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
+    static std::pair<incom::terminal_plot::DesiredPlot, size_t> compute_priorityFactor(
+        incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds);
+
 protected:
     auto compute_axis_vr(this auto &&self)
         -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
@@ -423,6 +432,9 @@ protected:
     static guess_retType guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
+
+    static std::pair<incom::terminal_plot::DesiredPlot, size_t> compute_priorityFactor(
+        incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds);
 
 protected:
     auto compute_descriptors(this auto &&self)
@@ -455,6 +467,9 @@ protected:
     static guess_retType guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
+
+    static std::pair<incom::terminal_plot::DesiredPlot, size_t> compute_priorityFactor(
+        incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds);
 
 protected:
     auto compute_labels_vl(this auto &&self)

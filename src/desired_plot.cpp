@@ -439,7 +439,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
 
     // SCATTER PLOT
     else if (dp.plot_type_name == detail::get_typeIndex<plot_structures::Scatter>()) {
-        if (dp.values_colIDs.size() > Config::max_numOfValCols) {
+        if (dp.values_colIDs.size() > Config::max_numOfValColsScatter) {
             return std::unexpected(incerr_c::make(GVC_selectedMoreThanMaxNumOfYvalCols));
         }
         else if (dp.cat_colID.has_value()) {
@@ -452,7 +452,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_valueCols(Des
         }
         else {
             if (dp.values_colIDs.size() < 1) {
-                if (not addValColsUntil(1, Config::max_numOfValCols).has_value()) {
+                if (not addValColsUntil(1, Config::max_numOfValColsScatter).has_value()) {
                     return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols));
                 }
             }

@@ -25,7 +25,6 @@ enum class parsedVal_t {
 class DataStore {
 public:
     // TYPE ALIAS
-
     using varCol_t        = std::variant<std::vector<std::string>, std::vector<long long>, std::vector<double>>;
     using vec_pr_varCol_t = std::vector<std::pair<std::string, varCol_t>>;
 
@@ -33,7 +32,6 @@ public:
         std::vector<std::pair<std::string, varCol_t>> data;
         std::vector<std::vector<unsigned int>>        itemFlags;
     };
-
     struct Column {
         std::string               name;
         parsedVal_t               colType;
@@ -107,15 +105,16 @@ public:
             return std::visit(visi, variant_data);
         }
     };
-    std::vector<Column> m_data;
 
+    // DATA MEMBER - THE ONLY ONE
+    std::vector<Column> m_data;
 
     // CONSTRUCTION
     DataStore() : DataStore(DS_CtorObj()) {}
 
     // Pair first = name of the column, Pair second = values in that column
-    DataStore(DS_CtorObj const &vecOfDataVecs);
-    DataStore(DS_CtorObj const &&vecOfDataVecs) : DataStore(vecOfDataVecs) {};
+    DataStore(DS_CtorObj const &ctorObj);
+    DataStore(DS_CtorObj const &&ctorObj) : DataStore(ctorObj) {};
 
     // COMPARISON
     bool operator==(const DataStore &other) const { return true; }

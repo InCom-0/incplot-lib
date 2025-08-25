@@ -38,9 +38,9 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
         if (auto optVal = inout_ap.present<int>("-c")) { res.back().c_colID = optVal.value(); }
     };
 
-    if (inout_ap.get<bool>("-b")) { addOne(detail::get_typeIndex<plot_structures::BarV>()); }
-    if (inout_ap.get<bool>("-s")) { addOne(detail::get_typeIndex<plot_structures::Scatter>()); }
-    if (inout_ap.get<bool>("-l")) { addOne(detail::get_typeIndex<plot_structures::Multiline>()); }
+    if (inout_ap.get<bool>("-B")) { addOne(detail::get_typeIndex<plot_structures::BarV>()); }
+    if (inout_ap.get<bool>("-S")) { addOne(detail::get_typeIndex<plot_structures::Scatter>()); }
+    if (inout_ap.get<bool>("-L")) { addOne(detail::get_typeIndex<plot_structures::Multiline>()); }
     if (inout_ap.get<bool>("-V")) { addOne(detail::get_typeIndex<plot_structures::BarVM>()); }
     if (inout_ap.get<bool>("-H")) { addOne(detail::get_typeIndex<plot_structures::BarHM>()); }
     if (inout_ap.get<bool>("-S")) { addOne(detail::get_typeIndex<plot_structures::BarHS>()); }
@@ -62,9 +62,9 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
         "are optional");
 
     out_ap.add_group("Plot type options");
-    out_ap.add_argument("-b", "--barV").help("Draw vertical [b]ar plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-s", "--scatter").help("Draw [s]catter plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-l", "--line").help("Draw (multi)[l]ine plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-B", "--barV").help("Draw vertical [B]ar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-S", "--scatter").help("Draw [S]catter plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-L", "--line").help("Draw (multi)[L]ine plot [flag]").flag().nargs(0);
     out_ap.add_argument("-V", "--barVM").help("Draw [V]ertical multibar plot [flag]").flag().nargs(0);
     out_ap.add_argument("-H", "--barHM").help("Draw [H]orizontal multibar plot [flag]").flag().nargs(0);
     out_ap.add_argument("-S", "--barHS").help("Draw horizontal [S]tacked bar plot [flag]").flag().nargs(0);

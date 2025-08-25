@@ -43,14 +43,12 @@ std::expected<size_t, incerr_c> addColsUntil(std::vector<size_t> &out_dp_valCol,
     }
     return 0uz;
 }
-
 } // namespace detail
 
 
 using namespace incom::standard::algos;
 
 // BASE
-
 size_t Base::compute_lengthOfSelf() const {
 
     size_t lngth = pad_top + pad_bottom;
@@ -192,7 +190,6 @@ std::string Base::build_plotAsString() const {
 // ### END BASE ###
 
 // BAR V
-
 guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
@@ -212,12 +209,7 @@ guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &d
 
         // Best == the one with the most "categories" ie. least number of identical strings in rows
         auto bestForLabels = std::ranges::max_element(filter2, [](auto const &lhs, auto const &rhs) {
-            double const l_val = std::get<1>(std::get<1>(lhs)).categoryCount /
-                                 static_cast<double>(std::get<0>(std::get<1>(lhs)).itemFlags.size());
-            double const r_val = std::get<1>(std::get<1>(rhs)).categoryCount /
-                                 static_cast<double>(std::get<0>(std::get<1>(rhs)).itemFlags.size());
-
-            return l_val < r_val;
+            return std::get<1>(std::get<1>(lhs)).categoryCount < std::get<1>(std::get<1>(rhs)).categoryCount;
         });
 
         if (bestForLabels == filter2.end()) {
@@ -264,9 +256,6 @@ guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore cons
     };
 
     auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
-
-    // Verify that the selected column can actually be used for this plot
-    if (dp.values_colIDs.size() == 1) { return dp_pr; }
 
     if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1)}) { return dp_pr; }
     else { return std::unexpected(retExp.error()); }
@@ -319,23 +308,65 @@ std::pair<incom::terminal_plot::DesiredPlot, size_t> BarV::compute_priorityFacto
 
 
 // BAR VM
-
 guess_retType BarVM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TSCol(std::move(dp_pr), ds);
+    return BarV::guess_TSCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarVM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_catCol(std::move(dp_pr), ds);
+    return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarVM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+    DesiredPlot &dp = dp_pr.get();
+
+    if (dp.values_colIDs.size() > Config::max_numOfValCols) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
+    }
+
+    auto lam_filter = [&](auto const &tpl) {
+        bool const arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
+                                   std::get<1>(tpl).colType == parsedVal_t::double_like;
+        // Not timeSeriesLike and Not categoryLike
+        bool const notExcluded = (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
+                                 (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
+
+        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike));
+    };
+    auto useableValCols_tpl =
+        std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), lam_filter);
+
+    // Check if selected cols are actually useable
+    for (auto const &selColID : dp.values_colIDs) {
+        if (not std::ranges::contains(useableValCols_tpl, selColID, [](auto const &tpl) { return std::get<0>(tpl); })) {
+            return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+        }
+    }
+    // TODO: Do some sort of smarter sorting of potential yValCols
+    auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
+        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+    };
+
+    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+
+    // Verify that the selected column can actually be used for this plot
+    if (dp.values_colIDs.size() > 0) { return dp_pr; }
+    else {
+        if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 2, Config::max_numOfValCols)}) {
+            return dp_pr;
+        }
+        else { return std::unexpected(retExp.error()); }
+    }
 }
 guess_retType BarVM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_sizes(std::move(dp_pr), ds);
+    return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarVM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
+    return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
+std::pair<incom::terminal_plot::DesiredPlot, size_t> BarVM::compute_priorityFactor(
+    incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+
+    return std::make_pair(dp_pr, 0uz);
+}
 // ### END BAR VM ###
 
 
@@ -407,15 +438,57 @@ guess_retType Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore cons
     return dp_pr;
 }
 guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+    DesiredPlot &dp = dp_pr.get();
+
+    // TODO: Consider potential use where the catCol isn't specified and cats are specified by individual columns
+    // The above would require some very clever logic to find the 'most suitable' columns to select
+    if (dp.values_colIDs.size() > Config::max_numOfValColsScatter) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForScatter));
+    }
+
+    auto lam_filter = [&](auto const &tpl) {
+        bool const arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
+                                   std::get<1>(tpl).colType == parsedVal_t::double_like;
+        // Not timeSeriesLike and Not categoryLike
+        bool const notExcluded = (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
+                                 (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
+
+        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike));
+    };
+    auto useableValCols_tpl =
+        std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), lam_filter);
+
+    // Check if selected cols are actually useable
+    for (auto const &selColID : dp.values_colIDs) {
+        if (not std::ranges::contains(useableValCols_tpl, selColID, [](auto const &tpl) { return std::get<0>(tpl); })) {
+            return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+        }
+    }
+    // TODO: Do some sort of smarter sorting of potential yValCols
+    auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
+        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+    };
+
+    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+
+    // Scatter is newly allowed to only have 1 yValCol
+    if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1, Config::max_numOfValColsScatter)}) {
+        return dp_pr;
+    }
+    else { return std::unexpected(retExp.error()); }
 }
 guess_retType Scatter::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_sizes(std::move(dp_pr), ds);
+    return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType Scatter::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
+    return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
+std::pair<incom::terminal_plot::DesiredPlot, size_t> Scatter::compute_priorityFactor(
+    incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+
+    return std::make_pair(dp_pr, 0uz);
+}
 // ### END SCATTER ###
 
 
@@ -457,32 +530,73 @@ guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore con
     std::unreachable();
 }
 guess_retType Multiline::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_catCol(std::move(dp_pr), ds);
+    return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return std::unexpected(incerr_c::make(TEST_t1));
 }
 guess_retType Multiline::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_sizes(std::move(dp_pr), ds);
+    return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType Multiline::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
+    return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
+}
+
+std::pair<incom::terminal_plot::DesiredPlot, size_t> Multiline::compute_priorityFactor(
+    incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+
+    return std::make_pair(dp_pr, 0uz);
 }
 // ### END MULTILINE ###
 
 
 // BAR HM
 guess_retType BarHM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TSCol(std::move(dp_pr), ds);
+    return BarV::guess_TSCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarHM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_catCol(std::move(dp_pr), ds);
+    return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
-    if (dp.values_colIDs.size() < 1) { return std::unexpected(incerr_c::make(GVC_notEnoughSuitableYvalCols)); }
-    return std::unexpected(incerr_c::make(TEST_t1));
+    if (dp.values_colIDs.size() > Config::max_numOfValCols) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
+    }
+
+    auto lam_filter = [&](auto const &tpl) {
+        bool const arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
+                                   std::get<1>(tpl).colType == parsedVal_t::double_like;
+        // Not timeSeriesLike and Not categoryLike
+        bool const notExcluded = (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
+                                 (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
+
+        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike));
+    };
+    auto useableValCols_tpl =
+        std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), lam_filter);
+
+    // Check if selected cols are actually useable
+    for (auto const &selColID : dp.values_colIDs) {
+        if (not std::ranges::contains(useableValCols_tpl, selColID, [](auto const &tpl) { return std::get<0>(tpl); })) {
+            return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+        }
+    }
+    // TODO: Do some sort of smarter sorting of potential yValCols
+    auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
+        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+    };
+
+    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+
+    // Verify that the selected column can actually be used for this plot
+    if (dp.values_colIDs.size() > 0) { return dp_pr; }
+    else {
+        if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 2, Config::max_numOfValCols)}) {
+            return dp_pr;
+        }
+        else { return std::unexpected(retExp.error()); }
+    }
 }
 guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
@@ -525,20 +639,26 @@ guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &
     return dp_pr;
 }
 guess_retType BarHM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
+    return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
+}
+
+std::pair<incom::terminal_plot::DesiredPlot, size_t> BarHM::compute_priorityFactor(
+    incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+
+    return std::make_pair(dp_pr, 0uz);
 }
 // ### END BAR HM ###
 
 
 // BAR HS
 guess_retType BarHS::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TSCol(std::move(dp_pr), ds);
+    return BarV::guess_TSCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarHS::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_catCol(std::move(dp_pr), ds);
+    return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+    return BarHM::guess_valueCols(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
@@ -580,9 +700,14 @@ guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &
     return dp_pr;
 }
 guess_retType BarHS::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarV::guess_TFfeatures(std::move(dp_pr), ds);
+    return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
+std::pair<incom::terminal_plot::DesiredPlot, size_t> BarHS::compute_priorityFactor(
+    incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+
+    return std::make_pair(dp_pr, 0uz);
+}
 // ### END BAR HS ###
 
 

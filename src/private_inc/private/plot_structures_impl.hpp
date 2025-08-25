@@ -693,10 +693,12 @@ auto BarVM::compute_descriptors(this auto &&self)
 
     // PLOT AREA HEIGHT
     self.areaHeight = (self.data_rowCount * self.dp.values_colIDs.size()) + (self.data_rowCount - 1);
-    if (self.areaHeight < static_cast<long long>(Config::min_areaHeight) ||
-        self.areaHeight < (static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
-                           self.axisName_horTop_bool - self.labels_horTop.size() - 2ll - self.labels_horBottom.size() -
-                           self.axisName_horBottom_bool - self.pad_bottom)) {
+    if ((self.areaHeight < static_cast<long long>(Config::min_areaHeight)) ||
+        self.areaHeight > (self.dp.availableHeight.has_value()
+                               ? (static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
+                                  self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
+                                  self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom)
+                               : std::numeric_limits<long long>::max())) {
         return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
     }
 
@@ -1186,11 +1188,14 @@ auto BarHM::compute_descriptors(this auto &&self)
                      (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2ll -
                      self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
                      self.pad_right;
-    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth_BarHM) ||
-        self.areaWidth < ((self.data_rowCount * oneGroupWidth) +
-                          (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount))) {
+    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth_BarHM)) {
         return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
     }
+    // TODO: PROBABLY UNNECESSARY but verify later
+    // else if (self.areaWidth < ((self.data_rowCount * oneGroupWidth) +
+    //    //                            (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount))) {
+    //     return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
+    // }
     else {
         self.areaWidth = ((self.data_rowCount * oneGroupWidth) +
                           (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount));
@@ -1202,6 +1207,7 @@ auto BarHM::compute_descriptors(this auto &&self)
     // LABELS AND AXIS NAME HOR TOP ... probably nothing so keeping 0 size
     // ...
 
+    
     // PLOT AREA HEIGHT
     if (not self.dp.targetHeight.has_value()) {
         if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {

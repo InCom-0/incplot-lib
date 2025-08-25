@@ -113,7 +113,8 @@ public:
     static inline size_t default_areaWidth2Height_ratio_Multiline = 6uz;
     static inline size_t default_areaWidth2Height_ratio           = 3uz;
 
-    static inline size_t max_numOfValCols             = 3uz;
+    static inline size_t max_numOfValCols             = 6uz;
+    static inline size_t max_numOfValColsScatter      = 1uz;
     static inline size_t max_maxNumOfCategories       = 3uz;
     static inline size_t max_maxNumOfLinesInMultiline = 3uz;
 

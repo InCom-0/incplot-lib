@@ -54,7 +54,7 @@ class Parser {
     // PARSE USING RANAV::CSV2
     static std::expected<DataStore::DS_CtorObj, incerr_c> parse_usingCSV2(auto &&csv2Reader, std::string_view const trimmed);
 
-
+    
 public:
     // MAIN INTENDED INTERFACE METHOD
     // Dispatches the string_view to the right parser and constructs DataStore

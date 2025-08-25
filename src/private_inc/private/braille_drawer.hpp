@@ -212,7 +212,6 @@ public:
             i++;
         }
 
-
         // Interpolate 'in between' every 2 points to actually get a line in the plot visually
         std::vector<size_t> interpolatedValues;
         for (size_t catID = 0; auto one_yValCol : view_varValCols) {
