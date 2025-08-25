@@ -1207,7 +1207,7 @@ auto BarHM::compute_descriptors(this auto &&self)
     // LABELS AND AXIS NAME HOR TOP ... probably nothing so keeping 0 size
     // ...
 
-    
+
     // PLOT AREA HEIGHT
     if (not self.dp.targetHeight.has_value()) {
         if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
@@ -1268,7 +1268,7 @@ auto BarHM::compute_labels_hb(this auto &&self)
 
     size_t const labelCharCount = labelHeight * ((pureVertical) ? 1 : labelWidth);
     bool const   doubleSpace    = is_barHS ? false : self.values_data.size() > 1;
-    bool const evenSize = ((self.values_data.size() % 2) == 0);
+    bool const evenSize = (((self.values_data.size() % 2) == 0) && not is_barHS);
 
     size_t const label_startHorPos = (is_barHS || (not pureVertical)) ? 0 : self.values_data.size() / 2;
 
