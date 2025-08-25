@@ -260,12 +260,12 @@ auto BarV::compute_descriptors(this auto &&self)
 
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
                                      self.values_data.at(0));
-        if (self.dp.availableHeight.has_value() &&
-            self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
-                                  self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
-                                  self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom) {
-            return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
-        }
+        // if (self.dp.availableHeight.has_value() &&
+        //     self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
+        //                           self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
+        //                           self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom) {
+        //     return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
+        // }
     }
     else if (not self.dp.targetHeight.has_value()) {
         if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {

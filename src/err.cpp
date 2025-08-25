@@ -37,7 +37,7 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
             return "There is no string-like column to be used for label in vertical bar chart"sv;
         case Unexp_plotSpecs::GTSC_unreachableCodeReached: return "Hard library error, unreachable code path reached"sv;
         case Unexp_plotSpecs::GCC_cantSpecifyCategoryForOtherThanScatter:
-            return "Category column cannot be specified for (potentially inferred) vertical bar chart"sv;
+            return "Category column cannot be specified for any plot type other then Scatter"sv;
         case Unexp_plotSpecs::GCC_noSuitableCatColForBarVM:
             return "There is no suitable category column and it is required for the selected horizontal bar chart"sv;
         case Unexp_plotSpecs::GCC_specifiedCatColCantBeUsedAsCatCol:
