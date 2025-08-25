@@ -27,13 +27,13 @@ int main(int argc, char *argv[]) {
     auto dpCtor = incplot::CL_Args::get_dpCtorStruct().front();
     // dpCtor.tar_width = 250uz;
     dpCtor.tar_height = 15uz;
-    dpCtor.plot_type_name       = std::type_index(typeid(plot_structures::BarHS));
+    dpCtor.plot_type_name       = std::type_index(typeid(plot_structures::BarHM));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
     // dpCtor.availableHeight = 15;
     // dpCtor.filter_outsideStdDev = 0;
     // dpCtor.lts_colID            = 4;
-    // dpCtor.v_colIDs             = {0,1,3};
+    dpCtor.v_colIDs             = {0,1,3,4};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));
@@ -44,8 +44,9 @@ int main(int argc, char *argv[]) {
     std::string_view iris_small{DATAFOLDER "iris_data_small.ndjson"sv};
     std::string_view nile{DATAFOLDER "nile_data.csv"sv};
     std::string_view wine{DATAFOLDER "wine_quality_data.ndjson"sv};
+    std::string_view wine_small{DATAFOLDER "wine_quality_data_small.csv"sv};
 
-    auto data = incstd::filesys::get_file_textual(iris_small);
+    auto data = incstd::filesys::get_file_textual(wine_small);
     if (not data.has_value()) { std::exit(1); }
 
     auto ds = parsers::Parser::parse(data.value());

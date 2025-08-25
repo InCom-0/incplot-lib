@@ -1268,6 +1268,7 @@ auto BarHM::compute_labels_hb(this auto &&self)
 
     size_t const labelCharCount = labelHeight * ((pureVertical) ? 1 : labelWidth);
     bool const   doubleSpace    = is_barHS ? false : self.values_data.size() > 1;
+    bool const evenSize = ((self.values_data.size() % 2) == 0);
 
     size_t const label_startHorPos = (is_barHS || (not pureVertical)) ? 0 : self.values_data.size() / 2;
 
@@ -1299,7 +1300,7 @@ auto BarHM::compute_labels_hb(this auto &&self)
             for (auto const &tmpLine : tmpHolder) {
                 res_oneLine.append(label_startHorPos, Config::space);
                 res_oneLine.append(tmpLine.begin() + startOffset, tmpLine.begin() + startOffset + labelWidth);
-                res_oneLine.append(label_startHorPos + 1 + doubleSpace, Config::space);
+                res_oneLine.append(label_startHorPos + 1 + doubleSpace - evenSize, Config::space);
             }
             if (doubleSpace) { res_oneLine.pop_back(); }
             startOffset += labelWidth;
