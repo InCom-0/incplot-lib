@@ -38,8 +38,8 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
         case Unexp_plotSpecs::GTSC_unreachableCodeReached: return "Hard library error, unreachable code path reached"sv;
         case Unexp_plotSpecs::GCC_cantSpecifyCategoryForOtherThanScatter:
             return "Category column cannot be specified for any plot type other then Scatter"sv;
-        case Unexp_plotSpecs::GCC_noSuitableCatColForBarVM:
-            return "There is no suitable category column and it is required for the selected horizontal bar chart"sv;
+        case Unexp_plotSpecs::GCC_noSuitableCatColForScatter:
+            return "There is no suitable category column and it is required for the selected scatter plot"sv;
         case Unexp_plotSpecs::GCC_specifiedCatColCantBeUsedAsCatCol:
             {
                 static std::string GCC_cccbuacc_r;
@@ -71,7 +71,7 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
             {
                 static std::string GVC_mnyvc_r{
                     std::format("The user selected more than a maximum number of value columns (-y) which is: {}",
-                                Config::max_numOfValColsScatter)};
+                                Config::max_numOfValColsScatterCat)};
                 return std::string_view(GVC_mnyvc_r);
             }
 

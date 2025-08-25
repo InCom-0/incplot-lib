@@ -18,10 +18,10 @@ public:
     static inline std::string axisTick_r = "├";
     static inline std::string axisTick_t = "┴";
 
-    static inline std::string axisFiller_l       = "│";
-    static inline std::string axisFiller_b       = "─";
-    static inline std::string axisFiller_r       = "│";
-    static inline std::string axisFiller_t       = "─";
+    static inline std::string axisFiller_l = "│";
+    static inline std::string axisFiller_b = "─";
+    static inline std::string axisFiller_r = "│";
+    static inline std::string axisFiller_t = "─";
 
     static inline std::string areaCorner_tl = "┬";
     static inline std::string areaCorner_bl = "┼";
@@ -97,7 +97,7 @@ public:
 
     static inline size_t min_plotWidth            = 24uz;
     static inline size_t max_plotWidth            = 256uz;
-    static inline size_t default_targetWidth      = 1024uz;
+    static inline size_t default_targetWidth      = 96uz;
     static inline double scale_availablePlotWidth = 0.75;
 
     static inline size_t min_plotHeight = 5uz;
@@ -113,10 +113,11 @@ public:
     static inline size_t default_areaWidth2Height_ratio_Multiline = 6uz;
     static inline size_t default_areaWidth2Height_ratio           = 3uz;
 
-    static inline size_t max_numOfValCols             = 6uz;
-    static inline size_t max_numOfValColsScatter      = 1uz;
-    static inline size_t max_maxNumOfCategories       = 3uz;
-    static inline size_t max_maxNumOfLinesInMultiline = 3uz;
+    static inline size_t max_numOfValCols              = 6uz;
+    static inline size_t max_numOfValColsScatterCat    = 1uz;
+    static inline size_t max_numOfValColsScatterNonCat = 3uz;
+    static inline size_t max_maxNumOfCategories        = 3uz;
+    static inline size_t max_maxNumOfLinesInMultiline  = 3uz;
 
     static inline size_t axisLabels_maxLength_vl       = 16uz;
     static inline size_t axisLabels_maxLength_vr       = 16uz;

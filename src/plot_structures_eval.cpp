@@ -1,3 +1,4 @@
+#include "incplot/err.hpp"
 #include <algorithm>
 #include <expected>
 #include <incplot/plot_structures.hpp>
@@ -415,25 +416,22 @@ guess_retType Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore cons
                     std::get<2>(colType).categoryCount <= Config::max_maxNumOfCategories);
         });
 
-    // size_t useableCatCols_tpl_sz = std::ranges::count_if(useableCatCols_tpl, [](auto const &_) { return true; });
-    size_t useableCatCols_tpl_sz = std::ranges::distance(useableCatCols_tpl.begin(), useableCatCols_tpl.end());
-
-    // Impossible if there is no useable catCol or if the are more than 1 selected valCol
-    if (useableCatCols_tpl_sz == 0) { return std::unexpected(incerr_c::make(GCC_specifiedCatColCantBeUsedAsCatCol)); }
-    if (dp.values_colIDs.size() > 1) { return std::unexpected(incerr_c::make(GCC_cantSelectCatColAndMultipleYCols)); }
-
     // catCol specified need to verify that it is legit to use
     if (dp.cat_colID.has_value()) {
         bool calColID_found = std::ranges::find_if(useableCatCols_tpl, [&](auto const &tpl) {
                                   return std::get<0>(tpl) == dp.cat_colID.value();
                               }) != useableCatCols_tpl.end();
-
         // If the existing catColID cant be found then its wrong
         if (not calColID_found) { return std::unexpected(incerr_c::make(GCC_specifiedCatColCantBeUsedAsCatCol)); }
     }
 
-    // catCol isn't specified ... select first one of the useable catCols
-    else { dp.cat_colID = std::get<0>(useableCatCols_tpl.front()); }
+    // catCol isn't specified ... try to select first one of the useable catCols if available
+    else if (dp.values_colIDs.size() < 2 && std::ranges::distance(useableCatCols_tpl) > 0) {
+        dp.cat_colID = std::get<0>(useableCatCols_tpl.front());
+    }
+
+    // If not available keep as is (catCol is not actually required)
+    else {}
 
     return dp_pr;
 }
@@ -442,8 +440,12 @@ guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore c
 
     // TODO: Consider potential use where the catCol isn't specified and cats are specified by individual columns
     // The above would require some very clever logic to find the 'most suitable' columns to select
-    if (dp.values_colIDs.size() > Config::max_numOfValColsScatter) {
-        return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForScatter));
+
+    if (dp.cat_colID.has_value() && dp.values_colIDs.size() > Config::max_numOfValColsScatterCat) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForScatterCat));
+    }
+    else if (dp.values_colIDs.size() > Config::max_numOfValColsScatterNonCat) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForScatterNonCat));
     }
 
     auto lam_filter = [&](auto const &tpl) {
@@ -471,11 +473,22 @@ guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore c
 
     auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
 
-    // Scatter is newly allowed to only have 1 yValCol
-    if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1, Config::max_numOfValColsScatter)}) {
-        return dp_pr;
+
+    if (dp.cat_colID.has_value()) {
+        if (auto retExp{
+                detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1, Config::max_numOfValColsScatterCat)}) {
+            return dp_pr;
+        }
+        else { return std::unexpected(retExp.error()); }
     }
-    else { return std::unexpected(retExp.error()); }
+    else if (dp.values_colIDs.size() == 0) {
+        if (auto retExp{
+                detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1, Config::max_numOfValColsScatterNonCat)}) {
+            return dp_pr;
+        }
+        else { return std::unexpected(retExp.error()); }
+    }
+    else { return dp_pr; }
 }
 guess_retType Scatter::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
