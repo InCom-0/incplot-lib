@@ -43,7 +43,7 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
     if (inout_ap.get<bool>("-L")) { addOne(detail::get_typeIndex<plot_structures::Multiline>()); }
     if (inout_ap.get<bool>("-V")) { addOne(detail::get_typeIndex<plot_structures::BarVM>()); }
     if (inout_ap.get<bool>("-H")) { addOne(detail::get_typeIndex<plot_structures::BarHM>()); }
-    if (inout_ap.get<bool>("-S")) { addOne(detail::get_typeIndex<plot_structures::BarHS>()); }
+    if (inout_ap.get<bool>("-T")) { addOne(detail::get_typeIndex<plot_structures::BarHS>()); }
     if (res.empty()) { addOne(std::nullopt); }
 
     return res;
@@ -67,7 +67,7 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
     out_ap.add_argument("-L", "--line").help("Draw (multi)[L]ine plot [flag]").flag().nargs(0);
     out_ap.add_argument("-V", "--barVM").help("Draw [V]ertical multibar plot [flag]").flag().nargs(0);
     out_ap.add_argument("-H", "--barHM").help("Draw [H]orizontal multibar plot [flag]").flag().nargs(0);
-    out_ap.add_argument("-S", "--barHS").help("Draw horizontal [S]tacked bar plot [flag]").flag().nargs(0);
+    out_ap.add_argument("-T", "--barHS").help("Draw horizontal s[T]acked bar plot [flag]").flag().nargs(0);
 
 
     out_ap.add_group("Values options");
