@@ -33,6 +33,7 @@ enum class Unexp_plotSpecs {
     GVC_selectedMoreThan1YvalColForBarV,
     GVC_selectedMoreThan3YvalColForScatterCat,
     GVC_selectedMoreThan3YvalColForScatterNonCat,
+    GVC_selectedMoreThan3YvalColForMultiline,
     GVC_selectedMoreThan6YvalColForBarXM,
     GVC_selectedMoreThanMaxNumOfYvalCols,
     GVC_selectedMoreThanAllowedOfYvalColsForMultiline,

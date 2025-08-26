@@ -471,10 +471,8 @@ guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore c
         return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
     };
 
-    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
-
-
     if (dp.cat_colID.has_value()) {
+        auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
         if (auto retExp{
                 detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1, Config::max_numOfValColsScatterCat)}) {
             return dp_pr;
@@ -482,6 +480,7 @@ guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore c
         else { return std::unexpected(retExp.error()); }
     }
     else if (dp.values_colIDs.size() == 0) {
+        auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
         if (auto retExp{
                 detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1, Config::max_numOfValColsScatterNonCat)}) {
             return dp_pr;
@@ -546,7 +545,44 @@ guess_retType Multiline::guess_catCol(guess_firstParamType &&dp_pr, DataStore co
     return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return std::unexpected(incerr_c::make(TEST_t1));
+    DesiredPlot &dp = dp_pr.get();
+
+    if (dp.values_colIDs.size() > Config::max_maxNumOfLinesInMultiline) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForMultiline));
+    }
+
+    auto lam_filter = [&](auto const &tpl) {
+        bool const arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
+                                   std::get<1>(tpl).colType == parsedVal_t::double_like;
+        // Not timeSeriesLike and Not categoryLike
+        bool const notExcluded = (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
+
+        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike));
+    };
+    auto useableValCols_tpl =
+        std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), lam_filter);
+
+    // Check if selected cols are actually useable
+    for (auto const &selColID : dp.values_colIDs) {
+        if (not std::ranges::contains(useableValCols_tpl, selColID, [](auto const &tpl) { return std::get<0>(tpl); })) {
+            return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+        }
+    }
+
+    // TODO: Do some sort of smarter sorting of potential yValCols
+    auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
+        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+    };
+
+    if (dp.values_colIDs.size() == 0) {
+        auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+        if (auto retExp{
+                detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1, Config::max_maxNumOfLinesInMultiline)}) {
+            return dp_pr;
+        }
+        else { return std::unexpected(retExp.error()); }
+    }
+    else { return dp_pr; }
 }
 guess_retType Multiline::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
@@ -649,7 +685,8 @@ guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &
     dp.targetWidth = desired_targetWidth;
 
     // Height
-    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
+    if (dp.targetHeight.has_value() &&
+        (dp.targetHeight.value() < (Config::min_plotHeight + Config::axisLabels_maxHeight_hb - 1))) {
         return std::unexpected(incerr_c::make(GZS_heightTooSmall));
     }
 
@@ -714,7 +751,8 @@ guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &
     dp.targetWidth = desired_targetWidth;
 
     // Height
-    if (dp.targetHeight.has_value() && dp.targetHeight.value() < Config::min_plotHeight) {
+    if (dp.targetHeight.has_value() &&
+        (dp.targetHeight.value() < (Config::min_plotHeight + Config::axisLabels_maxHeight_hb - 1))) {
         return std::unexpected(incerr_c::make(GZS_heightTooSmall));
     }
 

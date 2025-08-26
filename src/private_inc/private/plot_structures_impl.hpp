@@ -1,4 +1,3 @@
-#include "incplot/config.hpp"
 #include <algorithm>
 #include <cassert>
 #include <concepts>
