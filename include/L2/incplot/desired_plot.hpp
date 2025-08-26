@@ -21,6 +21,7 @@ private:
     struct ColumnParams {
         size_t categoryCount;
         double standDev;
+        double mean;
 
         bool is_categoriesSameSize;
         bool is_categoryLike;

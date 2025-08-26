@@ -24,11 +24,17 @@ using incerr_c = incerr::incerr_code;
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessments(DesiredPlot    &&dp,
                                                                                     DataStore const &ds) {
 
-
     auto c_standDev = [&](auto const &vecRef) -> double {
-        auto const &vec = vecRef;
-        if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
-            return incom::standard::numeric::compute_stdDeviation(vec);
+        if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vecRef)>::value_type>) {
+            return incom::standard::numeric::compute_stdDeviation(vecRef);
+        }
+        else { return std::numeric_limits<double>::max(); }
+    };
+
+    auto c_mean = [&](auto const &vecRef) -> double {
+        if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vecRef)>::value_type>) {
+            return std::ranges::fold_left(vecRef, 0, [](auto &&acc, auto const &itemRef) { return acc + itemRef; }) /
+                   static_cast<double>(vecRef.size());
         }
         else { return std::numeric_limits<double>::max(); }
     };
@@ -130,6 +136,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
 
         std::visit(c_catParams, oneCol.variant_data);
         dp.m_colAssessments.back().standDev                     = std::visit(c_standDev, oneCol.variant_data);
+        dp.m_colAssessments.back().mean                         = std::visit(c_mean, oneCol.variant_data);
         dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol.variant_data);
         dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol.variant_data);
         dp.m_colAssessments.back().is_allValuesNonNegative      = std::visit(is_nonNeg, oneCol.variant_data);

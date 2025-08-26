@@ -1,7 +1,5 @@
-#include "incplot/plot_structures.hpp"
 #include <incplot.hpp>
 #include <incstd.hpp>
-#include <typeindex>
 
 
 #if defined(_WIN64)
@@ -18,9 +16,7 @@ void set_cocp() {
 
 #define DATAFOLDER "../../demos/data/"
 
-// TODO: Fix the automatic plot detection not really working
-// TODO: Implement at least some rudimentary versions of 'compute_priorityFactor'
-// TODO: Actually implement the comparator for '_reduce_possibilitiesToOne'
+// TODO: Sorting of potentially guessed value cols seems not such a great idea ... maybe reconsider later
 int main(int argc, char *argv[]) {
 
     using namespace std::literals;
@@ -31,11 +27,11 @@ int main(int argc, char *argv[]) {
     auto dpCtor            = incplot::CL_Args::get_dpCtorStruct().front();
     // dpCtor.tar_width = 250uz;
     // dpCtor.tar_height      = 6uz;
-    dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::Multiline));
+    // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::Multiline));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
-    dpCtor.availableHeight = 20;
-    dpCtor.availableWidth  = 96;
+    dpCtor.availableHeight = 35;
+    dpCtor.availableWidth  = 192;
     // dpCtor.filter_outsideStdDev = 0;
     // dpCtor.lts_colID            = 4;
     // dpCtor.v_colIDs        = {9, 8, 7};
@@ -51,7 +47,7 @@ int main(int argc, char *argv[]) {
     std::string_view wine{DATAFOLDER "wine_quality_data.ndjson"sv};
     std::string_view wine_small{DATAFOLDER "wine_quality_data_small.csv"sv};
 
-    auto data = incstd::filesys::get_file_textual(flights);
+    auto data = incstd::filesys::get_file_textual(wine_small);
     if (not data.has_value()) { std::exit(1); }
 
     auto ds = parsers::Parser::parse(data.value());

@@ -1,11 +1,16 @@
-#include "incplot/err.hpp"
 #include <algorithm>
+#include <cstddef>
+#include <cstdlib>
 #include <expected>
-#include <incplot/plot_structures.hpp>
-#include <incstd/algos.hpp>
+#include <iterator>
+#include <limits>
 #include <optional>
 #include <ranges>
 #include <utility>
+#include <variant>
+
+#include <incplot/plot_structures.hpp>
+#include <incstd/algos.hpp>
 
 
 namespace incom {
@@ -17,6 +22,30 @@ using enum Unexp_plotSpecs;
 using enum Unexp_plotDrawer;
 
 namespace detail {
+std::vector<size_t> compute_groupByStdDevDistance(auto useableValCols_tplView, double const stdDev) {
+
+    std::vector vecOfGroups(std::ranges::distance(useableValCols_tplView), std::vector<size_t>{});
+
+    for (auto lhs_iter = useableValCols_tplView.begin(); lhs_iter != useableValCols_tplView.end(); ++lhs_iter) {
+        for (auto rhs_iter = std::next(lhs_iter); rhs_iter != useableValCols_tplView.end(); ++rhs_iter) {
+            auto const &lhsColAsse_ref = std::get<2>(*lhs_iter);
+            auto const &rhsColAsse_ref = std::get<2>(*rhs_iter);
+
+            double const meanDif = std::abs(lhsColAsse_ref.mean - rhsColAsse_ref.mean);
+            if (meanDif < (stdDev * lhsColAsse_ref.standDev) && meanDif < (stdDev * rhsColAsse_ref.standDev)) {
+                vecOfGroups[std::get<0>(*lhs_iter)].push_back(std::get<0>(*rhs_iter));
+                vecOfGroups[std::get<0>(*rhs_iter)].push_back(std::get<0>(*lhs_iter));
+            }
+        }
+    }
+
+    auto resTpl = *std::ranges::max_element(
+        std::views::zip(std::views::iota(0uz), vecOfGroups),
+        [](auto const &lhs, auto const &rhs) { return std::get<1>(lhs).size() < std::get<1>(rhs).size(); });
+
+    std::get<1>(resTpl).push_back(std::get<0>(resTpl));
+    return std::get<1>(resTpl);
+}
 
 std::expected<size_t, incerr_c> addColsUntil(std::vector<size_t> &out_dp_valCol, std::vector<size_t> useableValCols,
                                              size_t minAllowed, size_t addUntil_ifAvailable = 1) {
@@ -252,8 +281,10 @@ guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore cons
             return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
         }
     }
+    // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
     auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
-        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        // return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        return false;
     };
 
     auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
@@ -302,8 +333,7 @@ guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore con
 
 std::pair<incom::terminal_plot::DesiredPlot, size_t> BarV::compute_priorityFactor(
     incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
-
-    return std::make_pair(dp_pr, 0uz);
+    return std::make_pair(dp_pr, 1uz);
 }
 // ### END BAR V ###
 
@@ -340,12 +370,15 @@ guess_retType BarVM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
             return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
         }
     }
-    // TODO: Do some sort of smarter sorting of potential yValCols
+    // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
     auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
-        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        // return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        return false;
     };
 
-    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+    auto canAdd_prioritized =
+        detail::compute_groupByStdDevDistance(useableValCols_tpl, Config::inColGroup_stdDevMultiplierAllowance);
+    // auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
 
     // Verify that the selected column can actually be used for this plot
     if (dp.values_colIDs.size() > 0) { return dp_pr; }
@@ -365,8 +398,7 @@ guess_retType BarVM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore co
 
 std::pair<incom::terminal_plot::DesiredPlot, size_t> BarVM::compute_priorityFactor(
     incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
-
-    return std::make_pair(dp_pr, 0uz);
+    return std::make_pair(dp_pr, (dp_pr.values_colIDs.size() > 1) * dp_pr.values_colIDs.size());
 }
 // ### END BAR VM ###
 
@@ -466,9 +498,10 @@ guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore c
             return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
         }
     }
-    // TODO: Do some sort of smarter sorting of potential yValCols
+    // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
     auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
-        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        // return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        return false;
     };
 
     if (dp.cat_colID.has_value()) {
@@ -498,8 +531,9 @@ guess_retType Scatter::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore 
 
 std::pair<incom::terminal_plot::DesiredPlot, size_t> Scatter::compute_priorityFactor(
     incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+    size_t resPriority = dp_pr.cat_colID.has_value() ? std::numeric_limits<size_t>::max() / 2 : 0uz;
 
-    return std::make_pair(dp_pr, 0uz);
+    return std::make_pair(dp_pr, resPriority);
 }
 // ### END SCATTER ###
 
@@ -569,9 +603,10 @@ guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore
         }
     }
 
-    // TODO: Do some sort of smarter sorting of potential yValCols
+    // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
     auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
-        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        // return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        return false;
     };
 
     if (dp.values_colIDs.size() == 0) {
@@ -593,8 +628,17 @@ guess_retType Multiline::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStor
 
 std::pair<incom::terminal_plot::DesiredPlot, size_t> Multiline::compute_priorityFactor(
     incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
+    size_t rawRowCount =
+        std::visit([](auto const &vec) { return vec.size(); }, ds.m_data.at(dp_pr.values_colIDs.front()).variant_data);
+    long long const available_areaWidth =
+        dp_pr.targetWidth.value() - Config::ps_padLeft - Config::ps_padRight - 2ll - Config::max_valLabelSize -
+        Config::axisLabels_padRight_vl -
+        (dp_pr.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_minWidth_legend_vr
+                                        : Config::axis_verName_width_vl);
 
-    return std::make_pair(dp_pr, 0uz);
+    // Highest priority if each step of the time series 'fits' into the are resolution nicely. If not => very low
+    // priority
+    return std::make_pair(dp_pr, rawRowCount <= (2 * available_areaWidth) ? std::numeric_limits<size_t>::max() : 0uz);
 }
 // ### END MULTILINE ###
 
@@ -631,12 +675,15 @@ guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
             return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
         }
     }
-    // TODO: Do some sort of smarter sorting of potential yValCols
+   // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
     auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
-        return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        // return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        return false;
     };
 
-    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+    auto canAdd_prioritized =
+        detail::compute_groupByStdDevDistance(useableValCols_tpl, Config::inColGroup_stdDevMultiplierAllowance);
+    auto canAdd_prioritized_OLD = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
 
     // Verify that the selected column can actually be used for this plot
     if (dp.values_colIDs.size() > 0) { return dp_pr; }
@@ -699,7 +746,8 @@ guess_retType BarHM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore co
 std::pair<incom::terminal_plot::DesiredPlot, size_t> BarHM::compute_priorityFactor(
     incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
 
-    return std::make_pair(dp_pr, 0uz);
+    size_t resPriority = (std::numeric_limits<size_t>::max() / Config::max_numOfValCols) * dp_pr.values_colIDs.size();
+    return std::make_pair(dp_pr, resPriority);
 }
 // ### END BAR HM ###
 
@@ -765,7 +813,9 @@ guess_retType BarHS::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore co
 std::pair<incom::terminal_plot::DesiredPlot, size_t> BarHS::compute_priorityFactor(
     incom::terminal_plot::DesiredPlot &&dp_pr, DataStore const &ds) {
 
-    return std::make_pair(dp_pr, 0uz);
+    size_t resPriority =
+        (std::numeric_limits<size_t>::max() / (Config::max_numOfValCols + 2)) * dp_pr.values_colIDs.size();
+    return std::make_pair(dp_pr, resPriority);
 }
 // ### END BAR HS ###
 

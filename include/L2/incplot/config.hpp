@@ -94,11 +94,13 @@ public:
     static inline size_t x_interpolationMultiplier = 4uz;
 
     // OTHER PLOT SETTINGS
-
     static inline size_t min_plotWidth            = 24uz;
     static inline size_t max_plotWidth            = 256uz;
     static inline size_t default_targetWidth      = 64uz;
     static inline double scale_availablePlotWidth = 0.75;
+
+    static inline double inColGroup_stdDevMultiplierAllowance = 8.0;
+    static inline double inColGroup_meanDiffMultiplierAllowance = 8.0;
 
     static inline size_t min_plotHeight = 5uz;
 
