@@ -694,14 +694,16 @@ auto BarVM::compute_descriptors(this auto &&self)
 
     // PLOT AREA HEIGHT
     self.areaHeight = (self.data_rowCount * self.dp.values_colIDs.size()) + (self.data_rowCount - 1);
-    if ((self.areaHeight < static_cast<long long>(Config::min_areaHeight)) ||
-        self.areaHeight > (self.dp.availableHeight.has_value()
-                               ? (static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
-                                  self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
-                                  self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom)
-                               : std::numeric_limits<long long>::max())) {
+    if ((self.areaHeight < static_cast<long long>(Config::min_areaHeight))) {
         return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
     }
+    // if (self.areaHeight > (self.dp.availableHeight.has_value()
+    //                            ? (static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
+    //                               self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
+    //                               self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom)
+    //                            : std::numeric_limits<long long>::max())) {
+    //     return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
+    // }
 
     // Axes steps
     self.axis_verLeftSteps   = self.data_rowCount - 1;
@@ -1287,7 +1289,7 @@ auto BarHM::compute_labels_hb(this auto &&self)
 
     size_t const labelCharCount = labelHeight * ((pureVertical) ? 1 : labelWidth);
     bool const   doubleSpace    = is_barHS ? false : self.values_data.size() > 1;
-    bool const evenSize = ((self.values_data.size() % 2) == 0);
+    bool const   evenSize       = ((self.values_data.size() % 2) == 0);
 
     size_t const label_startHorPos = (is_barHS || (not pureVertical)) ? 0 : self.values_data.size() / 2;
 

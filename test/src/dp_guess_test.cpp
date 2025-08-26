@@ -1,4 +1,5 @@
 
+#include "incplot/config.hpp"
 #include <functional>
 #include <gtest/gtest.h>
 #include <incstd.hpp>
@@ -471,7 +472,7 @@ TEST(DP_guess_sizes, penguins_default) {
     auto dp = dp_res.value();
 
     EXPECT_EQ(dp.targetWidth.has_value(), true);
-    EXPECT_EQ(dp.targetWidth.value(), 64uz);
+    EXPECT_EQ(dp.targetWidth.value(), incom::terminal_plot::Config::default_targetWidth);
 }
 TEST(DP_guess_sizes, wine_quality_default) {
     using enum incplot::Unexp_plotSpecs;
@@ -489,7 +490,7 @@ TEST(DP_guess_sizes, wine_quality_default) {
     auto dp = dp_res.value();
 
     EXPECT_EQ(dp.targetWidth.has_value(), true);
-    EXPECT_EQ(dp.targetWidth.value(), 64uz);
+    EXPECT_EQ(dp.targetWidth.value(), incom::terminal_plot::Config::default_targetWidth);
 }
 TEST(DP_guess_sizes, penguins_possible_available_possible) {
     using enum incplot::Unexp_plotSpecs;

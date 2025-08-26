@@ -20,8 +20,6 @@ void set_cocp() {
 
 // TODO: Fix the MultiLine
 // TODO: Fix the BarHM not actually working with any yValCol specified
-// TODO: Fix the BarVM somehow being limtied by the available vertical size (which it shoudlnt be)
-// TODO: Fix the BarVM put legend also at the bottom part of labels_vr if long enough
 // TODO: Fix the automatic plot detection not really working
 int main(int argc, char *argv[]) {
 
@@ -36,7 +34,7 @@ int main(int argc, char *argv[]) {
     dpCtor.plot_type_name       = std::type_index(typeid(plot_structures::BarVM));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
-    // dpCtor.availableHeight = 15;
+    dpCtor.availableHeight = 60;
     // dpCtor.filter_outsideStdDev = 0;
     // dpCtor.lts_colID            = 4;
     dpCtor.v_colIDs             = {9,8,7};
