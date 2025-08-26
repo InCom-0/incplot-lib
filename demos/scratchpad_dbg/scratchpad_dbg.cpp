@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     dpCtor.availableWidth  = 196;
     // dpCtor.filter_outsideStdDev = 0;
     // dpCtor.lts_colID            = 4;
-    dpCtor.v_colIDs        = {9, 7};
+    dpCtor.v_colIDs        = {9,8,7};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

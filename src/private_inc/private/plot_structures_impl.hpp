@@ -1289,11 +1289,12 @@ auto BarHM::compute_labels_hb(this auto &&self)
     size_t const labelHeight =
         std::min(Config::axisLabels_maxHeight_hb, (realMaxLabelSize + labelWidth - 1) / labelWidth);
 
-    size_t const labelCharCount = labelHeight * ((pureVertical) ? 1 : labelWidth);
-    bool const   doubleSpace    = is_barHS ? false : self.values_data.size() > 1;
-    bool const   evenSize       = ((self.values_data.size() % 2) == 0);
+    size_t const labelCharCount    = labelHeight * labelWidth;
+    bool const   doubleSpace       = is_barHS ? false : self.values_data.size() > 1;
+    size_t const label_startHorPos = (is_barHS || (not pureVertical)) ? 0uz : self.values_data.size() / 2;
 
-    size_t const label_startHorPos = (is_barHS || (not pureVertical)) ? 0 : self.values_data.size() / 2;
+    bool const negAdjust = (((self.values_data.size() % 2) == 0) && (label_startHorPos != 0)) ? true : false;
+
 
     auto computeLabels = [&](auto &var) -> void {
         std::ranges::fill_n(std::back_inserter(self.labels_horBottom), labelHeight, std::string{Config::color_Axes});
@@ -1323,7 +1324,7 @@ auto BarHM::compute_labels_hb(this auto &&self)
             for (auto const &tmpLine : tmpHolder) {
                 res_oneLine.append(label_startHorPos, Config::space);
                 res_oneLine.append(tmpLine.begin() + startOffset, tmpLine.begin() + startOffset + labelWidth);
-                res_oneLine.append(label_startHorPos + 1 + doubleSpace - evenSize, Config::space);
+                res_oneLine.append(label_startHorPos + 1 + doubleSpace - negAdjust, Config::space);
             }
             if (doubleSpace) { res_oneLine.pop_back(); }
             startOffset += labelWidth;

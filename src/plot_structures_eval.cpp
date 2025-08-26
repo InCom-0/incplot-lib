@@ -695,11 +695,15 @@ guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &
         (dp.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_minWidth_legend_vr
                                      : Config::axis_verName_width_vl);
 
-    if (dp.targetWidth.has_value() && desired_targetWidth > static_cast<long long>(dp.targetWidth.value())) {
-        return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+    if (dp.targetWidth.has_value()) {
+        if (desired_targetWidth > static_cast<long long>(dp.targetWidth.value())) {
+            return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+        }
     }
-    else if (dp.availableWidth.has_value() && desired_targetWidth > static_cast<long long>(dp.availableWidth.value())) {
-        return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+    else if (dp.availableWidth.has_value()) {
+        if (desired_targetWidth > static_cast<long long>(dp.availableWidth.value())) {
+            return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
+        }
     }
     // Neither targetWidth, neither availableWidth was specified ... fallback to some default value
     else {
