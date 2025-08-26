@@ -1,3 +1,4 @@
+#include "incplot/plot_structures.hpp"
 #include <incplot.hpp>
 #include <incstd.hpp>
 
@@ -27,13 +28,13 @@ int main(int argc, char *argv[]) {
     auto dpCtor            = incplot::CL_Args::get_dpCtorStruct().front();
     // dpCtor.tar_width = 250uz;
     // dpCtor.tar_height      = 6uz;
-    // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::Multiline));
+    dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarHS));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
     dpCtor.availableHeight = 35;
     dpCtor.availableWidth  = 192;
     // dpCtor.filter_outsideStdDev = 0;
-    // dpCtor.lts_colID            = 4;
+    dpCtor.lts_colID            = 5;
     // dpCtor.v_colIDs        = {9, 8, 7};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));

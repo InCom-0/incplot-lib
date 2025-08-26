@@ -681,9 +681,7 @@ guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
         return false;
     };
 
-    auto canAdd_prioritized =
-        detail::compute_groupByStdDevDistance(useableValCols_tpl, Config::inColGroup_stdDevMultiplierAllowance);
-    auto canAdd_prioritized_OLD = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
 
     // Verify that the selected column can actually be used for this plot
     if (dp.values_colIDs.size() > 0) { return dp_pr; }
