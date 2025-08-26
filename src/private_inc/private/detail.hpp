@@ -176,7 +176,8 @@ requires std::is_arithmetic_v<std::remove_cvref_t<T>>
 constexpr inline std::pair<double, std::string> rebase_2_SIPrefix(T &&value) {
     if (value == 0) { return {0, ""}; }
     else {
-        int target = std::log10(std::abs(value)) / 3 - (std::abs(value) < 1 ? 1 : 0);
+        int target = std::log10(std::abs(value));
+        target     = (target - (3 * (target == 3))) / 3 - (std::abs(value) < 1 ? 1 : 0);
         return {value / std::pow(1000, target), Config::si_prefixes.at(target + 10)};
     }
 }
