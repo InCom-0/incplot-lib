@@ -119,11 +119,12 @@ public:
     static inline size_t max_maxNumOfCategories        = 3uz;
     static inline size_t max_maxNumOfLinesInMultiline  = 3uz;
 
-    static inline size_t axisLabels_maxLength_vl       = 16uz;
-    static inline size_t axisLabels_maxLength_vr       = 16uz;
-    static inline size_t axisLabels_maxHeight_ht       = 8uz;
-    static inline size_t axisLabels_maxHeight_hb       = 8uz;
-    static inline size_t axisLabels_minWidth_legend_vr = 8uz;
+    static inline size_t axisLabels_maxLength_vl                         = 16uz;
+    static inline size_t axisLabels_maxLength_vr                         = 16uz;
+    static inline size_t axisLabels_maxHeight_ht                         = 8uz;
+    static inline size_t axisLabels_maxHeight_hb                         = 8uz;
+    static inline size_t axisLabels_minWidth_legend_vr                   = 8uz;
+    static inline size_t axisLabels_sizeMultipleForMultilegend_legend_vr = 8uz;
 
     static inline size_t axisLabels_padRight_vl = 1uz;
     static inline size_t axisLabels_padLeft_vr  = 1uz;

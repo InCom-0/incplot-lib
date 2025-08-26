@@ -1,3 +1,4 @@
+#include "incplot/config.hpp"
 #include <algorithm>
 #include <cassert>
 #include <concepts>
@@ -769,20 +770,38 @@ auto BarVM::compute_labels_vr(this auto &&self)
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
-        for (size_t lineID = 0; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
-            if (lineID < (self.dp.values_colIDs.size())) {
+        size_t lineID = 0;
+        for (; lineID < self.dp.values_colIDs.size(); ++lineID) {
+            self.labels_verRight.push_back(
+                std::string(Config::axisLabels_padLeft_vr, Config::space)
+                    .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                    .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
+                                                     self.labels_verRightWidth))
+                    .append(Config::term_setDefault));
+        }
+        for (; lineID < (static_cast<size_t>(self.areaHeight) - self.dp.values_colIDs.size()); ++lineID) {
+            self.labels_verRight.push_back(
+                std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+        }
+        if ((static_cast<size_t>(self.areaHeight) >
+             (Config::axisLabels_sizeMultipleForMultilegend_legend_vr * self.dp.values_colIDs.size()))) {
+            for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
-                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID_2)))
+                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
-            else {
+        }
+        else {
+            for (; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
                 self.labels_verRight.push_back(
                     std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
             }
         }
+
+
         // horBottom axis line
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
@@ -1268,7 +1287,7 @@ auto BarHM::compute_labels_hb(this auto &&self)
 
     size_t const labelCharCount = labelHeight * ((pureVertical) ? 1 : labelWidth);
     bool const   doubleSpace    = is_barHS ? false : self.values_data.size() > 1;
-    bool const evenSize = (((self.values_data.size() % 2) == 0) && not is_barHS);
+    bool const evenSize = ((self.values_data.size() % 2) == 0);
 
     size_t const label_startHorPos = (is_barHS || (not pureVertical)) ? 0 : self.values_data.size() / 2;
 
