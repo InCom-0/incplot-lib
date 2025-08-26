@@ -19,8 +19,9 @@ void set_cocp() {
 #define DATAFOLDER "../../demos/data/"
 
 // TODO: Fix the MultiLine
-// TODO: Fix the BarHM not actually working with any yValCol specified
 // TODO: Fix the automatic plot detection not really working
+// TODO: Implement at least some rudimentary versions of 'compute_priorityFactor'
+// TODO: Actually implement the comparator for '_reduce_possibilitiesToOne'
 int main(int argc, char *argv[]) {
 
     using namespace std::literals;
@@ -28,16 +29,17 @@ int main(int argc, char *argv[]) {
 
     set_cocp();
 
-    auto dpCtor = incplot::CL_Args::get_dpCtorStruct().front();
+    auto dpCtor            = incplot::CL_Args::get_dpCtorStruct().front();
     // dpCtor.tar_width = 250uz;
-    dpCtor.tar_height = 15uz;
-    dpCtor.plot_type_name       = std::type_index(typeid(plot_structures::BarVM));
+    dpCtor.tar_height      = 15uz;
+    dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarHM));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
-    dpCtor.availableHeight = 60;
+    dpCtor.availableHeight = 120;
+    dpCtor.availableWidth  = 196;
     // dpCtor.filter_outsideStdDev = 0;
     // dpCtor.lts_colID            = 4;
-    dpCtor.v_colIDs             = {9,8,7};
+    dpCtor.v_colIDs        = {9, 7};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

@@ -9,6 +9,7 @@
 #include <ranges>
 #include <string>
 #include <type_traits>
+#include <typeindex>
 #include <variant>
 
 #include <incplot/plot_structures.hpp>
@@ -42,6 +43,7 @@ std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataSto
                 return std::unexpected(incerr_c::make(GPT_explicitlySpecifiedDifferentPlotType));
             }
         }
+        else { dp_pr.get().plot_type_name = std::type_index(typeid(PS)); }
         return dp_pr;
     };
     auto c_fflags = [&](guess_firstParamType &&dp_pr) -> guess_retType {
