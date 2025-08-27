@@ -26,15 +26,18 @@ std::vector<size_t> compute_groupByStdDevDistance(auto useableValCols_tplView, d
 
     std::vector vecOfGroups(std::ranges::distance(useableValCols_tplView), std::vector<size_t>{});
 
-    for (auto lhs_iter = useableValCols_tplView.begin(); lhs_iter != useableValCols_tplView.end(); ++lhs_iter) {
-        for (auto rhs_iter = std::next(lhs_iter); rhs_iter != useableValCols_tplView.end(); ++rhs_iter) {
+    for (auto [lhs_ID, lhs_iter] = std::tuple(0uz, useableValCols_tplView.begin());
+         lhs_iter != useableValCols_tplView.end(); ++lhs_iter, ++lhs_ID) {
+
+        for (auto [rhs_ID, rhs_iter] = std::tuple(lhs_ID + 1, std::next(lhs_iter));
+             rhs_iter != useableValCols_tplView.end(); ++rhs_iter, ++rhs_ID) {
             auto const &lhsColAsse_ref = std::get<2>(*lhs_iter);
             auto const &rhsColAsse_ref = std::get<2>(*rhs_iter);
 
             double const meanDif = std::abs(lhsColAsse_ref.mean - rhsColAsse_ref.mean);
             if (meanDif < (stdDev * lhsColAsse_ref.standDev) && meanDif < (stdDev * rhsColAsse_ref.standDev)) {
-                vecOfGroups[std::get<0>(*lhs_iter)].push_back(std::get<0>(*rhs_iter));
-                vecOfGroups[std::get<0>(*rhs_iter)].push_back(std::get<0>(*lhs_iter));
+                vecOfGroups[lhs_ID].push_back(rhs_ID);
+                vecOfGroups[rhs_ID].push_back(lhs_ID);
             }
         }
     }
@@ -245,7 +248,8 @@ guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &d
         auto bestForLabels = std::ranges::max_element(filter2, [](auto const &lhs, auto const &rhs) {
             bool const lhs_AllTheSame = std::get<1>(std::get<1>(lhs)).is_allValuesIdentical;
             bool const rhs_AllTheSame = std::get<1>(std::get<1>(rhs)).is_allValuesIdentical;
-            bool const catCount_lhsSmaller = std::get<1>(std::get<1>(lhs)).categoryCount < std::get<1>(std::get<1>(rhs)).categoryCount;
+            bool const catCount_lhsSmaller =
+                std::get<1>(std::get<1>(lhs)).categoryCount < std::get<1>(std::get<1>(rhs)).categoryCount;
             return (lhs_AllTheSame && (not rhs_AllTheSame)) || catCount_lhsSmaller;
         });
 
