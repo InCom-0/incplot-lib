@@ -29,6 +29,7 @@ private:
         bool is_sameRepeatingSubsequences_whole;
         bool is_timeSeriesLikeIndex;
         bool is_allValuesNonNegative;
+        bool is_allValuesIdentical;
     };
 
 

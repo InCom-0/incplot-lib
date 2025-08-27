@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     dpCtor.availableHeight = 35;
     dpCtor.availableWidth  = 192;
     // dpCtor.filter_outsideStdDev = 0;
-    dpCtor.lts_colID            = 5;
+    // dpCtor.lts_colID            = 12;
     // dpCtor.v_colIDs        = {9, 8, 7};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
@@ -47,8 +47,9 @@ int main(int argc, char *argv[]) {
     std::string_view nile{DATAFOLDER "nile_data.csv"sv};
     std::string_view wine{DATAFOLDER "wine_quality_data.ndjson"sv};
     std::string_view wine_small{DATAFOLDER "wine_quality_data_small.csv"sv};
+    std::string_view german_eco{DATAFOLDER "german_economy.tsv"sv};
 
-    auto data = incstd::filesys::get_file_textual(wine_small);
+    auto data = incstd::filesys::get_file_textual(german_eco);
     if (not data.has_value()) { std::exit(1); }
 
     auto ds = parsers::Parser::parse(data.value());

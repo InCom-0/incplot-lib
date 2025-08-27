@@ -232,14 +232,21 @@ guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &d
         // Suitable: 1) string_like AND 2) not selected as catCol AND 3) not selected as valCol
         auto filter2 = std::views::filter(
             std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
-                return (std::get<0>(std::get<1>(ca)).colType == parsedVal_t::string_like) &&
-                       (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                       std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+                bool const stringLike = std::get<0>(std::get<1>(ca)).colType == parsedVal_t::string_like;
+                bool const tsLike     = std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex;
+                bool const notSelectedElsewhere =
+                    (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                    std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+
+                return (stringLike || tsLike) && notSelectedElsewhere;
             });
 
         // Best == the one with the most "categories" ie. least number of identical strings in rows
         auto bestForLabels = std::ranges::max_element(filter2, [](auto const &lhs, auto const &rhs) {
-            return std::get<1>(std::get<1>(lhs)).categoryCount < std::get<1>(std::get<1>(rhs)).categoryCount;
+            bool const lhs_AllTheSame = std::get<1>(std::get<1>(lhs)).is_allValuesIdentical;
+            bool const rhs_AllTheSame = std::get<1>(std::get<1>(rhs)).is_allValuesIdentical;
+            bool const catCount_lhsSmaller = std::get<1>(std::get<1>(lhs)).categoryCount < std::get<1>(std::get<1>(rhs)).categoryCount;
+            return (lhs_AllTheSame && (not rhs_AllTheSame)) || catCount_lhsSmaller;
         });
 
         if (bestForLabels == filter2.end()) {
@@ -675,7 +682,7 @@ guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
             return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
         }
     }
-   // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
+    // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
     auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
         // return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
         return false;

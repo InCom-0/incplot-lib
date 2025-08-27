@@ -130,6 +130,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
         else { return false; }
         std::unreachable();
     };
+    auto is_AllTheSame = [&](auto const &vecRef) -> bool {
+        for (auto const &item : vecRef) {
+            if (item != vecRef.front()) { return false; }
+        }
+        return true;
+    };
 
     for (auto const &oneCol : ds.m_data) {
         dp.m_colAssessments.push_back({0, false, false, false, false, false, false});
@@ -140,6 +146,7 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
         dp.m_colAssessments.back().is_sameRepeatingSubsequences = std::visit(is_srss, oneCol.variant_data);
         dp.m_colAssessments.back().is_timeSeriesLikeIndex       = std::visit(is_tsli, oneCol.variant_data);
         dp.m_colAssessments.back().is_allValuesNonNegative      = std::visit(is_nonNeg, oneCol.variant_data);
+        dp.m_colAssessments.back().is_allValuesIdentical        = std::visit(is_AllTheSame, oneCol.variant_data);
     }
     return dp;
 }
