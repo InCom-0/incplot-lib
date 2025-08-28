@@ -27,7 +27,7 @@ using evaAllPoss_rt = decltype(incom::terminal_plot::evaluate_allPSpossibilities
 std::expected<DesiredPlot, incerr_c> _reduce_possibilitiesToOne(evaAllPoss_rt const &vec_possibilities) {
     auto fv  = std::views::filter(vec_possibilities, [](auto const &item) { return item.second.has_value(); });
     auto res = std::ranges::max_element(
-        fv, [](auto &lhs, auto &rhs) { return lhs.second.value().second < rhs.second.value().second; });
+        fv, [](auto const &lhs, auto const &rhs) { return lhs.second.value().second < rhs.second.value().second; });
 
     if (res == fv.end()) { return std::unexpected(incerr_c::make(EVAPS_impossibleToDrawAnyPlot)); }
     else { return res->second.value().first; }
