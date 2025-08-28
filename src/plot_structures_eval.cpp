@@ -23,31 +23,27 @@ using enum Unexp_plotDrawer;
 
 namespace detail {
 std::vector<size_t> compute_groupByStdDevDistance(auto useableValCols_tplView, double const stdDev) {
+    auto maxID = std::get<0>(*std::ranges::max_element(
+        useableValCols_tplView, [](auto const &lhs, auto const &rhs) { return std::get<0>(lhs) < std::get<0>(rhs); }));
 
-    std::vector vecOfGroups(std::ranges::distance(useableValCols_tplView), std::vector<size_t>{});
-
-    for (auto [lhs_ID, lhs_iter] = std::tuple(0uz, useableValCols_tplView.begin());
-         lhs_iter != useableValCols_tplView.end(); ++lhs_iter, ++lhs_ID) {
-
-        for (auto [rhs_ID, rhs_iter] = std::tuple(lhs_ID + 1, std::next(lhs_iter));
-             rhs_iter != useableValCols_tplView.end(); ++rhs_iter, ++rhs_ID) {
+    std::vector vecOfGroups(maxID + 1, std::vector<size_t>{});
+    for (auto lhs_iter = useableValCols_tplView.begin(); lhs_iter != useableValCols_tplView.end(); ++lhs_iter) {
+        vecOfGroups[std::get<0>(*lhs_iter)].push_back(std::get<0>(*lhs_iter));
+        for (auto rhs_iter = std::next(lhs_iter); rhs_iter != useableValCols_tplView.end(); ++rhs_iter) {
             auto const &lhsColAsse_ref = std::get<2>(*lhs_iter);
             auto const &rhsColAsse_ref = std::get<2>(*rhs_iter);
 
             double const meanDif = std::abs(lhsColAsse_ref.mean - rhsColAsse_ref.mean);
             if (meanDif < (stdDev * lhsColAsse_ref.standDev) && meanDif < (stdDev * rhsColAsse_ref.standDev)) {
-                vecOfGroups[lhs_ID].push_back(rhs_ID);
-                vecOfGroups[rhs_ID].push_back(lhs_ID);
+                vecOfGroups[std::get<0>(*lhs_iter)].push_back(std::get<0>(*rhs_iter));
+                vecOfGroups[std::get<0>(*rhs_iter)].push_back(std::get<0>(*lhs_iter));
             }
         }
     }
 
-    auto resTpl = *std::ranges::max_element(
-        std::views::zip(std::views::iota(0uz), vecOfGroups),
-        [](auto const &lhs, auto const &rhs) { return std::get<1>(lhs).size() < std::get<1>(rhs).size(); });
-
-    std::get<1>(resTpl).push_back(std::get<0>(resTpl));
-    return std::get<1>(resTpl);
+    auto res = *std::ranges::max_element(vecOfGroups,
+                                         [](auto const &lhs, auto const &rhs) { return lhs.size() < rhs.size(); });
+    return res;
 }
 
 std::expected<size_t, incerr_c> addColsUntil(std::vector<size_t> &out_dp_valCol, std::vector<size_t> useableValCols,
