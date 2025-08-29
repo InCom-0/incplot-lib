@@ -442,6 +442,8 @@ protected:
 
     auto compute_axis_hb(this auto &&self)
         -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
+    auto compute_labels_vr(this auto &&self)
+        -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
     auto compute_labels_hb(this auto &&self)
         -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c>;
 

@@ -79,6 +79,7 @@ auto evaluate_PSs(DesiredPlot dp, DataStore const &ds) {
                                             .transform(std::bind_back(PSs::compute_priorityFactor, ds))}...}};
     return res;
 }
+
 } // namespace detail_ps
 
 
@@ -262,12 +263,6 @@ auto BarV::compute_descriptors(this auto &&self)
 
         self.areaHeight = std::visit([](auto &a) { return std::ranges::count_if(a, [](auto &&a2) { return true; }); },
                                      self.values_data.at(0));
-        // if (self.dp.availableHeight.has_value() &&
-        //     self.areaHeight < static_cast<long long>(self.dp.availableHeight.value()) - self.pad_top -
-        //                           self.axisName_horTop_bool - self.labels_horTop.size() - 2ll -
-        //                           self.labels_horBottom.size() - self.axisName_horBottom_bool - self.pad_bottom) {
-        //     return std::unexpected(incerr_c::make(C_DSC_areaHeight_insufficient));
-        // }
     }
     else if (not self.dp.targetHeight.has_value()) {
         if (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::Multiline>()) {
@@ -1190,45 +1185,43 @@ auto BarHM::compute_descriptors(this auto &&self)
     auto selColNameSizes = std::views::transform(
         self.dp.values_colIDs, [&](auto &&colID) { return detail::strlen_utf8(self.ds.m_data.at(colID).name); });
 
+    // Special case when the only one value column or when the plot type is 'stacked'
+    size_t const oneGroupWidth =
+        (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>()) ? 1 : self.values_data.size();
+
+    // PLOT AREA
+    self.areaWidth =
+        ((self.data_rowCount * oneGroupWidth) + (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount));
+    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth_BarHM)) {
+        return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
+    }
+
+    // HLPR (-2 is for the 2 vertical axes positions)
+    size_t tarWidth_exLegend = self.areaWidth + self.pad_left +
+                               (Config::axis_verName_width_vl * self.axisName_verLeft_bool) + self.labels_verLeftWidth +
+                               2ll + (Config::axis_verName_width_vr * self.axisName_verRight_bool) + self.pad_right;
+
     self.labels_verRightWidth =
         std::min(Config::axisLabels_maxLength_vr,
                  std::min(std::ranges::max(selColNameSizes),
-                          static_cast<size_t>((self.dp.targetWidth.value() - self.pad_left - self.pad_right) / 4)));
+                          static_cast<size_t>(self.dp.targetWidth.value() - tarWidth_exLegend)));
 
     // VERTICAL AXES NAMES ... LEFT if values col size == 1, RIGHT never
     if (self.dp.values_colIDs.size() > 1) { self.axisName_verLeft_bool = false; }
     else { self.axisName_verLeft_bool = true; }
     self.axisName_verRight_bool = false;
 
-    // Special case when the only one value column or when the plot type is 'stacked'
-    size_t const oneGroupWidth =
-        (self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>()) ? 1 : self.values_data.size();
 
-    // PLOT AREA
-    // Plot area width (-2 is for the 2 vertical axes positions)
-    self.areaWidth = self.dp.targetWidth.value() - self.pad_left -
-                     (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2ll -
-                     self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
-                     self.pad_right;
-    if (self.areaWidth < static_cast<long long>(Config::min_areaWidth_BarHM)) {
-        return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
-    }
-    // TODO: PROBABLY UNNECESSARY but verify later
-    // else if (self.areaWidth < ((self.data_rowCount * oneGroupWidth) +
-    //    //                            (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount))) {
-    //     return std::unexpected(incerr_c::make(C_DSC_areaWidth_insufficient));
-    // }
-    else {
-        self.areaWidth = ((self.data_rowCount * oneGroupWidth) +
-                          (oneGroupWidth == 1 ? self.data_rowCount - 1 : 2 * self.data_rowCount));
-    }
+    // self.areaWidth = self.dp.targetWidth.value() - self.pad_left -
+    //                  (Config::axis_verName_width_vl * self.axisName_verLeft_bool) - self.labels_verLeftWidth - 2ll -
+    //                  self.labels_verRightWidth - (Config::axis_verName_width_vr * self.axisName_verRight_bool) -
+    //                  self.pad_right;
 
     // LABELS AND AXIS NAME HOR BOTTOM
-    self.axisName_horBottom_bool = false;
+    self.axisName_horBottom_bool = true;
 
     // LABELS AND AXIS NAME HOR TOP ... probably nothing so keeping 0 size
     // ...
-
 
     // PLOT AREA HEIGHT
     if (not self.dp.targetHeight.has_value()) {
@@ -1241,8 +1234,30 @@ auto BarHM::compute_descriptors(this auto &&self)
         }
     }
     else {
+        auto olset = [](auto &var) -> size_t {
+            if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+                return std::ranges::max(
+                    std::views::transform(var, [](auto const &a) { return detail::strlen_utf8(a); }));
+            }
+            else if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
+                return Config::max_sizeOfValueLabels;
+            }
+            else { static_assert(false); } // This should never be instantiated
+        };
+        auto const realMaxLabelSize = std::visit(olset, self.labelTS_data.value());
+        bool const is_barHS         = self.dp.plot_type_name == detail::get_typeIndex<plot_structures::BarHS>();
+
+        // If max label size is small enough we will make all 1 width vertical (usually used for arithmetic values)
+        bool const   pureVertical = (realMaxLabelSize <= Config::max_sizeOfValueLabels) || is_barHS;
+        size_t const labelWidth   = pureVertical ? 1 : self.values_data.size();
+
+        // '(realMaxLabelSize + labelWidth - 1) / labelWidth)' means rounded up to nearest integer
+        size_t const labelHeight =
+            std::min(Config::axisLabels_maxHeight_hb, (realMaxLabelSize + labelWidth - 1) / labelWidth);
+
+
         self.areaHeight = static_cast<long long>(self.dp.targetHeight.value()) - self.pad_top -
-                          self.axisName_horTop_bool - self.labels_horTop.size() - 2ll - self.labels_horBottom.size() -
+                          self.axisName_horTop_bool - self.labels_horTop.size() - 2ll - labelHeight -
                           self.axisName_horBottom_bool - self.pad_bottom;
     }
     if (self.areaHeight < static_cast<long long>(Config::min_areaHeight)) {
@@ -1265,6 +1280,63 @@ auto BarHM::compute_axis_hb(this auto &&self)
     for (size_t id = 0; id < self.areaWidth; ++id) { self.axis_horBottom.push_back(Config::axisFiller_b); }
     return std::ref(self);
 };
+auto BarHM::compute_labels_vr(this auto &&self)
+    -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
+
+    // Categories are specified by column names
+    if (self.dp.values_colIDs.size() > 1) {
+        // horTop axis line
+        self.labels_verRight.push_back(
+            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+
+        size_t lineID = 0;
+        for (; lineID < self.dp.values_colIDs.size(); ++lineID) {
+            if (lineID == self.areaHeight) { break; }
+            self.labels_verRight.push_back(
+                std::string(Config::axisLabels_padLeft_vr, Config::space)
+                    .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                    .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
+                                                     self.labels_verRightWidth))
+                    .append(Config::term_setDefault));
+        }
+        if (((self.areaHeight) - static_cast<long long>(self.dp.values_colIDs.size())) > 0) {
+            for (; lineID < (static_cast<size_t>(self.areaHeight) - self.dp.values_colIDs.size()); ++lineID) {
+                self.labels_verRight.push_back(
+                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+            }
+        }
+        if ((static_cast<size_t>(self.areaHeight) >
+             (Config::axisLabels_sizeMultipleForMultilegend_legend_vr * self.dp.values_colIDs.size()))) {
+            for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
+                self.labels_verRight.push_back(
+                    std::string(Config::axisLabels_padLeft_vr, Config::space)
+                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID_2)))
+                        .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
+                                                         self.labels_verRightWidth))
+                        .append(Config::term_setDefault));
+            }
+        }
+        else {
+            for (; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
+                self.labels_verRight.push_back(
+                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+            }
+        }
+
+
+        // horBottom axis line
+        self.labels_verRight.push_back(
+            std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+    }
+
+    // If no categories then all VR labels are empty strings
+    else {
+        for (int i = 0; i < (self.areaHeight + 2); ++i) { self.labels_verRight.push_back(""); }
+    }
+
+    return std::ref(self);
+}
+
 auto BarHM::compute_labels_hb(this auto &&self)
     -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
@@ -1286,7 +1358,7 @@ auto BarHM::compute_labels_hb(this auto &&self)
 
     // '(realMaxLabelSize + labelWidth - 1) / labelWidth)' means rounded up to nearest integer
     size_t const labelHeight =
-        std::min(Config::axisLabels_maxHeight_hb, (realMaxLabelSize + labelWidth - 1) / labelWidth);
+        std::min(Config::axisLabels_maxHeight_hb, (realMaxLabelSize + labelWidth - 1 - pureVertical) / labelWidth);
 
     size_t const labelCharCount    = labelHeight * labelWidth;
     bool const   doubleSpace       = is_barHS ? false : self.values_data.size() > 1;
@@ -1483,20 +1555,53 @@ auto BarHS::compute_labels_vr(this auto &&self)
         self.labels_verRight.push_back(
             std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
 
-        size_t lineID_start = 0;
+        size_t lineID = 0;
+
         for (auto const [bp, colID] : std::views::zip(
                  (std::views::reverse(std::views::take(self.dp.color_basePalette, self.dp.values_colIDs.size()))),
                  std::views::reverse(self.dp.values_colIDs))) {
-
+            // Need to break if the area height is smaller than the desired legend height
+            if (lineID == self.areaHeight) { break; }
             self.labels_verRight.push_back(
                 std::string(Config::axisLabels_padLeft_vr, Config::space)
                     .append(TermColors::get_basicColor(bp))
                     .append(detail::trim2Size_ending(self.ds.m_data.at(colID).name, self.labels_verRightWidth))
                     .append(Config::term_setDefault));
-            lineID_start++;
+            lineID++;
+        }
+        if (((self.areaHeight) - static_cast<long long>(self.dp.values_colIDs.size())) > 0) {
+            for (; lineID < (static_cast<size_t>(self.areaHeight) - self.dp.values_colIDs.size()); ++lineID) {
+                self.labels_verRight.push_back(
+                    std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
+            }
+        }
+        if ((static_cast<size_t>(self.areaHeight) >
+             (Config::axisLabels_sizeMultipleForMultilegend_legend_vr * self.dp.values_colIDs.size()))) {
+
+            for (size_t lineID_2 = 0;
+                 auto const [bp, colID] : std::views::zip(
+                     (std::views::reverse(std::views::take(self.dp.color_basePalette, self.dp.values_colIDs.size()))),
+                     std::views::reverse(self.dp.values_colIDs))) {
+                self.labels_verRight.push_back(
+                    std::string(Config::axisLabels_padLeft_vr, Config::space)
+                        .append(TermColors::get_basicColor(bp))
+                        .append(detail::trim2Size_ending(self.ds.m_data.at(colID).name, self.labels_verRightWidth))
+                        .append(Config::term_setDefault));
+                lineID++;
+                lineID_2++;
+            }
+
+            // for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
+            //     self.labels_verRight.push_back(
+            //         std::string(Config::axisLabels_padLeft_vr, Config::space)
+            //             .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID_2)))
+            //             .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
+            //                                              self.labels_verRightWidth))
+            //             .append(Config::term_setDefault));
+            // }
         }
 
-        for (size_t lineID = lineID_start; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
+        for (; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
             self.labels_verRight.push_back(
                 std::string(self.labels_verRightWidth + Config::axisLabels_padLeft_vr, Config::space));
         }

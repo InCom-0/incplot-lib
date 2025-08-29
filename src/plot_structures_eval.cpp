@@ -11,6 +11,7 @@
 
 #include <incplot/plot_structures.hpp>
 #include <incstd/algos.hpp>
+#include <private/detail.hpp>
 
 
 namespace incom {
@@ -308,10 +309,11 @@ guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &d
         // Is known ... using it after scaling down a little
         else { dp.targetWidth = static_cast<size_t>(dp.availableWidth.value() * Config::scale_availablePlotWidth); }
     }
-
-    if (dp.availableWidth.has_value()) {
-        if (dp.targetWidth.value() > dp.availableWidth.value()) {
-            return std::unexpected(incerr_c::make(GSZ_tarWidthLargerThanAvailableWidth));
+    else {
+        if (dp.availableWidth.has_value()) {
+            if (dp.targetWidth.value() > dp.availableWidth.value()) {
+                return std::unexpected(incerr_c::make(GSZ_tarWidthLargerThanAvailableWidth));
+            }
         }
     }
 
@@ -702,39 +704,47 @@ guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
 guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
-    // Compute rowCount as it is required to evaluate whether there is enough 'width' to fit the plot
-    auto compute_rowCount = [&](auto &var) -> size_t { return std::ranges::to<std::vector>(var).size(); };
-
-    auto         dataViews = ds.get_filteredViewOfData(dp.values_colIDs, dp.filterFlags);
-    size_t const rowCount  = std::visit(compute_rowCount, dataViews.front());
+    // rowCount are the unfiltered row (filterFlag == 0u)
+    size_t const rowCount = std::ranges::count(dp.filterFlags, 0u);
 
     size_t const desired_areaWidth =
         ((rowCount * dp.values_colIDs.size()) + (dp.values_colIDs.size() == 1 ? rowCount - 1 : 2 * rowCount));
 
     // +2ll for the 2 vertical axes
-    long long const desired_targetWidth =
+    size_t const minDesired_targetWidth =
         desired_areaWidth + Config::ps_padLeft + Config::ps_padRight + 2ll + Config::max_valLabelSize +
         Config::axisLabels_padRight_vl +
         (dp.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_minWidth_legend_vr
                                      : Config::axis_verName_width_vl);
 
     if (dp.targetWidth.has_value()) {
-        if (desired_targetWidth > static_cast<long long>(dp.targetWidth.value())) {
+        if (minDesired_targetWidth > dp.targetWidth.value()) {
             return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
         }
     }
     else if (dp.availableWidth.has_value()) {
-        if (desired_targetWidth > static_cast<long long>(dp.availableWidth.value())) {
+        if (minDesired_targetWidth > dp.availableWidth.value()) {
             return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
         }
     }
     // Neither targetWidth, neither availableWidth was specified ... fallback to some default value
     else {
-        if (desired_targetWidth > Config::default_targetWidth) {
+        if (minDesired_targetWidth > Config::default_targetWidth) {
             return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
         }
     }
-    dp.targetWidth = desired_targetWidth;
+
+    size_t const maxDesired_targetWidth =
+        desired_areaWidth + Config::ps_padLeft + Config::ps_padRight + 2ll + Config::max_valLabelSize +
+        Config::axisLabels_padRight_vl +
+        (dp.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_maxLength_vr
+                                     : Config::axis_verName_width_vl);
+
+    if (dp.targetWidth.has_value()) { dp.targetWidth = std::min(dp.targetWidth.value(), maxDesired_targetWidth); }
+    else if (dp.availableWidth.has_value()) {
+        dp.targetWidth = std::min(dp.availableWidth.value(), maxDesired_targetWidth);
+    }
+    else { dp.targetWidth = std::min(Config::default_targetWidth, maxDesired_targetWidth); }
 
     // Height
     if (dp.targetHeight.has_value() &&
@@ -770,38 +780,46 @@ guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
 guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
-    // Compute rowCount as it is required to evaluate whether there is enough 'width' to fit the plot
-    auto compute_rowCount = [&](auto &var) -> size_t { return std::ranges::to<std::vector>(var).size(); };
-
-    auto         dataViews = ds.get_filteredViewOfData(dp.values_colIDs, dp.filterFlags);
-    size_t const rowCount  = std::visit(compute_rowCount, dataViews.front());
+    // rowCount are the unfiltered row (filterFlag == 0u)
+    size_t const rowCount = std::ranges::count(dp.filterFlags, 0u);
 
     size_t const desired_areaWidth = (2 * rowCount) - 1;
 
     // +2ll for the 2 vertical axes
-    long long const desired_targetWidth =
+    size_t const minDesired_targetWidth =
         desired_areaWidth + Config::ps_padLeft + Config::ps_padRight + 2ll + Config::max_valLabelSize +
         Config::axisLabels_padRight_vl +
         (dp.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_minWidth_legend_vr
                                      : Config::axis_verName_width_vl);
 
     if (dp.targetWidth.has_value()) {
-        if (desired_targetWidth > static_cast<long long>(dp.targetWidth.value())) {
+        if (minDesired_targetWidth > dp.targetWidth.value()) {
             return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
         }
     }
     else if (dp.availableWidth.has_value()) {
-        if (desired_targetWidth > static_cast<long long>(dp.availableWidth.value())) {
+        if (minDesired_targetWidth > dp.availableWidth.value()) {
             return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
         }
     }
     // Neither targetWidth, neither availableWidth was specified ... fallback to some default value
     else {
-        if (desired_targetWidth > Config::default_targetWidth) {
+        if (minDesired_targetWidth > Config::default_targetWidth) {
             return std::unexpected(incerr_c::make(GSZ_iferredTargetWidthLargerThanAvailableWidth));
         }
     }
-    dp.targetWidth = desired_targetWidth;
+
+    size_t const maxDesired_targetWidth =
+        desired_areaWidth + Config::ps_padLeft + Config::ps_padRight + 2ll + Config::max_valLabelSize +
+        Config::axisLabels_padRight_vl +
+        (dp.values_colIDs.size() > 1 ? Config::axisLabels_padLeft_vr + Config::axisLabels_maxLength_vr
+                                     : Config::axis_verName_width_vl);
+
+    if (dp.targetWidth.has_value()) { dp.targetWidth = std::min(dp.targetWidth.value(), maxDesired_targetWidth); }
+    else if (dp.availableWidth.has_value()) {
+        dp.targetWidth = std::min(dp.availableWidth.value(), maxDesired_targetWidth);
+    }
+    else { dp.targetWidth = std::min(Config::default_targetWidth, maxDesired_targetWidth); }
 
     // Height
     if (dp.targetHeight.has_value() &&
