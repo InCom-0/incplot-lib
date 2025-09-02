@@ -18,25 +18,31 @@ using enum Unexp_plotDrawer;
 
 // MAIN SIMPLIFIED INTERFACE OF THE LIBRARY
 
-std::expected<std::string, incerr_c> make_plot(DesiredPlot const &dp_ctrs, std::string_view inputData);
-std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::string_view inputData);
 
-std::string make_plot_collapseUnExp(DesiredPlot const &dp_ctrs, std::string_view inputData);
-std::string make_plot_collapseUnExp(DesiredPlot &&dp_ctrs, std::string_view inputData);
+std::expected<std::string, incerr_c>        make_plot(DesiredPlot &&dp_ctrs, std::string_view inputData);
+inline std::expected<std::string, incerr_c> make_plot(DesiredPlot const &dp_ctrs, std::string_view inputData) {
+    return make_plot(DesiredPlot(dp_ctrs), inputData);
+}
 
-std::expected<var_plotTypes, incerr_c> build_plot_structure(DesiredPlot const &dp, DataStore const &ds);
+std::string        make_plot_collapseUnExp(DesiredPlot &&dp_ctrs, std::string_view inputData);
+inline std::string make_plot_collapseUnExp(DesiredPlot const &dp_ctrs, std::string_view inputData) {
+    return make_plot_collapseUnExp(DesiredPlot(dp_ctrs), inputData);
+}
 
-std::expected<DesiredPlot, incerr_c>
-evaluate_onePSpossibility(DesiredPlot const &dp, DataStore const &ds);
+std::expected<var_plotTypes, incerr_c> build_plotStructure(DesiredPlot const &dp, DataStore const &ds);
 
-std::expected<DesiredPlot, incerr_c>
-evaluate_onePSpossibility(DesiredPlot &&dp, DataStore const &ds);
+std::expected<DesiredPlot, incerr_c>        evaluate_onePSpossibility(DesiredPlot const &dp, DataStore const &ds);
+inline std::expected<DesiredPlot, incerr_c> evaluate_onePSpossibility(DesiredPlot &&dp, DataStore const &ds) {
+    return evaluate_onePSpossibility(dp, ds);
+}
 
 std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
 evaluate_allPSpossibilities(DesiredPlot const &dp, DataStore const &ds);
 
-std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
-evaluate_allPSpossibilities(DesiredPlot &&dp, DataStore const &ds);
+inline std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
+evaluate_allPSpossibilities(DesiredPlot &&dp, DataStore const &ds) {
+    return evaluate_allPSpossibilities(dp, ds);
+}
 
 
 } // namespace terminal_plot

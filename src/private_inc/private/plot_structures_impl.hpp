@@ -71,6 +71,7 @@ std::expected<DesiredPlot, incerr_c> evaluate_PS(DesiredPlot dp, DataStore const
 template <typename... PSs>
 requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
 auto evaluate_PSs(DesiredPlot dp, DataStore const &ds) {
+    // prepDP is the part of DP evaluation that is always the same regardless of the plotType
     auto dp_exp = evaluate_prepDP(std::move(dp), ds);
 
     std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>> res{

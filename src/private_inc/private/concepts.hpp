@@ -23,7 +23,7 @@ constexpr auto get_typeIndex(T) {
 template <typename BASE, typename... Ts>
 requires(std::is_base_of_v<BASE, Ts>, ...) && incom::standard::concepts::types_noneSame_v<Ts...>
 struct VariantTypeMap {
-    // PTC = Types To Pass To Constructors
+    // PTC = Pass To Constructors
     template <typename... PTC>
     static constexpr inline auto gen_typeMap(PTC const &...ptc) {
         // return incom::standard::variant_utils::VariantUtility<Ts...>::gen_typeMap(ptc...);
