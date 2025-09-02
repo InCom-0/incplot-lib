@@ -108,7 +108,7 @@ std::expected<var_plotTypes, incerr_c> build_plotStructure(DesiredPlot const &dp
     }
     else {
         auto ol = [&](auto &var) -> std::expected<var_plotTypes, incerr_c> {
-            return var.build_self().transform([](auto &&ps) -> var_plotTypes { return var_plotTypes(ps); });
+            return var.build_self().transform([](auto &&ps) -> var_plotTypes { return var_plotTypes(std::move(ps)); });
         };
         auto varCpy = found->second;
         return std::visit(ol, varCpy);

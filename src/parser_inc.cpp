@@ -198,7 +198,7 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::dispatch_toParsers(input_
 std::expected<DataStore, incerr_c> Parser::parse(std::string_view const sv) {
     std::string_view const trimmed = get_trimmedSV(sv);
 
-    auto c_dstr = [](auto const &&data) { return DataStore(data); };
+    auto c_dstr = [](auto &&data) { return DataStore(std::forward<decltype(data)>(data)); };
     return assess_inputType(trimmed).and_then(std::bind_back(dispatch_toParsers, trimmed)).transform(c_dstr);
 }
 
@@ -314,34 +314,7 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto     
 // JSON AND NDJSON
 std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_NDJSON(std::string_view const &trimmed) {
 
-    // cppcoro::static_thread_pool threadPool(4);
-
-    // using retType = cppcoro::task<NLMjson>;
-
-
-    // auto process_chunk_async = [](cppcoro::static_thread_pool &tp, auto const inputData) -> retType {
-    //     co_await tp.schedule();
-    //     co_return NLMjson::parse(inputData);
-    // };
-
-    // auto run = [&](cppcoro::static_thread_pool &tp,
-    //                std::string_view const &trimmed) -> cppcoro::task<std::vector<NLMjson>> {
-    //     std::vector<retType> tasks;
-
-    //     auto ssv = std::views::split(trimmed, '\n') |
-    //                std::views::transform([](auto const &in) { return std::string_view(in); });
-
-    //     for (auto const &item : ssv) { tasks.push_back(process_chunk_async(tp, item)); }
-    //     auto aa = co_await cppcoro::when_all(std::move(tasks));
-
-    //     co_return aa;
-    // };
-
-    // = cppcoro::sync_wait(run(threadPool, trimmed));
-
     std::vector<NLMjson> parsed;
-
-
     for (auto const &oneLine : std::views::split(trimmed, '\n') |
                                    std::views::transform([](auto const &in) { return std::string_view(in); })) {
         NLMjson oneLineJson;
