@@ -17,7 +17,6 @@ void set_cocp() {
 
 #define DATAFOLDER "../../demos/data/"
 
-// TODO: Sorting of potentially guessed value cols seems not such a great idea ... maybe reconsider later
 int main(int argc, char *argv[]) {
 
     using namespace std::literals;
@@ -28,14 +27,14 @@ int main(int argc, char *argv[]) {
     auto dpCtor            = incplot::CL_Args::get_dpCtorStruct().front();
     // dpCtor.tar_width = 250uz;
     // dpCtor.tar_height      = 12uz;
-    // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarHS));
+    dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::Multiline));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
     dpCtor.availableHeight = 35;
     dpCtor.availableWidth  = 192;
     // dpCtor.filter_outsideStdDev = 0;
-    dpCtor.lts_colID            = 0;
-    dpCtor.v_colIDs        = {2, 3,4,5,6,7};
+    // dpCtor.lts_colID            = 0;
+    // dpCtor.v_colIDs        = {2, 3,4};
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));

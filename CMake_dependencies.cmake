@@ -49,13 +49,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(magic_enum)
 
-# FetchContent_Declare(
-#     cppcoro
-#     GIT_REPOSITORY https://github.com/andreasbuhr/cppcoro.git
-#     GIT_TAG        main
-# )
-# FetchContent_MakeAvailable(cppcoro)
-
 # FetchContent_Declare (
 #     tracy
 #     GIT_REPOSITORY https://github.com/wolfpld/tracy.git

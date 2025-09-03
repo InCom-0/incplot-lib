@@ -6,8 +6,9 @@
 #include <utility>
 #include <variant>
 
-#include <private/detail.hpp>
 #include <incstd/algos.hpp>
+#include <private/detail.hpp>
+
 
 namespace incom {
 namespace terminal_plot {
@@ -188,10 +189,10 @@ public:
                     res.push_back(item);
                 }
                 return res;
-                //TODO: Once on GCC 15 (or supporting) use the below incantation instead as its simpler
-                // return std::vector<double>{std::from_range, varVec | std::views::transform([](auto &&item) {
-                //                                                 return static_cast<double>(item);
-                //                                             })};
+                // TODO: Once on GCC 15 (or supporting) use the below incantation instead as its simpler
+                //  return std::vector<double>{std::from_range, varVec | std::views::transform([](auto &&item) {
+                //                                                  return static_cast<double>(item);
+                //                                              })};
             }
             else { return res; }
             std::unreachable();
@@ -215,20 +216,18 @@ public:
         // Interpolate 'in between' every 2 points to actually get a line in the plot visually
         std::vector<size_t> interpolatedValues;
         for (size_t catID = 0; auto one_yValCol : view_varValCols) {
-            auto olSet = [&](auto &oneCol) -> void {
-                auto &yValCol_data = oneCol;
+            auto olSet = [&](auto const &oneCol) -> void {
+                // auto &yValCol_data = oneCol;
 
                 // yValCol needs to be arithmetic
-                if constexpr (std::is_arithmetic_v<
-                                  std::ranges::range_value_t<std::remove_cvref_t<decltype(yValCol_data)>>>) {
-                    for (auto const &[pointA, pointB] :
-                         (std::views::zip(yValCol_data, xValues) | std::views::pairwise)) {
+                if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(oneCol)>>>) {
+                    for (auto const &[pointA, pointB] : (std::views::zip(oneCol, xValues) | std::views::pairwise)) {
                         auto intpLine = construct_interpolatedLine(
                             pointA, pointB, (std::abs((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
-                            std::abs(std::get<1>(pointB) - std::get<1>(pointA)));
+                            std::abs(std::get<1>(pointB) - std::get<1>(pointA)/ xStepSize));
 
-                        for (size_t rowID = 0; rowID < intpLine.first.size(); ++rowID) {
-                            placePointOnCanvas(intpLine.first.at(rowID), intpLine.second.at(rowID), catID);
+                        for (auto const &[first, second] : std::ranges::views::zip(intpLine.first, intpLine.second)) {
+                            placePointOnCanvas(first, second, catID);
                         }
                     }
                 }

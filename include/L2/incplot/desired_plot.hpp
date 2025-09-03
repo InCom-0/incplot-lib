@@ -91,7 +91,6 @@ public:
     std::optional<double> filter_outsideStdDev  = std::nullopt;
     std::optional<bool>   display_filtered_bool = std::nullopt;
 
-    // TODO: Provide some compile time programmatic way to set the default sizes here
     struct DP_CtorStruct {
         std::optional<size_t>          tar_width      = std::nullopt;
         std::optional<size_t>          tar_height     = std::nullopt;
