@@ -483,7 +483,7 @@ guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore c
     // The above would require some very clever logic to find the 'most suitable' columns to select
 
     if (dp.cat_colID.has_value() && dp.values_colIDs.size() > Config::max_numOfValColsScatterCat) {
-        return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForScatterCat));
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForScatterCat));
     }
     else if (dp.values_colIDs.size() > Config::max_numOfValColsScatterNonCat) {
         return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForScatterNonCat));
@@ -591,7 +591,7 @@ guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() > Config::max_maxNumOfLinesInMultiline) {
-        return std::unexpected(incerr_c::make(GVC_selectedMoreThan3YvalColForMultiline));
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThanAllowedOfYvalColsForMultiline));
     }
 
     auto lam_filter = [&](auto const &tpl) {

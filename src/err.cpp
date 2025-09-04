@@ -147,13 +147,62 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
     }
 }
 
-// COMMENTED OUT UNTILL THIS ERROR TYPE IS DOCUMENTED
-// TODO: Implement the method below
+// DON'T NEED TO IMPLEMENT THE BELOW
 // std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e) {
 //     switch (e) {
 //         default: return "Undocumented error type"sv;
 //     }
 // }
+
+std::string_view incerr_msg_dispatch(Unexp_parser &&e) {
+    switch (e) {
+        case Unexp_parser::JSON_malformattedArrayLike:
+            return "Input data in JSON format seem malformated for use in incplot."sv;
+        case Unexp_parser::JSON_objectsNotOfSameSize:
+            return "JSON objects (ie. data rows) inside input data are not the same size."sv;
+        case Unexp_parser::JSON_valueTypeDoesntMatch:
+            return "Some value types inside JSON do not match across JSON objects (ie. data rows)."sv;
+        case Unexp_parser::JSON_keyNameDoesntMatch:
+            return "Some key (ie. column name) inside JSON do not match across all JSON objects (ie. data rows)."sv;
+        case Unexp_parser::JSON_isEmpty: return "Parsed data appears to be empty."sv;
+        case Unexp_parser::JSON_topLevelEleNotArrayOrObject:
+            return "Top level JSON element need to be either a JSON object or a JSON array. It is neither in the input data."sv;
+        case Unexp_parser::JSON_parserBackendError:
+            return "Parser backend encountered error."
+                   "This error is probably unfixable by the user."sv;
+        case Unexp_parser::JSON_unhandledCellType:
+            return "Some data element in JSON is neither arithmetic type nor string."sv;
+        case Unexp_parser::NDJSON_braceCountDoesntMatch:
+            return "NDJSON input data appear malformatted."
+                   "Open and close brace charater counts ('{' and '}') do not match"sv;
+        case Unexp_parser::NDJSON_braceCountDoesntMatchNLcount:
+            return "NDJSON input data appear malformatted."
+                   "Brace charater count do not match new line character count"sv;
+        case Unexp_parser::NDJSON_isEmpty: return "NDJSON input data appear to be empty."sv;
+        case Unexp_parser::NDJSON_isNotFlat:
+            return "NDJSON input data appear not to be flat."
+                   "incplot expects NDJSON input data not to contain nested JSON objects"sv;
+        case Unexp_parser::CSV_containsZeroNewLineChars:
+            return "CSV input data appear malformatted."
+                   "CSV appears tp contain zero new line characters, which is impossible."sv;
+        case Unexp_parser::CSV_headerHasMoreItemsThanDataRow:
+            return "CSV input data appear malformatted."
+                   "CSV appear to contain more items in a header row than in other rows."sv;
+        case Unexp_parser::CSV_headerHasLessItemsThanDataRow:
+            return "CSV input data appear malformatted."
+                   "CSV appear to contain less items in a header row than in other rows."sv;
+        case Unexp_parser::CSV_valueTypeDoesntMatch:
+            return "CSV input data appear malformatted."
+                   "Element type in some row do not match the expected element type."sv;
+        case Unexp_parser::CSV_parserBackendError:
+            return "Parser backend encountered error."
+                   "This error is probably unfixable by the user."sv;
+        case Unexp_parser::CSV_unhandledCellType:
+            return "Some data element in CSV is neither arithmetic type nor string."sv;
+
+        default: return "Undocumented error type"sv;
+    }
+}
 
 } // namespace terminal_plot
 } // namespace incom
