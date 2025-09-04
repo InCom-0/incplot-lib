@@ -37,13 +37,13 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
         }
         if (auto optVal = inout_ap.present<int>("-c")) { res.back().c_colID = optVal.value(); }
     };
-
-    if (inout_ap.get<bool>("-B")) { addOne(detail::get_typeIndex<plot_structures::BarV>()); }
-    if (inout_ap.get<bool>("-S")) { addOne(detail::get_typeIndex<plot_structures::Scatter>()); }
-    if (inout_ap.get<bool>("-L")) { addOne(detail::get_typeIndex<plot_structures::Multiline>()); }
-    if (inout_ap.get<bool>("-V")) { addOne(detail::get_typeIndex<plot_structures::BarVM>()); }
-    if (inout_ap.get<bool>("-H")) { addOne(detail::get_typeIndex<plot_structures::BarHM>()); }
-    if (inout_ap.get<bool>("-T")) { addOne(detail::get_typeIndex<plot_structures::BarHS>()); }
+    using namespace incom::standard::typegen;
+    if (inout_ap.get<bool>("-B")) { addOne(get_typeIndex<plot_structures::BarV>()); }
+    if (inout_ap.get<bool>("-S")) { addOne(get_typeIndex<plot_structures::Scatter>()); }
+    if (inout_ap.get<bool>("-L")) { addOne(get_typeIndex<plot_structures::Multiline>()); }
+    if (inout_ap.get<bool>("-V")) { addOne(get_typeIndex<plot_structures::BarVM>()); }
+    if (inout_ap.get<bool>("-H")) { addOne(get_typeIndex<plot_structures::BarHM>()); }
+    if (inout_ap.get<bool>("-T")) { addOne(get_typeIndex<plot_structures::BarHS>()); }
     if (res.empty()) { addOne(std::nullopt); }
 
     return res;

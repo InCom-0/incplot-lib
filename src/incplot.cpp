@@ -7,6 +7,7 @@
 #include <variant>
 
 #include <incplot.hpp>
+#include <incstd/variant_utils.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <private/detail.hpp>
 #include <private/plot_structures_impl.hpp>
@@ -60,8 +61,8 @@ std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp, std::string_vi
 auto _get_vpt_mpNames2Types(DesiredPlot const &dp, DataStore const &ds) {
     return std::invoke(
         [&]<size_t... IDXs>(std::index_sequence<IDXs...>) {
-            return detail::VariantTypeMap<plot_structures::Base,
-                                          std::variant_alternative_t<IDXs, var_plotTypes>...>::gen_typeMap(dp, ds);
+            return incom::standard::variant_utils::VariantUtility<
+                std::variant_alternative_t<IDXs, var_plotTypes>...>::gen_alternsMap(dp, ds);
         },
         std::make_index_sequence<std::variant_size_v<var_plotTypes>>());
 }
