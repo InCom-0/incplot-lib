@@ -84,10 +84,14 @@ private:
         double const yStepSize = (std::get<0>(pointB) - std::get<0>(pointA)) / static_cast<double>(totalSteps);
         double const xStepSize = (std::get<1>(pointB) - std::get<1>(pointA)) / static_cast<double>(totalSteps);
 
-        std::pair<std::vector<double>, std::vector<double>> res;
-        for (int i = 1; i < totalSteps; ++i) {
-            res.first.push_back(std::get<0>(pointA) + (yStepSize * i));
-            res.second.push_back(std::get<1>(pointA) + (xStepSize * i));
+        // Construct res and preallocate with zeros
+        std::pair<std::vector<double>, std::vector<double>> res{std::vector<double>(totalSteps + 1, 0.0),
+                                                                std::vector<double>(totalSteps + 1, 0.0)};
+        for (int i = 0; i < totalSteps+1; ++i) {
+            res.first[i] = std::get<0>(pointA) + (yStepSize * i);
+            res.second[i] = std::get<1>(pointA) + (xStepSize * i);
+            // res.first.push_back(std::get<0>(pointA) + (yStepSize * i));
+            // res.second.push_back(std::get<1>(pointA) + (xStepSize * i));
         }
         return res;
     }
@@ -163,7 +167,7 @@ public:
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
                                               auto &view_varValCols, std::array<Color_CVTS, 6> colorPalette) {
         BrailleDrawer bd(canvas_width, canvas_height,
-                         std::ranges::count_if(view_varValCols, [](auto const &a) { return true; }), colorPalette);
+                         std::ranges::distance(view_varValCols), colorPalette);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col);
         auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);
@@ -177,6 +181,7 @@ public:
             size_t x       = static_cast<size_t>(((xVal - xMin) / xStepSize)) / 2;
             size_t xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
 
+            // We always se to 1 because we are not performing color shading in multiline plots
             bd.m_canvasBraille[y][x]                                         |= Config::braille_map[yChrPos][xChrPos];
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
         };
@@ -199,32 +204,15 @@ public:
         };
         std::vector<double> xValues = std::visit(createXValues, view_labelTS_col);
 
-        // Plot actual points on the bd canvas
-        for (size_t i = 0; auto one_yValCol : view_varValCols) {
-            auto olSet = [&](auto &oneCol) -> void {
-                if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(oneCol)>>>) {
-                    for (auto const &[yVal, xVal] : std::views::zip(oneCol, xValues)) {
-                        placePointOnCanvas(yVal, xVal, i);
-                    }
-                }
-                else { assert(false); }
-            };
-            std::visit(olSet, one_yValCol);
-            i++;
-        }
-
         // Interpolate 'in between' every 2 points to actually get a line in the plot visually
-        std::vector<size_t> interpolatedValues;
         for (size_t catID = 0; auto one_yValCol : view_varValCols) {
             auto olSet = [&](auto const &oneCol) -> void {
-                // auto &yValCol_data = oneCol;
-
                 // yValCol needs to be arithmetic
                 if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(oneCol)>>>) {
                     for (auto const &[pointA, pointB] : (std::views::zip(oneCol, xValues) | std::views::pairwise)) {
                         auto intpLine = construct_interpolatedLine(
                             pointA, pointB, (std::abs((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
-                            std::abs(std::get<1>(pointB) - std::get<1>(pointA)/ xStepSize));
+                            std::abs(std::get<1>(pointB) - std::get<1>(pointA)) / xStepSize);
 
                         for (auto const &[first, second] : std::ranges::views::zip(intpLine.first, intpLine.second)) {
                             placePointOnCanvas(first, second, catID);

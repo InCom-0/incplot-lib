@@ -90,8 +90,8 @@ public:
     static inline double                      colors_scaleDistanceFromBlack = 0.55;
 
     // MULTILINE
-    static inline size_t y_interpolationMultiplier = 4uz;
-    static inline size_t x_interpolationMultiplier = 4uz;
+    static inline size_t y_interpolationMultiplier = 2uz;
+    static inline size_t x_interpolationMultiplier = 2uz;
 
     // OTHER PLOT SETTINGS
     static inline size_t min_plotWidth            = 24uz;
