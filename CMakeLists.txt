@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.30...4.0)
 
 project(incplot-lib)
 # set(CMAKE_CXX_STANDARD 23)
-# set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 
 add_library(incplot-lib STATIC)
