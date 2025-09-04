@@ -35,6 +35,22 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                    "This happens when the user selected all available columns for values (-y) and there are none left for the x-axis"sv;
         case Unexp_plotSpecs::GTSC_noStringLikeColumnForLabelsForBarPlot:
             return "There is no string-like column to be used for label in vertical bar chart"sv;
+        case Unexp_plotSpecs::GTSC_selectedTScolNotFoundInData:
+            return "The column the user selected for primary axis (-x) was not found in the data.\n"
+                   "The most likely reason is that the column ID provided is higher than the highest column ID"sv;
+        case Unexp_plotSpecs::GTSC_selectedTScolIsNotTimeSeriesLike:
+            return "The column the user selected as primary axis (-x) for (multi)line plot is not 'time "
+                   "series like'.\n"
+                   "Line plot requires the primary axis column to contain arithmetic values with regular interval "
+                   "between them\n"
+                   "A possible workaround is to include an index column in the data"sv;
+        case Unexp_plotSpecs::GTSC_cantSelectTSColToBeTheSameAsCatCol:
+            return "Category column (-c or --category) and primary axis column (-x) need to be different columns"sv;
+            ;
+        case Unexp_plotSpecs::GTSC_cantSelectTSColToBeOneOfTheValCols:
+            return "One of the columns the user selected as values columm (-y) is also selected as the primary axis "
+                   "column (-x).\n"
+                   "The type of column overlap is not allowed."sv;
         case Unexp_plotSpecs::GTSC_unreachableCodeReached: return "Hard library error, unreachable code path reached"sv;
         case Unexp_plotSpecs::GCC_cantSpecifyCategoryForOtherThanScatter:
             return "Category column cannot be specified for any plot type other then Scatter"sv;
@@ -65,11 +81,15 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                    "This usually happens because the column is 'string-like'"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV:
             return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) vertical bar plot"sv;
+        case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForScatterCat:
+            return "It is not allowed to select more than one value columns (-y) for use in (potentially inferred) scatter plot together with category column (-c)"sv;
+        case Unexp_plotSpecs::GVC_selectedMoreThan3YvalColForScatterNonCat:
+            return "It is not allowed to select more than three value columns (-y) for use in (potentially inferred) scatter plot without category column"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThan6YvalColForBarXM:
-            return "It is not allowed to select more than six value columns (-y) for use in (potentially inferred) vertical multibar plot"sv;
+            return "It is not allowed to select more than six value columns (-y) for use in (potentially inferred) multibar plot"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThanMaxNumOfYvalCols:
             {
-                static std::string GVC_mnyvc_r{
+                static const std::string GVC_mnyvc_r{
                     std::format("The user selected more than a maximum number of value columns (-y) which is: {}",
                                 Config::max_numOfValColsScatterCat)};
                 return std::string_view(GVC_mnyvc_r);
@@ -104,14 +124,26 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                     std::format("The user cannot specify a width of more than: {}", Config::max_plotWidth)};
                 return std::string_view(GZS_wtl_r);
             }
+        case Unexp_plotSpecs::GSZ_tarWidthLargerThanAvailableWidth:
+            return "Specified target width (-w) must not be larger than available width.\n"
+                   "Note: available width is inferred from the size of the terminal window automatically"sv;
+        case Unexp_plotSpecs::GSZ_iferredTargetWidthLargerThanAvailableWidth:
+            return "Inferred target width must not be larger than available width.\n"
+                   "You may have selected a plot type which when used with the data supplied would be wider than "
+                   "terminal window.\n"
+                   "Note: available width is inferred from the size of the terminal window automatically"sv;
+        case Unexp_plotSpecs::GSZ_iferredTargetWidthLargerThanDefaultWidth:
+            return "Inferred target width must not be larger than default width if available width cannot be "
+                   "determined.\n"
+                   "Note: incplot was unable to obtain available width from the terminal, generally this should never happen and indicates something else being very wrong."sv;
         case Unexp_plotSpecs::GZS_heightTooSmall:
             {
                 static std::string GZS_hts_r{
                     std::format("The user cannot specify a height of less than: {}", Config::max_plotWidth)};
                 return std::string_view(GZS_hts_r);
             }
-
-        default: return "Undocumented error type"sv;
+        case Unexp_plotSpecs::CAPF_unhandledError: return "Undocumented error type"sv;
+        default:                                   return "Undocumented error type"sv;
     }
 }
 

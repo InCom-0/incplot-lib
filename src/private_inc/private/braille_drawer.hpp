@@ -181,7 +181,7 @@ public:
             size_t x       = static_cast<size_t>(((xVal - xMin) / xStepSize)) / 2;
             size_t xChrPos = static_cast<size_t>(((xVal - xMin) / xStepSize)) % 2;
 
-            // We always se to 1 because we are not performing color shading in multiline plots
+            // We always set to 1 because we are not performing color shading in multiline plots
             bd.m_canvasBraille[y][x]                                         |= Config::braille_map[yChrPos][xChrPos];
             bd.m_pointsCountPerPos_perColor[y][x][yChrPos][xChrPos][groupID]  = 1;
         };

@@ -31,9 +31,8 @@ enum class Unexp_plotSpecs {
     GCC_categoryColumnIsNotAllowedForMultiline,
     GVC_selectYvalColIsUnuseable,
     GVC_selectedMoreThan1YvalColForBarV,
-    GVC_selectedMoreThan3YvalColForScatterCat,
+    GVC_selectedMoreThan1YvalColForScatterCat,
     GVC_selectedMoreThan3YvalColForScatterNonCat,
-    GVC_selectedMoreThan3YvalColForMultiline,
     GVC_selectedMoreThan6YvalColForBarXM,
     GVC_selectedMoreThanMaxNumOfYvalCols,
     GVC_selectedMoreThanAllowedOfYvalColsForMultiline,
@@ -46,7 +45,6 @@ enum class Unexp_plotSpecs {
     GSZ_iferredTargetWidthLargerThanDefaultWidth,
     GZS_heightTooSmall,
     CAPF_unhandledError,
-    TEST_t1
 };
 
 
