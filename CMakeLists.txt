@@ -4,6 +4,9 @@ project(incplot-lib)
 # set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+  add_compile_options(/utf-8)
+endif()
 
 add_library(incplot-lib STATIC)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
@@ -55,7 +58,6 @@ target_link_libraries(incplot-lib PUBLIC
     argparse::argparse
     magic_enum::magic_enum
     incerr::incerr)
-
 
 
 option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
