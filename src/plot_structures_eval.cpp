@@ -424,7 +424,7 @@ guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const
         else if ((dp.cat_colID.has_value() ? dp.labelTS_colID.value() == dp.cat_colID.value() : false)) {
             return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeTheSameAsCatCol));
         }
-        else if (std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == dp.labelTS_colID.value(); })) {
+        else if (std::ranges::any_of(dp.values_colIDs, [&](auto const &a) { return a == dp.labelTS_colID.value(); })) {
             return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeOneOfTheValCols));
         }
         return dp_pr;
@@ -562,7 +562,7 @@ guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore con
         else if ((dp.cat_colID.has_value() ? dp.labelTS_colID.value() == dp.cat_colID.value() : false)) {
             return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeTheSameAsCatCol));
         }
-        else if (std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == dp.labelTS_colID.value(); })) {
+        else if (std::ranges::any_of(dp.values_colIDs, [&](auto const &a) { return a == dp.labelTS_colID.value(); })) {
             return std::unexpected(incerr_c::make(GTSC_cantSelectTSColToBeOneOfTheValCols));
         }
         return dp_pr;
