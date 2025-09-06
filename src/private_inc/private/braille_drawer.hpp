@@ -85,13 +85,13 @@ private:
         double const xStepSize = (std::get<1>(pointB) - std::get<1>(pointA)) / static_cast<double>(totalSteps);
 
         // Construct res and preallocate with zeros
-        std::pair<std::vector<double>, std::vector<double>> res{std::vector<double>(totalSteps + 1, 0.0),
-                                                                std::vector<double>(totalSteps + 1, 0.0)};
-        for (int i = 0; i < totalSteps+1; ++i) {
-            res.first[i] = std::get<0>(pointA) + (yStepSize * i);
-            res.second[i] = std::get<1>(pointA) + (xStepSize * i);
-            // res.first.push_back(std::get<0>(pointA) + (yStepSize * i));
-            // res.second.push_back(std::get<1>(pointA) + (xStepSize * i));
+        std::pair<std::vector<double>, std::vector<double>> res{
+            std::vector<double>(totalSteps + 1, std::get<0>(pointA)),
+            std::vector<double>(totalSteps + 1, std::get<1>(pointA))};
+
+        for (int i = 1; i < totalSteps + 1; ++i) {
+            res.first[i]  = res.first[i - 1] + yStepSize;
+            res.second[i] = res.second[i - 1] + xStepSize;
         }
         return res;
     }
@@ -166,8 +166,7 @@ public:
 
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
                                               auto &view_varValCols, std::array<Color_CVTS, 6> colorPalette) {
-        BrailleDrawer bd(canvas_width, canvas_height,
-                         std::ranges::distance(view_varValCols), colorPalette);
+        BrailleDrawer bd(canvas_width, canvas_height, std::ranges::distance(view_varValCols), colorPalette);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col);
         auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);
