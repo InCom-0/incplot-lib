@@ -1490,7 +1490,6 @@ auto BarHS::compute_labels_vl(this auto &&self)
         self.values_data, std::vector<double>(self.data_rowCount, 0.0), [](auto &&ini, auto const &oneVarCol) {
             auto ol = [&](auto &vc) -> std::vector<double> {
                 if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(vc)>>>) {
-                    // TODO: All values need to be positive ... can't have negative values for stacked plots
                     for (size_t i = 0; auto const &oneVal : vc) { ini[i++] += oneVal; }
                     return ini;
                 }
@@ -1627,7 +1626,6 @@ auto BarHS::compute_plot_area(this auto &&self)
 
     auto ol = [&](auto const &valCol) {
         if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(valCol)>>>) {
-            // TODO: All values need to be positive ... can't have negative values for stacked plots
             doubleConverted.push_back(std::vector<double>{});
             for (size_t i = 0; auto const &value : valCol) {
                 stackedSums[i++] += value;

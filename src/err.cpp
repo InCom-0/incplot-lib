@@ -78,7 +78,7 @@ std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e) {
                    "MultiLine plots must display multiple categories by specifying multiple value columns (y-axis), not a specific category column (which is usually used for other types of plots)"sv;
         case Unexp_plotSpecs::GVC_selectYvalColIsUnuseable:
             return "At least one of the value column the user specified (-y) is unuseable"
-                   "This usually happens because the column is 'string-like'"sv;
+                   "This can happen for multitude of reasons, but always having to do with the values in that column not being suitable for the plot selected."sv;
         case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForBarV:
             return "It is not allowed to select more than one value column (-y) for use in (potentially inferred) vertical bar plot"sv;
         case Unexp_plotSpecs::GVC_selectedMoreThan1YvalColForScatterCat:

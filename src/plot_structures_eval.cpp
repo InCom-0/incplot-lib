@@ -775,7 +775,46 @@ guess_retType BarHS::guess_catCol(guess_firstParamType &&dp_pr, DataStore const 
     return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
-    return BarHM::guess_valueCols(std::forward<decltype(dp_pr)>(dp_pr), ds);
+    DesiredPlot &dp = dp_pr.get();
+
+    if (dp.values_colIDs.size() > Config::max_numOfValCols) {
+        return std::unexpected(incerr_c::make(GVC_selectedMoreThan6YvalColForBarXM));
+    }
+
+    auto lam_filter = [&](auto const &tpl) {
+        bool const arithmeticCol = std::get<1>(tpl).colType == parsedVal_t::signed_like ||
+                                   std::get<1>(tpl).colType == parsedVal_t::double_like;
+        // Not timeSeriesLike and Not categoryLike
+        bool const notExcluded = (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
+                                 (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
+
+        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike) && (std::get<2>(tpl).is_allValuesNonNegative));
+    };
+    auto useableValCols_tpl =
+        std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), lam_filter);
+
+    // Check if selected cols are actually useable
+    for (auto const &selColID : dp.values_colIDs) {
+        if (not std::ranges::contains(useableValCols_tpl, selColID, [](auto const &tpl) { return std::get<0>(tpl); })) {
+            return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+        }
+    }
+    // TODO: Do some sort of smarter sorting of potential yValCols ... for now turning it off
+    auto lam_sorterComp = [&](auto const &lhs, auto const &rhs) {
+        // return std::get<1>(lhs).categoryCount > std::get<1>(rhs).categoryCount;
+        return false;
+    };
+
+    auto canAdd_prioritized = compute_filterSortedIDXs(lam_filter, lam_sorterComp, ds.m_data, dp.m_colAssessments);
+
+    // Verify that the selected column can actually be used for this plot
+    if (dp.values_colIDs.size() > 0) { return dp_pr; }
+    else {
+        if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 2, Config::max_numOfValCols)}) {
+            return dp_pr;
+        }
+        else { return std::unexpected(retExp.error()); }
+    }
 }
 guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();

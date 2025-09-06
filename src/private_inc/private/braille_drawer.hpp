@@ -77,8 +77,7 @@ private:
                                                                                           auto const &pointB,
                                                                                           double      ySteps,
                                                                                           double      xSteps) {
-        // Weird calculation of total steps on the interpolated line ... probably reinventing the wheel here
-        // TODO: Poosibly refactor according to some best practice on this
+        // This seems a little wierd, but it actually works for the braille type unicode line drawing
         int const totalSteps = std::max(0.0, ((ySteps)*Config::y_interpolationMultiplier) - 1.0) +
                                std::max(0.0, ((xSteps)*Config::x_interpolationMultiplier) - 1.0);
         double const yStepSize = (std::get<0>(pointB) - std::get<0>(pointA)) / static_cast<double>(totalSteps);

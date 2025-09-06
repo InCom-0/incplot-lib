@@ -16,8 +16,6 @@ TEST(PS, penguins_default) {
     auto ds = incplot::DataStore::get_DS(DataSets_FN::penguins.at(0));
     EXPECT_TRUE(ds.has_value());
 
-    // TODO: Need to fix new defaults of 'guess_missingParams'
-    // TODO: Also need to finally stop using plain string for selecting plot types ... it is just stupid :-)
     incplot::DesiredPlot::DP_CtorStruct dpctrs{
         .plot_type_name = std::type_index(typeid(incom::terminal_plot::plot_structures::Scatter))};
     auto dp = incom::terminal_plot::DesiredPlot(dpctrs).guess_missingParams(ds.value());

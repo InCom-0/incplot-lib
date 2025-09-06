@@ -337,7 +337,6 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_catCol(Desire
             // If the existing catColID cant be found then its wrong
             if (not calColID_found) { return std::unexpected(incerr_c::make(GCC_specifiedCatColCantBeUsedAsCatCol)); }
 
-            // TODO: Fix this somehow the logic seems wrong mixing a different case here?
             if (dp.values_colIDs.size() > 1) {
                 return std::unexpected(incerr_c::make(GCC_cantSelectCatColAndMultipleYCols));
             }
