@@ -20,14 +20,14 @@ using incerr_c             = incerr::incerr_code;
 using guess_firstParamType = std::reference_wrapper<DesiredPlot>;
 using guess_retType        = std::expected<guess_firstParamType, incerr_c>;
 
-// Forward declaration
+// Forward declarations
 class Base;
 
-namespace eval {
-template <typename PS>
-requires(std::is_base_of_v<Base, PS>)
-std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
+namespace detail_ps {
+struct _Eval;
+} // namespace detail_ps
 
+namespace eval {
 template <typename PS>
 requires(std::is_base_of_v<Base, PS>)
 std::expected<DesiredPlot, incerr_c> evaluate_PS(DesiredPlot dp, DataStore const &ds);
@@ -35,17 +35,17 @@ std::expected<DesiredPlot, incerr_c> evaluate_PS(DesiredPlot dp, DataStore const
 template <typename... PSs>
 requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
 auto evaluate_PSs(DesiredPlot dp, DataStore const &ds);
-
 } // namespace eval
+
 
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter
 // etc.)
 // Create your own 'plot structure' ie. type of plot by deriving from 'Base' class (or from other classes derived
-// from it). 'Shadow' the 'Compute_*' methods as needed as if you were overriding (but without override keyword). The
-// types properly derived from 'Base' can then be used inside std::variant<...>.
-// The idea is to be able to easily customize and also possibly 'partially customize' as needed.
-// You always have to make the 'Base' class a friend ... this enables really nice static compile-time polymorphism
-// coupled with 'deducing this' feature of C++23
+// from it - BarV is a good place to start). 'Shadow' the 'Compute_*' methods as needed as if you were overriding (but
+// without override keyword). The types properly derived from 'Base' can then be used inside std::variant<...>. The idea
+// is to be able to easily customize and also possibly 'partially customize' as needed. You always have to make the
+// 'Base' class a friend ... this enables really nice static compile-time polymorphism coupled with 'deducing this'
+// feature of C++23
 class Base {
 protected:
     // LEGACY WAY TO ACCESS DATA ... local views into the data held in DataStore
@@ -209,13 +209,7 @@ class BarV : public Base {
     friend class Base;
     using Base::Base;
 
-    template <typename PS>
-    requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
-
-    template <typename... PSs>
-    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend struct detail_ps::_Eval;
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -290,13 +284,7 @@ class BarVM : public BarV {
     friend class Base;
     using BarV::BarV;
 
-    template <typename PS>
-    requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
-
-    template <typename... PSs>
-    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend struct detail_ps::_Eval;
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -333,13 +321,7 @@ class Scatter : public BarV {
     friend class Base;
     using BarV::BarV;
 
-    template <typename PS>
-    requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
-
-    template <typename... PSs>
-    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend struct detail_ps::_Eval;
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -382,13 +364,7 @@ class Multiline : public Scatter {
     friend class Base;
     using Scatter::Scatter;
 
-    template <typename PS>
-    requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
-
-    template <typename... PSs>
-    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend struct detail_ps::_Eval;
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -415,13 +391,7 @@ class BarHM : public Multiline {
     friend class Base;
     using Multiline::Multiline;
 
-    template <typename PS>
-    requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
-
-    template <typename... PSs>
-    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend struct detail_ps::_Eval;
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -452,13 +422,7 @@ class BarHS : public BarHM {
     friend class Base;
     using BarHM::BarHM;
 
-    template <typename PS>
-    requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
-
-    template <typename... PSs>
-    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend struct detail_ps::_Eval;
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);

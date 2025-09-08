@@ -14,7 +14,6 @@
 #include <incplot/plot_structures.hpp>
 #include <incstd/typegen.hpp>
 #include <private/braille_drawer.hpp>
-#include <vector>
 
 
 namespace incom {
@@ -26,54 +25,74 @@ using enum Unexp_plotSpecs;
 using enum Unexp_plotDrawer;
 namespace incstd = incom::standard;
 
+
+namespace detail_ps {
+struct _Eval {
+    _Eval()                         = delete;
+    void *operator new(std::size_t) = delete;
+
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    static std::expected<DesiredPlot, incerr_c> _evaluate_guessing(DesiredPlot &&dp, DataStore const &ds) {
+
+        using enum incom::terminal_plot::Unexp_plotSpecs;
+        auto isNot_differentPS = [&](guess_firstParamType &&dp_pr, DataStore const &ds) -> guess_retType {
+            if (dp_pr.get().plot_type_name.has_value()) {
+                if (dp_pr.get().plot_type_name.value() != std::type_index(typeid(PS))) {
+                    return std::unexpected(incerr_c::make(GPT_explicitlySpecifiedDifferentPlotType));
+                }
+            }
+            else { dp_pr.get().plot_type_name = std::type_index(typeid(PS)); }
+            return dp_pr;
+        };
+
+        auto res = isNot_differentPS(guess_firstParamType{std::ref(dp)}, ds)
+                       .and_then(std::bind_back(PS::guess_TSCol, ds))
+                       .and_then(std::bind_back(PS::guess_catCol, ds))
+                       .and_then(std::bind_back(PS::guess_valueCols, ds))
+                       .and_then(std::bind_back(PS::compute_filterFlags, ds))
+                       .and_then(std::bind_back(PS::guess_sizes, ds))
+                       .and_then(std::bind_back(PS::guess_TFfeatures, ds));
+
+        if (res.has_value()) { return std::move(res.value().get()); }
+        else { return std::unexpected(res.error()); }
+    }
+
+    template <typename PS>
+    requires(std::is_base_of_v<Base, PS>)
+    static std::expected<DesiredPlot, incerr_c> _evaluate_PS(DesiredPlot &&dp, DataStore const &ds) {
+        return DesiredPlot::compute_colAssessments(std::move(dp), ds)
+            .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
+            .and_then(std::bind_back(_evaluate_guessing<PS>, ds));
+    }
+
+    template <typename... PSs>
+    requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
+    static auto _evaluate_PSs(DesiredPlot &&dp, DataStore const &ds) {
+        // This part of DP evaluation that is always the same regardless of the plotType
+        auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
+                          .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
+
+        std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>> res{
+            {{std::type_index(typeid(PSs)), std::expected<DesiredPlot, incerr_c>(dp_exp)
+                                                .and_then(std::bind_back(_evaluate_guessing<PSs>, ds))
+                                                .transform(std::bind_back(PSs::compute_priorityFactor, ds))}...}};
+        return res;
+    }
+};
+} // namespace detail_ps
+
 namespace eval {
 template <typename PS>
 requires(std::is_base_of_v<Base, PS>)
-std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataStore const &ds) {
-
-    using enum incom::terminal_plot::Unexp_plotSpecs;
-    auto isNot_differentPS = [&](guess_firstParamType &&dp_pr, DataStore const &ds) -> guess_retType {
-        if (dp_pr.get().plot_type_name.has_value()) {
-            if (dp_pr.get().plot_type_name.value() != std::type_index(typeid(PS))) {
-                return std::unexpected(incerr_c::make(GPT_explicitlySpecifiedDifferentPlotType));
-            }
-        }
-        else { dp_pr.get().plot_type_name = std::type_index(typeid(PS)); }
-        return dp_pr;
-    };
-
-    auto res = isNot_differentPS(guess_firstParamType{std::ref(dp)}, ds)
-                   .and_then(std::bind_back(PS::guess_TSCol, ds))
-                   .and_then(std::bind_back(PS::guess_catCol, ds))
-                   .and_then(std::bind_back(PS::guess_valueCols, ds))
-                   .and_then(std::bind_back(PS::compute_filterFlags, ds))
-                   .and_then(std::bind_back(PS::guess_sizes, ds))
-                   .and_then(std::bind_back(PS::guess_TFfeatures, ds));
-
-    if (res.has_value()) { return std::move(res.value().get()); }
-    else { return std::unexpected(res.error()); }
-}
-
-template <typename PS>
-requires(std::is_base_of_v<Base, PS>)
 std::expected<DesiredPlot, incerr_c> evaluate_PS(DesiredPlot dp, DataStore const &ds) {
-    return DesiredPlot::compute_colAssessments(std::move(dp), ds)
-        .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
-        .and_then(std::bind_back(evaluate_guessing<PS>, ds));
+    return detail_ps::_Eval::_evaluate_PS<PS>(std::move(dp), ds);
 }
 
 template <typename... PSs>
 requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
 auto evaluate_PSs(DesiredPlot dp, DataStore const &ds) {
-    // This part of DP evaluation that is always the same regardless of the plotType
-    auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
-                      .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
-
-    std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>> res{
-        {{std::type_index(typeid(PSs)), std::expected<DesiredPlot, incerr_c>(dp_exp)
-                                            .and_then(std::bind_back(evaluate_guessing<PSs>, ds))
-                                            .transform(std::bind_back(PSs::compute_priorityFactor, ds))}...}};
-    return res;
+    return detail_ps::_Eval::_evaluate_PSs<PSs...>(std::move(dp), ds);
 }
 } // namespace eval
 
