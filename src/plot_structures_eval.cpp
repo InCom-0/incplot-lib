@@ -300,6 +300,17 @@ guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore cons
     if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1)}) { return dp_pr; }
     else { return std::unexpected(retExp.error()); }
 }
+guess_retType BarV::compute_filterFlags(guess_firstParamType &&dp_pr, DataStore const &ds) {
+    DesiredPlot &dp = dp_pr.get();
+
+    std::vector<size_t> colIDs;
+    if (dp.labelTS_colID.has_value()) { colIDs.push_back(dp.labelTS_colID.value()); }
+    if (dp.cat_colID.has_value()) { colIDs.push_back(dp.cat_colID.value()); }
+    for (auto const &colID : dp.values_colIDs) { colIDs.push_back(colID); }
+
+    dp.filterFlags = ds.compute_filterFlags(colIDs, dp.filter_outsideStdDev);
+    return dp_pr;
+}
 guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
     // Width always need to be provided, otherwise the whole thing doesn't work
@@ -788,7 +799,8 @@ guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
         bool const notExcluded = (dp.cat_colID.has_value() ? (std::get<0>(tpl) != dp.cat_colID.value()) : true) &&
                                  (dp.labelTS_colID.has_value() ? (std::get<0>(tpl) != dp.labelTS_colID.value()) : true);
 
-        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike) && (std::get<2>(tpl).is_allValuesNonNegative));
+        return (arithmeticCol && notExcluded && (not std::get<2>(tpl).is_categoryLike) &&
+                (std::get<2>(tpl).is_allValuesNonNegative));
     };
     auto useableValCols_tpl =
         std::views::filter(std::views::zip(std::views::iota(0), ds.m_data, dp.m_colAssessments), lam_filter);

@@ -2,7 +2,6 @@
 #include <functional>
 #include <string>
 #include <type_traits>
-#include <typeindex>
 #include <utility>
 #include <variant>
 
@@ -26,18 +25,6 @@ std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp, std::string_vi
     auto ds = parsers::Parser::parse(inputData);
     if (not ds.has_value()) { return std::unexpected(ds.error()); }
 
-    using evaAllPoss_rt = decltype(incom::terminal_plot::evaluate_allPSpossibilities(
-        std::declval<DesiredPlot const &>(), std::declval<DataStore const &>()));
-
-    auto lam_reducePossibilitiesToOne = [](evaAllPoss_rt &&vec_possibilities) -> std::expected<DesiredPlot, incerr_c> {
-        auto fv  = std::views::filter(vec_possibilities, [](auto const &item) { return item.second.has_value(); });
-        auto res = std::ranges::max_element(
-            fv, [](auto const &lhs, auto const &rhs) { return lhs.second.value().second < rhs.second.value().second; });
-
-        if (res == fv.end()) { return std::unexpected(incerr_c::make(EVAPS_impossibleToDrawAnyPlot)); }
-        else { return res->second.value().first; }
-    };
-
     auto lam_get_bpas = [](auto &&ps_var) {
         return std::visit([&](auto &&ps) -> std::string { return ps.build_plotAsString(); }, ps_var);
     };
@@ -52,7 +39,7 @@ std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp, std::string_vi
             .transform(lam_get_bpas);
     }
     else {
-        return lam_reducePossibilitiesToOne(evaluate_allPSpossibilities(dp, ds.value()))
+        return evaluate_allPSpossibilities(dp, ds.value())
             .and_then(std::bind_back(build_plotStructure, ds.value()))
             .transform(lam_get_bpas);
     }
@@ -129,7 +116,7 @@ std::expected<DesiredPlot, incerr_c> evaluate_onePSpossibility(DesiredPlot const
     }
     else {
         auto ol = [&](auto &var) -> std::expected<DesiredPlot, incerr_c> {
-            return plot_structures::detail_ps::evaluate_PS<std::remove_cvref_t<decltype(var)>>(dp, ds);
+            return plot_structures::eval::evaluate_PS<std::remove_cvref_t<decltype(var)>>(dp, ds);
         };
 
         auto varCpy = found->second;
@@ -137,13 +124,22 @@ std::expected<DesiredPlot, incerr_c> evaluate_onePSpossibility(DesiredPlot const
     }
 }
 
-std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
-evaluate_allPSpossibilities(DesiredPlot const &dp, DataStore const &ds) {
-    return std::invoke(
+std::expected<DesiredPlot, incerr_c> evaluate_allPSpossibilities(DesiredPlot const &dp, DataStore const &ds) {
+
+    auto lam_reducePossibilitiesToOne = [](auto &&vec_possibilities) -> std::expected<DesiredPlot, incerr_c> {
+        auto fv  = std::views::filter(vec_possibilities, [](auto const &item) { return item.second.has_value(); });
+        auto res = std::ranges::max_element(
+            fv, [](auto const &lhs, auto const &rhs) { return lhs.second.value().second < rhs.second.value().second; });
+
+        if (res == fv.end()) { return std::unexpected(incerr_c::make(EVAPS_impossibleToDrawAnyPlot)); }
+        else { return res->second.value().first; }
+    };
+
+    return lam_reducePossibilitiesToOne(std::invoke(
         [&]<typename T, T... ints>(std::integer_sequence<T, ints...>) {
-            return plot_structures::detail_ps::evaluate_PSs<std::variant_alternative_t<ints, var_plotTypes>...>(dp, ds);
+            return plot_structures::eval::evaluate_PSs<std::variant_alternative_t<ints, var_plotTypes>...>(dp, ds);
         },
-        std::make_index_sequence<std::variant_size_v<var_plotTypes>>());
+        std::make_index_sequence<std::variant_size_v<var_plotTypes>>()));
 }
 
 } // namespace terminal_plot

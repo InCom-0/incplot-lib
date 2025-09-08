@@ -23,9 +23,7 @@ using guess_retType        = std::expected<guess_firstParamType, incerr_c>;
 // Forward declaration
 class Base;
 
-namespace detail_ps {
-inline std::expected<DesiredPlot, incerr::incerr_code> evaluate_prepDP(DesiredPlot &&dp, DataStore const &ds);
-
+namespace eval {
 template <typename PS>
 requires(std::is_base_of_v<Base, PS>)
 std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
@@ -38,7 +36,7 @@ template <typename... PSs>
 requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
 auto evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 
-} // namespace detail_ps
+} // namespace eval
 
 // Classes derived from base represent 'plot structures' of particular types of plots (such as bar vertical, scatter
 // etc.)
@@ -213,16 +211,17 @@ class BarV : public Base {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> detail_ps::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
 
     template <typename... PSs>
     requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto detail_ps::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds);
+    static guess_retType compute_filterFlags(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds);
     static guess_retType guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds);
 
@@ -293,11 +292,11 @@ class BarVM : public BarV {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> detail_ps::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
 
     template <typename... PSs>
     requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto detail_ps::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -336,11 +335,11 @@ class Scatter : public BarV {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> detail_ps::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
 
     template <typename... PSs>
     requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto detail_ps::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -385,11 +384,11 @@ class Multiline : public Scatter {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> detail_ps::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
 
     template <typename... PSs>
     requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto detail_ps::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -418,11 +417,11 @@ class BarHM : public Multiline {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> detail_ps::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
 
     template <typename... PSs>
     requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto detail_ps::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);
@@ -455,11 +454,11 @@ class BarHS : public BarHM {
 
     template <typename PS>
     requires(std::is_base_of_v<Base, PS>)
-    friend std::expected<DesiredPlot, incerr_c> detail_ps::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
+    friend std::expected<DesiredPlot, incerr_c> eval::evaluate_guessing(DesiredPlot &&dp, DataStore const &ds);
 
     template <typename... PSs>
     requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
-    friend auto detail_ps::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
+    friend auto eval::evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 
 protected:
     static guess_retType guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds);

@@ -26,12 +26,7 @@ using enum Unexp_plotSpecs;
 using enum Unexp_plotDrawer;
 namespace incstd = incom::standard;
 
-namespace detail_ps {
-inline std::expected<DesiredPlot, incerr::incerr_code> evaluate_prepDP(DesiredPlot &&dp, DataStore const &ds) {
-    return DesiredPlot::compute_colAssessments(std::forward<decltype(dp)>(dp), ds)
-        .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
-}
-
+namespace eval {
 template <typename PS>
 requires(std::is_base_of_v<Base, PS>)
 std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataStore const &ds) {
@@ -46,16 +41,12 @@ std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataSto
         else { dp_pr.get().plot_type_name = std::type_index(typeid(PS)); }
         return dp_pr;
     };
-    auto c_fflags = [&](guess_firstParamType &&dp_pr) -> guess_retType {
-        DesiredPlot::compute_filterFlags_r_void(dp_pr.get(), ds);
-        return dp_pr;
-    };
 
     auto res = isNot_differentPS(guess_firstParamType{std::ref(dp)}, ds)
                    .and_then(std::bind_back(PS::guess_TSCol, ds))
                    .and_then(std::bind_back(PS::guess_catCol, ds))
                    .and_then(std::bind_back(PS::guess_valueCols, ds))
-                   .and_then(c_fflags)
+                   .and_then(std::bind_back(PS::compute_filterFlags, ds))
                    .and_then(std::bind_back(PS::guess_sizes, ds))
                    .and_then(std::bind_back(PS::guess_TFfeatures, ds));
 
@@ -66,23 +57,25 @@ std::expected<DesiredPlot, incerr_c> evaluate_guessing(DesiredPlot &&dp, DataSto
 template <typename PS>
 requires(std::is_base_of_v<Base, PS>)
 std::expected<DesiredPlot, incerr_c> evaluate_PS(DesiredPlot dp, DataStore const &ds) {
-    return evaluate_prepDP(std::move(dp), ds).and_then(std::bind_back(evaluate_guessing<PS>, ds));
+    return DesiredPlot::compute_colAssessments(std::move(dp), ds)
+        .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
+        .and_then(std::bind_back(evaluate_guessing<PS>, ds));
 }
 
 template <typename... PSs>
 requires(std::is_base_of_v<Base, PSs>, ...) && (sizeof...(PSs) > 0)
 auto evaluate_PSs(DesiredPlot dp, DataStore const &ds) {
-    // prepDP is the part of DP evaluation that is always the same regardless of the plotType
-    auto dp_exp = evaluate_prepDP(std::move(dp), ds);
+    // This part of DP evaluation that is always the same regardless of the plotType
+    auto dp_exp = DesiredPlot::compute_colAssessments(std::move(dp), ds)
+                      .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds));
 
     std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>> res{
-        {{std::type_index(typeid(PSs)), std::expected<DesiredPlot, incerr::incerr_code>(dp_exp)
+        {{std::type_index(typeid(PSs)), std::expected<DesiredPlot, incerr_c>(dp_exp)
                                             .and_then(std::bind_back(evaluate_guessing<PSs>, ds))
                                             .transform(std::bind_back(PSs::compute_priorityFactor, ds))}...}};
     return res;
 }
-
-} // namespace detail_ps
+} // namespace eval
 
 
 // BASE
@@ -1188,8 +1181,9 @@ auto BarHM::compute_descriptors(this auto &&self)
         self.dp.values_colIDs, [&](auto &&colID) { return detail::strlen_utf8(self.ds.m_data.at(colID).name); });
 
     // Special case when the only one value column or when the plot type is 'stacked'
-    size_t const oneGroupWidth =
-        (self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHS>()) ? 1 : self.values_data.size();
+    size_t const oneGroupWidth = (self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHS>())
+                                     ? 1
+                                     : self.values_data.size();
 
     // PLOT AREA
     self.areaWidth =
@@ -1247,7 +1241,7 @@ auto BarHM::compute_descriptors(this auto &&self)
             else { static_assert(false); } // This should never be instantiated
         };
         auto const realMaxLabelSize = std::visit(olset, self.labelTS_data.value());
-        bool const is_barHS         = self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHS>();
+        bool const is_barHS = self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHS>();
 
         // If max label size is small enough we will make all 1 width vertical (usually used for arithmetic values)
         bool const   pureVertical = (realMaxLabelSize <= Config::max_sizeOfValueLabels) || is_barHS;
@@ -1342,6 +1336,7 @@ auto BarHM::compute_labels_vr(this auto &&self)
 auto BarHM::compute_labels_hb(this auto &&self)
     -> std::expected<std::reference_wrapper<std::remove_cvref_t<decltype(self)>>, incerr_c> {
 
+    // TODO: Figure out a better logic for making sure the labels are short if at all possible
     auto olset = [](auto &var) -> size_t {
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
             return std::ranges::max(std::views::transform(var, [](auto const &a) { return detail::strlen_utf8(a); }));

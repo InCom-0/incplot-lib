@@ -36,11 +36,8 @@ inline std::expected<DesiredPlot, incerr_c> evaluate_onePSpossibility(DesiredPlo
     return evaluate_onePSpossibility(dp, ds);
 }
 
-std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
-evaluate_allPSpossibilities(DesiredPlot const &dp, DataStore const &ds);
-
-inline std::vector<std::pair<std::type_index, std::expected<std::pair<DesiredPlot, size_t>, incerr_c>>>
-evaluate_allPSpossibilities(DesiredPlot &&dp, DataStore const &ds) {
+std::expected<DesiredPlot, incerr_c> evaluate_allPSpossibilities(DesiredPlot const &dp, DataStore const &ds);
+inline std::expected<DesiredPlot, incerr_c> evaluate_allPSpossibilities(DesiredPlot &&dp, DataStore const &ds) {
     return evaluate_allPSpossibilities(dp, ds);
 }
 
