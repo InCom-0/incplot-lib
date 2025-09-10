@@ -38,7 +38,6 @@ int main(int argc, char *argv[]) {
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));
 
-    std::string_view elcars{DATAFOLDER "elcars_data.csv"sv};
     std::string_view flights{DATAFOLDER "flights_data.ndjson"sv};
     std::string_view iris{DATAFOLDER "iris_data.ndjson"sv};
     std::string_view iris_small{DATAFOLDER "iris_data_small.ndjson"sv};
