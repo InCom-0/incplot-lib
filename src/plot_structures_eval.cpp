@@ -220,7 +220,7 @@ std::string Base::build_plotAsString() const {
 // ### END BASE ###
 
 // BAR V
-guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.labelTS_colID.has_value()) {
@@ -257,7 +257,7 @@ guess_retType BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &d
     }
     return dp_pr;
 }
-guess_retType BarV::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarV::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.cat_colID.has_value()) {
@@ -266,7 +266,7 @@ guess_retType BarV::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &
     else { return dp_pr; }
     std::unreachable();
 }
-guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() > 1) { return std::unexpected(incerr_c::make(GVC_selectedMoreThan1YvalColForBarV)); }
@@ -300,7 +300,7 @@ guess_retType BarV::guess_valueCols(guess_firstParamType &&dp_pr, DataStore cons
     if (auto retExp{detail::addColsUntil(dp.values_colIDs, canAdd_prioritized, 1)}) { return dp_pr; }
     else { return std::unexpected(retExp.error()); }
 }
-guess_retType BarV::compute_filterFlags(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarV::compute_filterFlags(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     std::vector<size_t> colIDs;
@@ -311,7 +311,7 @@ guess_retType BarV::compute_filterFlags(guess_firstParamType &&dp_pr, DataStore 
     dp.filterFlags = ds.compute_filterFlags(colIDs, dp.filter_outsideStdDev);
     return dp_pr;
 }
-guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
     // Width always need to be provided, otherwise the whole thing doesn't work
     if (not dp.targetWidth.has_value()) {
@@ -341,7 +341,7 @@ guess_retType BarV::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &d
     }
     return dp_pr;
 }
-guess_retType BarV::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarV::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
     if (not dp.valAxesNames_bool.has_value()) { dp.valAxesNames_bool = false; }
     if (not dp.valAxesLabels_bool.has_value()) { dp.valAxesLabels_bool = false; }
@@ -359,13 +359,13 @@ std::pair<incom::terminal_plot::DesiredPlot, size_t> BarV::compute_priorityFacto
 
 
 // BAR VM
-guess_retType BarVM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarVM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TSCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType BarVM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarVM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType BarVM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarVM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() > Config::max_numOfValCols) {
@@ -409,10 +409,10 @@ guess_retType BarVM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
         else { return std::unexpected(retExp.error()); }
     }
 }
-guess_retType BarVM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarVM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType BarVM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarVM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
@@ -424,7 +424,7 @@ std::pair<incom::terminal_plot::DesiredPlot, size_t> BarVM::compute_priorityFact
 
 
 // SCATTER
-guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     // If TScol specified then verify if it is legit.
@@ -459,7 +459,7 @@ guess_retType Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const
     }
     std::unreachable();
 }
-guess_retType Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     auto useableCatCols_tpl = std::views::filter(
@@ -487,7 +487,7 @@ guess_retType Scatter::guess_catCol(guess_firstParamType &&dp_pr, DataStore cons
 
     return dp_pr;
 }
-guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     // TODO: Consider potential use where the catCol isn't specified and cats are specified by individual columns
@@ -542,10 +542,10 @@ guess_retType Scatter::guess_valueCols(guess_firstParamType &&dp_pr, DataStore c
     }
     else { return dp_pr; }
 }
-guess_retType Scatter::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Scatter::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType Scatter::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Scatter::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
@@ -559,7 +559,7 @@ std::pair<incom::terminal_plot::DesiredPlot, size_t> Scatter::compute_priorityFa
 
 
 // MULTILINE
-guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     // If TScol specified then verify if it is legit.
@@ -595,10 +595,10 @@ guess_retType Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore con
     }
     std::unreachable();
 }
-guess_retType Multiline::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Multiline::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() > Config::max_maxNumOfLinesInMultiline) {
@@ -639,10 +639,10 @@ guess_retType Multiline::guess_valueCols(guess_firstParamType &&dp_pr, DataStore
     }
     else { return dp_pr; }
 }
-guess_retType Multiline::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Multiline::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_sizes(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType Multiline::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt Multiline::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
@@ -664,13 +664,13 @@ std::pair<incom::terminal_plot::DesiredPlot, size_t> Multiline::compute_priority
 
 
 // BAR HM
-guess_retType BarHM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHM::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TSCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType BarHM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHM::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() > Config::max_numOfValCols) {
@@ -712,7 +712,7 @@ guess_retType BarHM::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
         else { return std::unexpected(retExp.error()); }
     }
 }
-guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     // rowCount are the unfiltered row (filterFlag == 0u)
@@ -765,7 +765,7 @@ guess_retType BarHM::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &
 
     return dp_pr;
 }
-guess_retType BarHM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHM::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
@@ -779,13 +779,13 @@ std::pair<incom::terminal_plot::DesiredPlot, size_t> BarHM::compute_priorityFact
 
 
 // BAR HS
-guess_retType BarHS::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHS::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TSCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType BarHS::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHS::guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_catCol(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
-guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     if (dp.values_colIDs.size() > Config::max_numOfValCols) {
@@ -828,7 +828,7 @@ guess_retType BarHS::guess_valueCols(guess_firstParamType &&dp_pr, DataStore con
         else { return std::unexpected(retExp.error()); }
     }
 }
-guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &ds) {
     DesiredPlot &dp = dp_pr.get();
 
     // rowCount are the unfiltered row (filterFlag == 0u)
@@ -880,7 +880,7 @@ guess_retType BarHS::guess_sizes(guess_firstParamType &&dp_pr, DataStore const &
 
     return dp_pr;
 }
-guess_retType BarHS::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
+guess_rt BarHS::guess_TFfeatures(guess_firstParamType &&dp_pr, DataStore const &ds) {
     return BarV::guess_TFfeatures(std::forward<decltype(dp_pr)>(dp_pr), ds);
 }
 
