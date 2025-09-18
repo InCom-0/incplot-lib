@@ -96,10 +96,10 @@ public:
     // OTHER PLOT SETTINGS
     static inline size_t min_plotWidth            = 24uz;
     static inline size_t max_plotWidth            = 256uz;
-    static inline size_t default_targetWidth      = 64uz;
+    static inline size_t default_targetWidth      = 80uz;
     static inline double scale_availablePlotWidth = 0.75;
 
-    static inline double inColGroup_stdDevMultiplierAllowance = 8.0;
+    static inline double inColGroup_stdDevMultiplierAllowance   = 8.0;
     static inline double inColGroup_meanDiffMultiplierAllowance = 8.0;
 
     static inline size_t min_plotHeight = 5uz;
@@ -112,8 +112,9 @@ public:
     static inline size_t min_areaWidth_BarHM = 1uz;
     static inline size_t min_areaHeight      = 1uz;
 
-    static inline size_t default_areaWidth2Height_ratio_Multiline = 6uz;
-    static inline size_t default_areaWidth2Height_ratio           = 3uz;
+    // Derived from 16:10 aspect ratio, accounted for character pixel differece 16 height, 8 width, line plot is wider
+    static inline double default_areaWidth2Height_ratio_Multiline = (10.0 / 16.0 / 2.0 / 2.0);
+    static inline double default_areaWidth2Height_ratio           = (10.0 / 16.0 / 2.0);
 
     static inline size_t max_numOfValCols              = 6uz;
     static inline size_t max_numOfValColsScatterCat    = 1uz;

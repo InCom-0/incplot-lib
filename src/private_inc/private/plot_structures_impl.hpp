@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <concepts>
 #include <cstddef>
 #include <expected>
@@ -279,7 +280,7 @@ auto BarV::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> {
         if (self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::Multiline>()) {
             //
             if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-                self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio_Multiline;
+                self.areaHeight = std::ceil(self.areaWidth * Config::default_areaWidth2Height_ratio_Multiline);
             }
             else {
                 self.areaHeight = self.areaWidth * (static_cast<double>(self.dp.availableHeight.value()) /
@@ -288,7 +289,7 @@ auto BarV::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> {
         }
         else {
             if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-                self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
+                self.areaHeight = std::ceil(self.areaWidth * Config::default_areaWidth2Height_ratio);
             }
             else {
                 self.areaHeight = self.areaWidth * (static_cast<double>(self.dp.availableHeight.value()) /
@@ -1201,7 +1202,7 @@ auto BarHM::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> 
     // PLOT AREA HEIGHT
     if (not self.dp.targetHeight.has_value()) {
         if (not self.dp.availableWidth.has_value() || not self.dp.availableHeight.has_value()) {
-            self.areaHeight = self.areaWidth / Config::default_areaWidth2Height_ratio;
+            self.areaHeight = std::ceil(self.areaWidth * Config::default_areaWidth2Height_ratio);
         }
         else {
             self.areaHeight = self.areaWidth *
