@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <string>
 
 
@@ -53,18 +54,59 @@ enum class Color_CVTS {
 };
 
 class TermColors {
+
+
 private:
-    static constexpr auto const _S_basicCVTScolMap = std::array<std::pair<int, std::string_view>, 43>{{
-        {0, "\x1b[m"},      {1, "\x1b[1m"},     {22, "\x1b[22m"},   {4, "\x1b[4m"},     {24, "\x1b[24m"},
-        {7, "\x1b[7m"},     {27, "\x1b[27m"},   {30, "\x1b[30m"},   {31, "\x1b[31m"},   {32, "\x1b[32m"},
-        {33, "\x1b[33m"},   {34, "\x1b[34m"},   {35, "\x1b[35m"},   {36, "\x1b[36m"},   {37, "\x1b[37m"},
-        {38, "\x1b[38m"},   {39, "\x1b[39m"},   {40, "\x1b[40m"},   {41, "\x1b[41m"},   {42, "\x1b[42m"},
-        {43, "\x1b[43m"},   {44, "\x1b[44m"},   {45, "\x1b[45m"},   {46, "\x1b[46m"},   {47, "\x1b[47m"},
-        {48, "\x1b[48m"},   {49, "\x1b[49m"},   {90, "\x1b[90m"},   {91, "\x1b[91m"},   {92, "\x1b[92m"},
-        {93, "\x1b[93m"},   {94, "\x1b[94m"},   {95, "\x1b[95m"},   {96, "\x1b[96m"},   {97, "\x1b[97m"},
-        {100, "\x1b[100m"}, {101, "\x1b[101m"}, {102, "\x1b[102m"}, {103, "\x1b[103m"}, {104, "\x1b[104m"},
-        {105, "\x1b[105m"}, {106, "\x1b[106m"}, {107, "\x1b[107m"},
-    }};
+    static constexpr auto _S_basicCVTScolMap = [] {
+        using namespace std::literals;
+        std::array<std::string_view, 108> arr{}; // all default to ""sv
+
+        arr[0]   = "\x1b[m"sv;
+        arr[1]   = "\x1b[1m"sv;
+        arr[22]  = "\x1b[22m"sv;
+        arr[4]   = "\x1b[4m"sv;
+        arr[24]  = "\x1b[24m"sv;
+        arr[7]   = "\x1b[7m"sv;
+        arr[27]  = "\x1b[27m"sv;
+        arr[30]  = "\x1b[30m"sv;
+        arr[31]  = "\x1b[31m"sv;
+        arr[32]  = "\x1b[32m"sv;
+        arr[33]  = "\x1b[33m"sv;
+        arr[34]  = "\x1b[34m"sv;
+        arr[35]  = "\x1b[35m"sv;
+        arr[36]  = "\x1b[36m"sv;
+        arr[37]  = "\x1b[37m"sv;
+        arr[38]  = "\x1b[38m"sv;
+        arr[39]  = "\x1b[39m"sv;
+        arr[40]  = "\x1b[40m"sv;
+        arr[41]  = "\x1b[41m"sv;
+        arr[42]  = "\x1b[42m"sv;
+        arr[43]  = "\x1b[43m"sv;
+        arr[44]  = "\x1b[44m"sv;
+        arr[45]  = "\x1b[45m"sv;
+        arr[46]  = "\x1b[46m"sv;
+        arr[47]  = "\x1b[47m"sv;
+        arr[48]  = "\x1b[48m"sv;
+        arr[49]  = "\x1b[49m"sv;
+        arr[90]  = "\x1b[90m"sv;
+        arr[91]  = "\x1b[91m"sv;
+        arr[92]  = "\x1b[92m"sv;
+        arr[93]  = "\x1b[93m"sv;
+        arr[94]  = "\x1b[94m"sv;
+        arr[95]  = "\x1b[95m"sv;
+        arr[96]  = "\x1b[96m"sv;
+        arr[97]  = "\x1b[97m"sv;
+        arr[100] = "\x1b[100m"sv;
+        arr[101] = "\x1b[101m"sv;
+        arr[102] = "\x1b[102m"sv;
+        arr[103] = "\x1b[103m"sv;
+        arr[104] = "\x1b[104m"sv;
+        arr[105] = "\x1b[105m"sv;
+        arr[106] = "\x1b[106m"sv;
+        arr[107] = "\x1b[107m"sv;
+
+        return arr;
+    }();
 
 public:
     // Class should be impossible to instantiate
@@ -72,10 +114,12 @@ public:
     void *operator new(std::size_t) = delete;
 
     static constexpr auto get_basicColor(Color_CVTS const col) {
-        return std::string(std::ranges::find_if(_S_basicCVTScolMap, [&](auto &&pr) {
-                               return pr.first == static_cast<int>(col);
-                           })->second);
+        return _S_basicCVTScolMap.at(static_cast<size_t>(col));
     }
+    static constexpr std::string get_basicColor_str(Color_CVTS const col) {
+        return std::string{get_basicColor(col)};
+    }
+
     // Get color by ASCI defined fixed 256 palette
     static constexpr auto get_fgColor(int const color_256) {
         return std::string("\x1b[38;5;").append(std::to_string(color_256)).append("m");

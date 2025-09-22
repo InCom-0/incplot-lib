@@ -1,10 +1,12 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <format>
 #include <functional>
 #include <iterator>
 #include <ranges>
+#include <string_view>
 #include <type_traits>
 
 #include <private/color_mixer.hpp>
@@ -36,6 +38,13 @@ constexpr inline std::string convert_u32u8(std::u32string &str) {
 constexpr inline std::string convert_u32u8(std::u32string &&str) {
     return convert_u32u8(str);
 }
+constexpr inline std::string convert_u32u8(std::u32string_view &str_v) {
+    using namespace ww898::utf;
+    std::string res;
+    convz<utf_selector_t<std::decay_t<decltype(str_v)>::value_type>, utf8>(str_v.data(), std::back_inserter(res));
+    return res;
+}
+
 constexpr inline std::u32string convert_u32u8(std::string const &str) {
     using namespace ww898::utf;
     std::u32string res;
@@ -45,6 +54,14 @@ constexpr inline std::u32string convert_u32u8(std::string const &str) {
 constexpr inline std::u32string convert_u32u8(std::string const &&str) {
     return convert_u32u8(str);
 }
+constexpr inline std::u32string convert_u32u8(std::string_view const str_v) {
+    using namespace ww898::utf;
+    std::u32string res;
+    convz<utf_selector_t<std::decay_t<decltype(str_v)>::value_type>, utf32>(str_v.data(), std::back_inserter(res));
+    return res;
+}
+
+
 
 template <typename T>
 constexpr inline auto get_sortedAndUniqued(T &cont) {

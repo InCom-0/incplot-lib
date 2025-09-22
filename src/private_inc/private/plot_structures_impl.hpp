@@ -570,7 +570,7 @@ auto BarV::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
             for (auto const &val : var) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.push_back(TermColors::get_basicColor(self.dp.color_basePalette.front()));
+                self.plotArea.push_back(TermColors::get_basicColor_str(self.dp.color_basePalette.front()));
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
                 self.plotArea.back().append(Config::color_Axes);
 
@@ -1251,7 +1251,7 @@ auto BarHM::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> 
 }
 
 auto BarHM::compute_axis_hb(this auto &&self) -> compute_rt<decltype(self)> {
-    self.axis_horBottom.push_back(Config::color_Axes);
+    self.axis_horBottom.push_back(std::string{Config::color_Axes});
     for (size_t id = 0; id < self.areaWidth; ++id) { self.axis_horBottom.push_back(Config::axisFiller_b); }
     return std::ref(self);
 };

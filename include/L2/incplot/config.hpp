@@ -3,6 +3,7 @@
 #include <array>
 #include <incplot/color.hpp>
 #include <string>
+#include <string_view>
 
 
 namespace incom {
@@ -67,21 +68,21 @@ public:
     static inline Color_CVTS color_Bckgrnd5_enum = Color_CVTS::Background_Yellow;
     static inline Color_CVTS color_Bckgrnd6_enum = Color_CVTS::Background_Magenta;
 
-    static inline std::string color_Axes = TermColors::get_basicColor(color_Axes_enum);
+    static inline const std::string_view color_Axes = TermColors::get_basicColor(color_Axes_enum);
 
-    static inline std::string color_Vals1 = TermColors::get_basicColor(color_Vals1_enum);
-    static inline std::string color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
-    static inline std::string color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
-    static inline std::string color_Vals4 = TermColors::get_basicColor(color_Vals4_enum);
-    static inline std::string color_Vals5 = TermColors::get_basicColor(color_Vals5_enum);
-    static inline std::string color_Vals6 = TermColors::get_basicColor(color_Vals6_enum);
+    static inline const std::string_view color_Vals1 = TermColors::get_basicColor(color_Vals1_enum);
+    static inline const std::string_view color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
+    static inline const std::string_view color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
+    static inline const std::string_view color_Vals4 = TermColors::get_basicColor(color_Vals4_enum);
+    static inline const std::string_view color_Vals5 = TermColors::get_basicColor(color_Vals5_enum);
+    static inline const std::string_view color_Vals6 = TermColors::get_basicColor(color_Vals6_enum);
 
-    static inline std::string color_Bckgrnd1 = TermColors::get_basicColor(color_Bckgrnd1_enum);
-    static inline std::string color_Bckgrnd2 = TermColors::get_basicColor(color_Bckgrnd2_enum);
-    static inline std::string color_Bckgrnd3 = TermColors::get_basicColor(color_Bckgrnd3_enum);
-    static inline std::string color_Bckgrnd4 = TermColors::get_basicColor(color_Bckgrnd4_enum);
-    static inline std::string color_Bckgrnd5 = TermColors::get_basicColor(color_Bckgrnd5_enum);
-    static inline std::string color_Bckgrnd6 = TermColors::get_basicColor(color_Bckgrnd6_enum);
+    static inline const std::string_view color_Bckgrnd1 = TermColors::get_basicColor(color_Bckgrnd1_enum);
+    static inline const std::string_view color_Bckgrnd2 = TermColors::get_basicColor(color_Bckgrnd2_enum);
+    static inline const std::string_view color_Bckgrnd3 = TermColors::get_basicColor(color_Bckgrnd3_enum);
+    static inline const std::string_view color_Bckgrnd4 = TermColors::get_basicColor(color_Bckgrnd4_enum);
+    static inline const std::string_view color_Bckgrnd5 = TermColors::get_basicColor(color_Bckgrnd5_enum);
+    static inline const std::string_view color_Bckgrnd6 = TermColors::get_basicColor(color_Bckgrnd6_enum);
 
     static inline std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{
         {{19u, 161u, 14u}, {0u, 55u, 218u}, {197u, 15u, 31u}}};
@@ -143,7 +144,7 @@ public:
     static inline size_t axis_verName_width_vl = 3uz;
     static inline size_t axis_verName_width_vr = 3uz;
 
-    static inline std::string term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
+    static inline const std::string_view term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
 
     static inline std::array<std::string, 21> const si_prefixes{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
                                                                 "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
