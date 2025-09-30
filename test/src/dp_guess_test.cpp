@@ -1,7 +1,7 @@
 
 #include <functional>
 #include <gtest/gtest.h>
-#include <incstd_all.hpp>
+#include <incstd/incstd_all.hpp>
 
 #include <incplot.hpp>
 #include <tests_config.hpp>

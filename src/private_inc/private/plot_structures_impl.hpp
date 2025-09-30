@@ -13,7 +13,7 @@
 #include <variant>
 
 #include <incplot/plot_structures.hpp>
-#include <incstd/typegen.hpp>
+#include <incstd/core/typegen.hpp>
 #include <private/braille_drawer.hpp>
 
 

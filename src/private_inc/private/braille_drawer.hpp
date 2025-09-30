@@ -6,7 +6,7 @@
 #include <utility>
 #include <variant>
 
-#include <incstd/algos.hpp>
+#include <incstd/core/algos.hpp>
 #include <private/detail.hpp>
 
 

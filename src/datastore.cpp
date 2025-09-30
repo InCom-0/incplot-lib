@@ -4,7 +4,7 @@
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/parsers_inc.hpp>
-#include <incstd_all.hpp>
+#include <incstd/incstd_all.hpp>
 #include <utility>
 
 

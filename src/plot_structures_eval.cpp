@@ -10,7 +10,7 @@
 #include <variant>
 
 #include <incplot/plot_structures.hpp>
-#include <incstd/algos.hpp>
+#include <incstd/core/algos.hpp>
 #include <private/detail.hpp>
 
 

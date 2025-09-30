@@ -6,7 +6,7 @@
 #include <variant>
 
 #include <incplot.hpp>
-#include <incstd/variant_utils.hpp>
+#include <incstd/core/variant_utils.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <private/detail.hpp>
 #include <private/plot_structures_impl.hpp>

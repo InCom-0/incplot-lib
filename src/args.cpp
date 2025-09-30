@@ -1,6 +1,6 @@
 #include <incplot/args.hpp>
 #include <incplot/plot_structures.hpp>
-#include <incstd/typegen.hpp>
+#include <incstd/core/typegen.hpp>
 #include <optional>
 #include <private/detail.hpp>
 #include <typeindex>
