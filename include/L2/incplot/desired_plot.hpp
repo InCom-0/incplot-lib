@@ -1,5 +1,6 @@
 #pragma once
 
+#include "incstd/console/ansi_sequences.hpp"
 #include <expected>
 #include <optional>
 
@@ -74,14 +75,8 @@ public:
     std::optional<size_t> availableWidth  = std::nullopt;
     std::optional<size_t> availableHeight = std::nullopt;
 
-    std::array<Color_CVTS, 12> color_basePalette = {
-        Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
-        Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
-    };
-    std::array<Color_CVTS, 12> color_bckgrndPalette = {
-        Config::color_Bckgrnd1_enum, Config::color_Bckgrnd2_enum, Config::color_Bckgrnd3_enum,
-        Config::color_Bckgrnd4_enum, Config::color_Bckgrnd5_enum, Config::color_Bckgrnd6_enum,
-    };
+    std::array<ANSI::SGR_map, 12> color_basePalette    = Config::paletteSGR_native_fg;
+    std::array<ANSI::SGR_map, 12> color_bckgrndPalette = Config::paletteSGR_native_bg;
 
     std::optional<bool> valAxesNames_bool  = std::nullopt;
     std::optional<bool> valAxesLabels_bool = std::nullopt;
@@ -92,27 +87,21 @@ public:
     std::optional<bool>   display_filtered_bool = std::nullopt;
 
     struct DP_CtorStruct {
-        std::optional<size_t>          tar_width      = std::nullopt;
-        std::optional<size_t>          tar_height     = std::nullopt;
-        std::optional<std::type_index> plot_type_name = std::nullopt;
-        std::optional<size_t>          lts_colID      = std::nullopt;
-        std::vector<size_t>            v_colIDs       = {};
-        std::optional<size_t>          c_colID        = std::nullopt;
-        std::array<Color_CVTS, 12>      colors         = {
-            Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
-            Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
-        };
-        std::array<Color_CVTS, 12> color_bckgrnd = {
-            Config::color_Bckgrnd1_enum, Config::color_Bckgrnd2_enum, Config::color_Bckgrnd3_enum,
-            Config::color_Bckgrnd4_enum, Config::color_Bckgrnd5_enum, Config::color_Bckgrnd6_enum,
-        };
-        std::optional<std::string> lts_colName           = std::nullopt;
-        std::vector<std::string>   v_colNames            = {};
-        std::optional<std::string> c_colName             = std::nullopt;
-        std::optional<size_t>      availableWidth        = std::nullopt;
-        std::optional<size_t>      availableHeight       = std::nullopt;
-        std::optional<double>      filter_outsideStdDev  = std::nullopt;
-        std::optional<bool>        display_filtered_bool = Config::display_filtered_bool_default;
+        std::optional<size_t>          tar_width             = std::nullopt;
+        std::optional<size_t>          tar_height            = std::nullopt;
+        std::optional<std::type_index> plot_type_name        = std::nullopt;
+        std::optional<size_t>          lts_colID             = std::nullopt;
+        std::vector<size_t>            v_colIDs              = {};
+        std::optional<size_t>          c_colID               = std::nullopt;
+        std::array<ANSI::SGR_map, 12>  colors                = Config::paletteSGR_native_fg;
+        std::array<ANSI::SGR_map, 12>  color_bckgrnd         = Config::paletteSGR_native_bg;
+        std::optional<std::string>     lts_colName           = std::nullopt;
+        std::vector<std::string>       v_colNames            = {};
+        std::optional<std::string>     c_colName             = std::nullopt;
+        std::optional<size_t>          availableWidth        = std::nullopt;
+        std::optional<size_t>          availableHeight       = std::nullopt;
+        std::optional<double>          filter_outsideStdDev  = std::nullopt;
+        std::optional<bool>            display_filtered_bool = Config::display_filtered_bool_default;
     };
 
     DesiredPlot(DP_CtorStruct &&dp_struct)

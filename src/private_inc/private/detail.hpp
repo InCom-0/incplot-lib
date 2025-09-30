@@ -1,5 +1,7 @@
 #pragma once
 
+#include "incplot/config.hpp"
+#include "incstd/console/ansi_sequences.hpp"
 #include <algorithm>
 #include <cmath>
 #include <format>
@@ -60,7 +62,6 @@ constexpr inline std::u32string convert_u32u8(std::string_view const str_v) {
     convz<utf_selector_t<std::decay_t<decltype(str_v)>::value_type>, utf32>(str_v.data(), std::back_inserter(res));
     return res;
 }
-
 
 
 template <typename T>
@@ -166,13 +167,13 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
     std::vector<std::string> res;
     for (size_t i_step = 0; i_step < steps; ++i_step) {
         for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) {
-            res.push_back(TermColors::get_coloured(filler, Config::color_Axes_enum));
+            res.push_back(ANSI::SGR_builder().color_fg(Config::color_axesDefault).add_string(filler).reset_all().get());
         }
-        res.push_back(TermColors::get_coloured(tick, Config::color_Axes_enum));
+        res.push_back(ANSI::SGR_builder().color_fg(Config::color_axesDefault).add_string(tick).reset_all().get());
     }
     size_t sizeOfRest = totalLength - (steps) - (steps * fillerSize);
     for (size_t i_filler = 0; i_filler < sizeOfRest; ++i_filler) {
-        res.push_back(TermColors::get_coloured(filler, Config::color_Axes_enum));
+        res.push_back(ANSI::SGR_builder().color_fg(Config::color_axesDefault).add_string(filler).reset_all().get());
     }
     return res;
 }

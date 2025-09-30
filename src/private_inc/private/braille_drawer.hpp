@@ -1,5 +1,6 @@
 #pragma once
 
+#include "incstd/console/ansi_sequences.hpp"
 #include <algorithm>
 #include <cassert>
 #include <ranges>
@@ -24,7 +25,7 @@ private:
 
     BrailleDrawer() {};
     BrailleDrawer(size_t canvas_width, size_t canvas_height, size_t numOf_categories,
-                  std::array<Color_CVTS, 12> const &colorPalette)
+                  std::array<ANSI::SGR_map, 12> const &colorPalette)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))),
 
@@ -37,20 +38,23 @@ private:
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)}}}))),
-          m_colorPallete{detail::convert_u32u8(TermColors::get_basicColor(colorPalette[0])),
-                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[1])),
-                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[2])),
-                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[3])),
-                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[4])),
-                         detail::convert_u32u8(TermColors::get_basicColor(colorPalette[5]))} {};
+          m_colorPallete{detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[0])),
+                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[1])),
+                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[2])),
+                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[3])),
+                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[4])),
+                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[5]))} {
+
+
+          };
 
     void compute_canvasColors() {
         ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor));
         for (size_t rowID = 0; rowID < m_pointsCountPerPos_perColor.size(); ++rowID) {
             for (size_t colID = 0; colID < m_pointsCountPerPos_perColor[rowID].size(); ++colID) {
                 if (m_canvasBraille[rowID][colID] != Config::braille_blank) {
-                    m_canvasColors[rowID][colID] = detail::convert_u32u8(ANSI::get_fg(
-                        cm.compute_colorOfPosition(m_pointsCountPerPos_perColor[rowID][colID])));
+                    m_canvasColors[rowID][colID] = detail::convert_u32u8(
+                        ANSI::get_fg(cm.compute_colorOfPosition(m_pointsCountPerPos_perColor[rowID][colID])));
                 }
             }
         }
@@ -99,7 +103,7 @@ public:
     static std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
                                                auto                                     &view_varValCols,
                                                std::optional<std::vector<size_t>> const &catIDs_vec,
-                                               std::array<Color_CVTS, 12>                 colorPalette) {
+                                               std::array<ANSI::SGR_map, 12>             colorPalette) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          catIDs_vec.has_value()
@@ -164,7 +168,7 @@ public:
     }
 
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
-                                              auto &view_varValCols, std::array<Color_CVTS, 12> colorPalette) {
+                                              auto &view_varValCols, std::array<ANSI::SGR_map, 12> colorPalette) {
         BrailleDrawer bd(canvas_width, canvas_height, std::ranges::distance(view_varValCols), colorPalette);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col);

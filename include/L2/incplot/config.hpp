@@ -1,5 +1,7 @@
 #pragma once
 
+#include "incstd/color/color_common.hpp"
+#include "incstd/console/ansi_sequences.hpp"
 #include <array>
 #include <string>
 #include <string_view>
@@ -60,44 +62,28 @@ public:
     static inline const std::string_view color_Axes = ANSI::get_fg(ANSI_Color16::Bright_Black);
     static inline inc_sRGB               colors_blackRaw{12, 12, 12};
 
+    static inline ANSI_Color16 color_axesDefault = ANSI_Color16::Bright_Black;
+
     static inline const std::array<ANSI::inc_sRGB, 12> paletteRGB_CB_SD{
         campbell256.palette[2], campbell256.palette[4],  campbell256.palette[1],  campbell256.palette[6],
         campbell256.palette[3], campbell256.palette[5],  campbell256.palette[10], campbell256.palette[12],
         campbell256.palette[9], campbell256.palette[14], campbell256.palette[11], campbell256.palette[13]};
 
-    static inline const std::array<std::string_view, 12> paletteSGR_native_fg{
-        ANSI::get_fg(ANSI_Color16::Green),         ANSI::get_fg(ANSI_Color16::Blue),
-        ANSI::get_fg(ANSI_Color16::Red),           ANSI::get_fg(ANSI_Color16::Cyan),
-        ANSI::get_fg(ANSI_Color16::Yellow),        ANSI::get_fg(ANSI_Color16::Magenta),
-        ANSI::get_fg(ANSI_Color16::Bright_Green),  ANSI::get_fg(ANSI_Color16::Bright_Blue),
-        ANSI::get_fg(ANSI_Color16::Bright_Red),    ANSI::get_fg(ANSI_Color16::Bright_Cyan),
-        ANSI::get_fg(ANSI_Color16::Bright_Yellow), ANSI::get_fg(ANSI_Color16::Bright_Magenta)};
+    static inline const std::array<ANSI::SGR_map, 12> paletteSGR_native_fg{
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Green),         ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Blue),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Red),           ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Cyan),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Yellow),        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Magenta),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Green),  ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Blue),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Red),    ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Cyan),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Yellow), ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Magenta)};
 
-
-    static inline const std::array<std::string_view, 12> paletteSGR_native_bg{
-        ANSI::get_bg(ANSI_Color16::Green),         ANSI::get_bg(ANSI_Color16::Blue),
-        ANSI::get_bg(ANSI_Color16::Red),           ANSI::get_bg(ANSI_Color16::Cyan),
-        ANSI::get_bg(ANSI_Color16::Yellow),        ANSI::get_bg(ANSI_Color16::Magenta),
-        ANSI::get_bg(ANSI_Color16::Bright_Green),  ANSI::get_bg(ANSI_Color16::Bright_Blue),
-        ANSI::get_bg(ANSI_Color16::Bright_Red),    ANSI::get_bg(ANSI_Color16::Bright_Cyan),
-        ANSI::get_bg(ANSI_Color16::Bright_Yellow), ANSI::get_bg(ANSI_Color16::Bright_Magenta)};
-
-    static inline Color_CVTS color_Axes_enum = Color_CVTS::Bright_Foreground_Black;
-
-    static inline Color_CVTS color_Vals1_enum = Color_CVTS::Foreground_Green;
-    static inline Color_CVTS color_Vals2_enum = Color_CVTS::Foreground_Blue;
-    static inline Color_CVTS color_Vals3_enum = Color_CVTS::Foreground_Red;
-    static inline Color_CVTS color_Vals4_enum = Color_CVTS::Foreground_Cyan;
-    static inline Color_CVTS color_Vals5_enum = Color_CVTS::Foreground_Yellow;
-    static inline Color_CVTS color_Vals6_enum = Color_CVTS::Foreground_Magenta;
-
-    static inline Color_CVTS color_Bckgrnd1_enum = Color_CVTS::Background_Green;
-    static inline Color_CVTS color_Bckgrnd2_enum = Color_CVTS::Background_Blue;
-    static inline Color_CVTS color_Bckgrnd3_enum = Color_CVTS::Background_Red;
-    static inline Color_CVTS color_Bckgrnd4_enum = Color_CVTS::Background_Cyan;
-    static inline Color_CVTS color_Bckgrnd5_enum = Color_CVTS::Background_Yellow;
-    static inline Color_CVTS color_Bckgrnd6_enum = Color_CVTS::Background_Magenta;
-
+    static inline const std::array<ANSI::SGR_map, 12> paletteSGR_native_bg{
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Green),         ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Blue),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Red),           ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Cyan),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Yellow),        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Magenta),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Green),  ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Blue),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Red),    ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Cyan),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Yellow), ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Magenta)};
 
     static inline const std::string_view color_Vals1 = ANSI::get_fg(ANSI_Color16::Green);
     static inline const std::string_view color_Vals2 = ANSI::get_fg(ANSI_Color16::Blue);

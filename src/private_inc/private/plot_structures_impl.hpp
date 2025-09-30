@@ -570,7 +570,7 @@ auto BarV::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
             for (auto const &val : var) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.push_back(TermColors::get_basicColor_str(self.dp.color_basePalette.front()));
+                self.plotArea.push_back(std::string(ANSI::get_fromSGR_direct(self.dp.color_basePalette.front())));
                 for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
                 self.plotArea.back().append(Config::color_Axes);
 
@@ -761,7 +761,7 @@ auto BarVM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
         for (; lineID < self.dp.values_colIDs.size(); ++lineID) {
             self.labels_verRight.push_back(
                 std::string(Config::axisLabels_padLeft_vr, Config::space)
-                    .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                    .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
                     .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                      self.labels_verRightWidth))
                     .append(Config::term_setDefault));
@@ -775,7 +775,7 @@ auto BarVM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
             for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID_2)))
+                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID_2)))
                         .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
@@ -882,7 +882,7 @@ auto BarVM::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
                 }
 
                 std::string &lineRef = self.plotArea.at((rowID * skipSize) + seriesID);
-                lineRef.append(TermColors::get_basicColor(self.dp.color_basePalette.at(seriesID)));
+                lineRef.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(seriesID)));
                 lineRef.append(incom::terminal_plot::detail::convert_u32u8(tmp_u32string));
                 lineRef.append(Config::term_setDefault);
 
@@ -991,7 +991,7 @@ auto Scatter::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> 
             if (lineID < uniquedCats_vec.size()) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
                         .append(detail::trim2Size_ending(uniquedCats_vec.at(lineID), self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
@@ -1015,7 +1015,7 @@ auto Scatter::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> 
             if (lineID < (self.dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
                         .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
@@ -1268,7 +1268,7 @@ auto BarHM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
             if (lineID == self.areaHeight) { break; }
             self.labels_verRight.push_back(
                 std::string(Config::axisLabels_padLeft_vr, Config::space)
-                    .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID)))
+                    .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
                     .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                      self.labels_verRightWidth))
                     .append(Config::term_setDefault));
@@ -1284,7 +1284,7 @@ auto BarHM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
             for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID_2)))
+                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID_2)))
                         .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
@@ -1433,7 +1433,7 @@ auto BarHM::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
     for (size_t resLineID = 0; auto &resLine : self.plotArea) {
         for (size_t col_inPlotID = 0; col_inPlotID < self.data_rowCount; ++col_inPlotID) {
             for (size_t valColID = 0; valColID < self.values_data.size(); ++valColID) {
-                resLine.append(TermColors::get_basicColor(self.dp.color_basePalette.at(valColID)));
+                resLine.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(valColID)));
                 resLine.append(Config::blocks_ver_str.at(symbolVects[valColID][resLineID][col_inPlotID]));
             }
             for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLine.push_back(Config::space); }
@@ -1534,7 +1534,7 @@ auto BarHS::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
             if (lineID == self.areaHeight) { break; }
             self.labels_verRight.push_back(
                 std::string(Config::axisLabels_padLeft_vr, Config::space)
-                    .append(TermColors::get_basicColor(bp))
+                    .append(ANSI::get_fromSGR_direct(bp))
                     .append(detail::trim2Size_ending(self.ds.m_data.at(colID).name, self.labels_verRightWidth))
                     .append(Config::term_setDefault));
             lineID++;
@@ -1554,21 +1554,12 @@ auto BarHS::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
                      std::views::reverse(self.dp.values_colIDs))) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(TermColors::get_basicColor(bp))
+                        .append(ANSI::get_fromSGR_direct(bp))
                         .append(detail::trim2Size_ending(self.ds.m_data.at(colID).name, self.labels_verRightWidth))
                         .append(Config::term_setDefault));
                 lineID++;
                 lineID_2++;
             }
-
-            // for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
-            //     self.labels_verRight.push_back(
-            //         std::string(Config::axisLabels_padLeft_vr, Config::space)
-            //             .append(TermColors::get_basicColor(self.dp.color_basePalette.at(lineID_2)))
-            //             .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
-            //                                              self.labels_verRightWidth))
-            //             .append(Config::term_setDefault));
-            // }
         }
 
         for (; lineID < static_cast<size_t>(self.areaHeight); ++lineID) {
@@ -1624,7 +1615,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
             // Full block of current color
             else if (doubleConverted[currentValColIDs[resColID]][resColID] >= bigStepSize) {
-                resLine.append(TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                resLine.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(currentValColIDs[resColID])));
                 resLine.append(Config::blocks_ver_str[8uz]);
                 doubleConverted[currentValColIDs[resColID]][resColID] -= bigStepSize;
             }
@@ -1634,7 +1625,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
                 size_t const numOfSmallSteps =
                     static_cast<size_t>(doubleConverted[currentValColIDs[resColID]][resColID] / smallStepSize);
 
-                resLine.append(TermColors::get_basicColor(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                resLine.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(currentValColIDs[resColID])));
                 doubleConverted[currentValColIDs[resColID]][resColID] -= numOfSmallSteps * smallStepSize;
                 currentValColIDs[resColID]++;
 
@@ -1649,7 +1640,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
                 else {
                     // Append the background color representing the next valCol
                     resLine.append(
-                        TermColors::get_basicColor(self.dp.color_bckgrndPalette.at(currentValColIDs[resColID])));
+                        ANSI::get_fromSGR_direct(self.dp.color_bckgrndPalette.at(currentValColIDs[resColID])));
 
                     // Subtract from the next valCol value of the remnant of this block
                     // Note_1: This is inaccurate as we may show the remnant bigger than it should be based on the data.

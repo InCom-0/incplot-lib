@@ -161,21 +161,6 @@ public:
 
     template <typename T>
     requires std::is_convertible_v<T, std::string_view>
-    static constexpr auto get_colouredFG(T &&toColor, int color_256) {
-        return std::string(get_fgColor(color_256))
-            .append(std::forward<T>(toColor))
-            .append(get_basicColor(Color_CVTS::Default));
-    }
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
-    static constexpr auto get_colouredBG(T &&toColor, int color_256) {
-        return std::string(get_bgColor(color_256))
-            .append(std::forward<T>(toColor))
-            .append(get_basicColor(Color_CVTS::Default));
-    }
-
-    template <typename T>
-    requires std::is_convertible_v<T, std::string_view>
     static constexpr auto get_coloured(T &&toColor, Color_CVTS const col) {
         return std::string(get_basicColor(col))
             .append(std::forward<T>(toColor))
