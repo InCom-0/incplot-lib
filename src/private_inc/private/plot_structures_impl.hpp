@@ -570,12 +570,13 @@ auto BarV::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
             for (auto const &val : var) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                self.plotArea.push_back(std::string(ANSI::get_fromSGR_direct(self.dp.color_basePalette.front())));
-                for (long long i = rpt; i > 0; --i) { self.plotArea.back().append("■"); }
-                self.plotArea.back().append(Config::color_Axes);
 
-                self.plotArea.back().append(Config::term_setDefault);
-                for (long long i = rpt; i < self.areaWidth; ++i) { self.plotArea.back().push_back(Config::space); }
+                ANSI::SGR_builder oneLine = ANSI::SGR_builder().add_SGR_direct(self.dp.color_basePalette.front());
+                for (long long i = rpt; i > 0; --i) { oneLine.add_string("■"sv); }
+                oneLine.reset_all();
+                oneLine.add_string(std::string(self.areaWidth - rpt, Config::space));
+
+                self.plotArea.push_back(std::move(oneLine).get());
             }
         }
     };
@@ -881,10 +882,12 @@ auto BarVM::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
                     self.plotArea.at((rowID * skipSize) - 1).append(emptyPlotLine);
                 }
 
-                std::string &lineRef = self.plotArea.at((rowID * skipSize) + seriesID);
-                lineRef.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(seriesID)));
-                lineRef.append(incom::terminal_plot::detail::convert_u32u8(tmp_u32string));
-                lineRef.append(Config::term_setDefault);
+                self.plotArea.at((rowID * skipSize) + seriesID)
+                    .append(ANSI::SGR_builder()
+                                .add_SGR_direct(self.dp.color_basePalette.at(seriesID))
+                                .add_string(detail::convert_u32u8(tmp_u32string))
+                                .reset_all()
+                                .get());
 
                 tmp_u32string.clear();
                 rowID++;
@@ -894,8 +897,6 @@ auto BarVM::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
     };
 
     for (auto const &varVec : self.values_data) { std::visit(computePA, varVec); }
-
-
     return std::ref(self);
 }
 // ### END BAR VM ###
