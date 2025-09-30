@@ -1,7 +1,5 @@
 #pragma once
 
-#include "incplot/config.hpp"
-#include "incstd/console/ansi_sequences.hpp"
 #include <algorithm>
 #include <cmath>
 #include <format>

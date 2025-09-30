@@ -1,5 +1,4 @@
 
-#include "incplot/config.hpp"
 #include <functional>
 #include <gtest/gtest.h>
 #include <incstd_all.hpp>
