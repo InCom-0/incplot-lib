@@ -2,7 +2,7 @@
 #include "incplot/config.hpp"
 #include <functional>
 #include <gtest/gtest.h>
-#include <incstd.hpp>
+#include <incstd_all.hpp>
 
 #include <incplot.hpp>
 #include <tests_config.hpp>

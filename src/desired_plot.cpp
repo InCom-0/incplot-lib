@@ -7,7 +7,7 @@
 
 #include <incplot/desired_plot.hpp>
 #include <incplot/plot_structures.hpp>
-#include <incstd.hpp>
+#include <incstd_all.hpp>
 #include <private/detail.hpp>
 
 
