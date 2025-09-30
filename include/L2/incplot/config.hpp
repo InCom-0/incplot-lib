@@ -1,12 +1,9 @@
 #pragma once
 
-#include "incstd/color/color_common.hpp"
-#include "incstd/console/ansi_sequences.hpp"
 #include <array>
 #include <string>
 #include <string_view>
 
-#include <incplot/color.hpp>
 #include <incstd_console.hpp>
 
 
