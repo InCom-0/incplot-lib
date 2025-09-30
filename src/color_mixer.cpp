@@ -1,31 +1,32 @@
 
 #include <algorithm>
-#include <ranges>
 #include <private/color_mixer.hpp>
+#include <ranges>
+
 
 namespace incom {
 namespace terminal_plot {
-namespace detail {
+namespace detail { 
+using namespace incstd::color;
 
 ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect,
-                       std::vector<std::array<unsigned int, 3>> selectColorsFrom, std::array<unsigned int, 3> blackRGB)
-    : m_maxSteps_perColor(std::move(maxSteps_perColor)), m_blackColor{blackRGB[0], blackRGB[1], blackRGB[2]},
+                       std::vector<inc_sRGB> selectColorsFrom, inc_sRGB blackRGB)
+    : m_maxSteps_perColor(std::move(maxSteps_perColor)), m_blackColor(blackRGB),
       m_stepSize_perColor(num_colorsToSelect, C_StepSize()) {
 
     // Construct vector of actual colors (in RGB)
     for (size_t fromColID = 0; fromColID < num_colorsToSelect; ++fromColID) {
-        m_selColors.push_back(
-            C{selectColorsFrom.at(fromColID)[0], selectColorsFrom.at(fromColID)[1], selectColorsFrom.at(fromColID)[2]});
+        m_selColors.push_back(selectColorsFrom.at(fromColID));
     }
 
     // Compute max RGB per channel
-    m_maxRGBVals.r = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.r < r.r; })->r;
-    m_maxRGBVals.g = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.g < r.g; })->g;
-    m_maxRGBVals.b = std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.b < r.b; })->b;
+    m_maxRGBVals.r = (*std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.r < r.r; })).r;
+    m_maxRGBVals.g = (*std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.g < r.g; })).g;
+    m_maxRGBVals.b = (*std::ranges::max_element(m_selColors, [](auto &&l, auto &&r) { return l.b < r.b; })).b;
 
-    m_minRGBVals.r = std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.r < r.r; })->r;
-    m_minRGBVals.g = std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.g < r.g; })->g;
-    m_minRGBVals.b = std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.b < r.b; })->b;
+    m_minRGBVals.r = (*std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.r < r.r; })).r;
+    m_minRGBVals.g = (*std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.g < r.g; })).g;
+    m_minRGBVals.b = (*std::ranges::min_element(m_selColors, [](auto &&l, auto &&r) { return l.b < r.b; })).b;
 
     m_fakeZeroColor.r = m_blackColor.r + static_cast<unsigned int>((m_maxRGBVals.r - m_blackColor.r) *
                                                                    (1 - Config::colors_scaleDistanceFromBlack));
@@ -45,7 +46,7 @@ ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsT
     }
 }
 
-ColorMixer::ColorMixer(size_t num_colorsToSelect, std::vector<std::array<unsigned int, 3>> selectColorsFrom)
+ColorMixer::ColorMixer(size_t num_colorsToSelect, std::vector<inc_sRGB> selectColorsFrom)
     : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), num_colorsToSelect, selectColorsFrom) {}
 
 std::vector<size_t> ColorMixer::compute_maxStepsPerColor(
@@ -67,7 +68,7 @@ std::vector<size_t> ColorMixer::compute_maxStepsPerColor(
     return res;
 }
 
-std::array<unsigned int, 3> ColorMixer::compute_colorOfPosition(
+incstd::color::inc_sRGB ColorMixer::compute_colorOfPosition(
     std::array<std::array<std::vector<size_t>, 2>, 4> const &colorPointCounts_onePos) {
 
     std::vector<size_t> stepsForPos_perColor = std::vector<size_t>(colorPointCounts_onePos.at(0).at(0).size(), 0uz);
@@ -81,18 +82,18 @@ std::array<unsigned int, 3> ColorMixer::compute_colorOfPosition(
         }
     }
 
-    std::array<unsigned int, 3> res{m_fakeZeroColor.r, m_fakeZeroColor.g, m_fakeZeroColor.b};
+    incstd::color::inc_sRGB res{m_fakeZeroColor.r, m_fakeZeroColor.g, m_fakeZeroColor.b};
     for (auto const &[steps, stepSize] : std::views::zip(stepsForPos_perColor, m_stepSize_perColor)) {
-        res[0] =
-            std::max(static_cast<int>(m_minRGBVals.r), static_cast<int>(res[0]) + static_cast<int>(steps * stepSize.r));
-        res[1] =
-            std::max(static_cast<int>(m_minRGBVals.g), static_cast<int>(res[1]) + static_cast<int>(steps * stepSize.g));
-        res[2] =
-            std::max(static_cast<int>(m_minRGBVals.b), static_cast<int>(res[2]) + static_cast<int>(steps * stepSize.b));
+        res.r =
+            std::max(static_cast<int>(m_minRGBVals.r), static_cast<int>(res.r) + static_cast<int>(steps * stepSize.r));
+        res.g =
+            std::max(static_cast<int>(m_minRGBVals.g), static_cast<int>(res.g) + static_cast<int>(steps * stepSize.g));
+        res.b =
+            std::max(static_cast<int>(m_minRGBVals.b), static_cast<int>(res.b) + static_cast<int>(steps * stepSize.b));
     }
-    res[0] = std::min(m_maxRGBVals.r, res[0]);
-    res[1] = std::min(m_maxRGBVals.g, res[1]);
-    res[2] = std::min(m_maxRGBVals.b, res[2]);
+    res.r = std::min(m_maxRGBVals.r, res.r);
+    res.g = std::min(m_maxRGBVals.g, res.g);
+    res.b = std::min(m_maxRGBVals.b, res.b);
     return res;
 }
 

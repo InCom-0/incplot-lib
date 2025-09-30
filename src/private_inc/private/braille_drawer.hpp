@@ -24,7 +24,7 @@ private:
 
     BrailleDrawer() {};
     BrailleDrawer(size_t canvas_width, size_t canvas_height, size_t numOf_categories,
-                  std::array<Color_CVTS, 6> const &colorPalette)
+                  std::array<Color_CVTS, 12> const &colorPalette)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))),
 
@@ -49,7 +49,7 @@ private:
         for (size_t rowID = 0; rowID < m_pointsCountPerPos_perColor.size(); ++rowID) {
             for (size_t colID = 0; colID < m_pointsCountPerPos_perColor[rowID].size(); ++colID) {
                 if (m_canvasBraille[rowID][colID] != Config::braille_blank) {
-                    m_canvasColors[rowID][colID] = detail::convert_u32u8(TermColors::get_fgColor(
+                    m_canvasColors[rowID][colID] = detail::convert_u32u8(ANSI::get_fg(
                         cm.compute_colorOfPosition(m_pointsCountPerPos_perColor[rowID][colID])));
                 }
             }
@@ -99,7 +99,7 @@ public:
     static std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
                                                auto                                     &view_varValCols,
                                                std::optional<std::vector<size_t>> const &catIDs_vec,
-                                               std::array<Color_CVTS, 6>                 colorPalette) {
+                                               std::array<Color_CVTS, 12>                 colorPalette) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          catIDs_vec.has_value()
@@ -164,7 +164,7 @@ public:
     }
 
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
-                                              auto &view_varValCols, std::array<Color_CVTS, 6> colorPalette) {
+                                              auto &view_varValCols, std::array<Color_CVTS, 12> colorPalette) {
         BrailleDrawer bd(canvas_width, canvas_height, std::ranges::distance(view_varValCols), colorPalette);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col);

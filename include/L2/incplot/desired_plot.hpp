@@ -74,11 +74,11 @@ public:
     std::optional<size_t> availableWidth  = std::nullopt;
     std::optional<size_t> availableHeight = std::nullopt;
 
-    std::array<Color_CVTS, 6> color_basePalette = {
+    std::array<Color_CVTS, 12> color_basePalette = {
         Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
         Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
     };
-    std::array<Color_CVTS, 6> color_bckgrndPalette = {
+    std::array<Color_CVTS, 12> color_bckgrndPalette = {
         Config::color_Bckgrnd1_enum, Config::color_Bckgrnd2_enum, Config::color_Bckgrnd3_enum,
         Config::color_Bckgrnd4_enum, Config::color_Bckgrnd5_enum, Config::color_Bckgrnd6_enum,
     };
@@ -98,11 +98,11 @@ public:
         std::optional<size_t>          lts_colID      = std::nullopt;
         std::vector<size_t>            v_colIDs       = {};
         std::optional<size_t>          c_colID        = std::nullopt;
-        std::array<Color_CVTS, 6>      colors         = {
+        std::array<Color_CVTS, 12>      colors         = {
             Config::color_Vals1_enum, Config::color_Vals2_enum, Config::color_Vals3_enum,
             Config::color_Vals4_enum, Config::color_Vals5_enum, Config::color_Vals6_enum,
         };
-        std::array<Color_CVTS, 6> color_bckgrnd = {
+        std::array<Color_CVTS, 12> color_bckgrnd = {
             Config::color_Bckgrnd1_enum, Config::color_Bckgrnd2_enum, Config::color_Bckgrnd3_enum,
             Config::color_Bckgrnd4_enum, Config::color_Bckgrnd5_enum, Config::color_Bckgrnd6_enum,
         };

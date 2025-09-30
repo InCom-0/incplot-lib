@@ -1,15 +1,20 @@
 #pragma once
 
 #include <array>
-#include <incplot/color.hpp>
 #include <string>
 #include <string_view>
+
+#include <incplot/color.hpp>
+#include <incstd_console.hpp>
 
 
 namespace incom {
 namespace terminal_plot {
 
 using namespace std::literals;
+using namespace incom::standard::color;
+using namespace incom::standard::console;
+using namespace incom::standard::console::color_schemes::windows_terminal;
 
 class Config {
 public:
@@ -52,6 +57,31 @@ public:
 
 
     // COLORS
+    static inline const std::string_view color_Axes = ANSI::get_fg(ANSI_Color16::Bright_Black);
+    static inline inc_sRGB               colors_blackRaw{12, 12, 12};
+
+    static inline const std::array<ANSI::inc_sRGB, 12> paletteRGB_CB_SD{
+        campbell256.palette[2], campbell256.palette[4],  campbell256.palette[1],  campbell256.palette[6],
+        campbell256.palette[3], campbell256.palette[5],  campbell256.palette[10], campbell256.palette[12],
+        campbell256.palette[9], campbell256.palette[14], campbell256.palette[11], campbell256.palette[13]};
+
+    static inline const std::array<std::string_view, 12> paletteSGR_native_fg{
+        ANSI::get_fg(ANSI_Color16::Green),         ANSI::get_fg(ANSI_Color16::Blue),
+        ANSI::get_fg(ANSI_Color16::Red),           ANSI::get_fg(ANSI_Color16::Cyan),
+        ANSI::get_fg(ANSI_Color16::Yellow),        ANSI::get_fg(ANSI_Color16::Magenta),
+        ANSI::get_fg(ANSI_Color16::Bright_Green),  ANSI::get_fg(ANSI_Color16::Bright_Blue),
+        ANSI::get_fg(ANSI_Color16::Bright_Red),    ANSI::get_fg(ANSI_Color16::Bright_Cyan),
+        ANSI::get_fg(ANSI_Color16::Bright_Yellow), ANSI::get_fg(ANSI_Color16::Bright_Magenta)};
+
+
+    static inline const std::array<std::string_view, 12> paletteSGR_native_bg{
+        ANSI::get_bg(ANSI_Color16::Green),         ANSI::get_bg(ANSI_Color16::Blue),
+        ANSI::get_bg(ANSI_Color16::Red),           ANSI::get_bg(ANSI_Color16::Cyan),
+        ANSI::get_bg(ANSI_Color16::Yellow),        ANSI::get_bg(ANSI_Color16::Magenta),
+        ANSI::get_bg(ANSI_Color16::Bright_Green),  ANSI::get_bg(ANSI_Color16::Bright_Blue),
+        ANSI::get_bg(ANSI_Color16::Bright_Red),    ANSI::get_bg(ANSI_Color16::Bright_Cyan),
+        ANSI::get_bg(ANSI_Color16::Bright_Yellow), ANSI::get_bg(ANSI_Color16::Bright_Magenta)};
+
     static inline Color_CVTS color_Axes_enum = Color_CVTS::Bright_Foreground_Black;
 
     static inline Color_CVTS color_Vals1_enum = Color_CVTS::Foreground_Green;
@@ -68,26 +98,23 @@ public:
     static inline Color_CVTS color_Bckgrnd5_enum = Color_CVTS::Background_Yellow;
     static inline Color_CVTS color_Bckgrnd6_enum = Color_CVTS::Background_Magenta;
 
-    static inline const std::string_view color_Axes = TermColors::get_basicColor(color_Axes_enum);
 
-    static inline const std::string_view color_Vals1 = TermColors::get_basicColor(color_Vals1_enum);
-    static inline const std::string_view color_Vals2 = TermColors::get_basicColor(color_Vals2_enum);
-    static inline const std::string_view color_Vals3 = TermColors::get_basicColor(color_Vals3_enum);
-    static inline const std::string_view color_Vals4 = TermColors::get_basicColor(color_Vals4_enum);
-    static inline const std::string_view color_Vals5 = TermColors::get_basicColor(color_Vals5_enum);
-    static inline const std::string_view color_Vals6 = TermColors::get_basicColor(color_Vals6_enum);
+    static inline const std::string_view color_Vals1 = ANSI::get_fg(ANSI_Color16::Green);
+    static inline const std::string_view color_Vals2 = ANSI::get_fg(ANSI_Color16::Blue);
+    static inline const std::string_view color_Vals3 = ANSI::get_fg(ANSI_Color16::Red);
+    static inline const std::string_view color_Vals4 = ANSI::get_fg(ANSI_Color16::Cyan);
+    static inline const std::string_view color_Vals5 = ANSI::get_fg(ANSI_Color16::Yellow);
+    static inline const std::string_view color_Vals6 = ANSI::get_fg(ANSI_Color16::Magenta);
 
-    static inline const std::string_view color_Bckgrnd1 = TermColors::get_basicColor(color_Bckgrnd1_enum);
-    static inline const std::string_view color_Bckgrnd2 = TermColors::get_basicColor(color_Bckgrnd2_enum);
-    static inline const std::string_view color_Bckgrnd3 = TermColors::get_basicColor(color_Bckgrnd3_enum);
-    static inline const std::string_view color_Bckgrnd4 = TermColors::get_basicColor(color_Bckgrnd4_enum);
-    static inline const std::string_view color_Bckgrnd5 = TermColors::get_basicColor(color_Bckgrnd5_enum);
-    static inline const std::string_view color_Bckgrnd6 = TermColors::get_basicColor(color_Bckgrnd6_enum);
+    static inline const std::string_view color_Bckgrnd1 = ANSI::get_bg(ANSI_Color16::Green);
+    static inline const std::string_view color_Bckgrnd2 = ANSI::get_bg(ANSI_Color16::Blue);
+    static inline const std::string_view color_Bckgrnd3 = ANSI::get_bg(ANSI_Color16::Red);
+    static inline const std::string_view color_Bckgrnd4 = ANSI::get_bg(ANSI_Color16::Cyan);
+    static inline const std::string_view color_Bckgrnd5 = ANSI::get_bg(ANSI_Color16::Yellow);
+    static inline const std::string_view color_Bckgrnd6 = ANSI::get_bg(ANSI_Color16::Magenta);
 
-    static inline std::array<std::array<unsigned int, 3>, 3> colors_defaulRaw{
-        {{19u, 161u, 14u}, {0u, 55u, 218u}, {197u, 15u, 31u}}};
+    static inline std::array<inc_sRGB, 3> colors_defaulRaw{{{19u, 161u, 14u}, {0u, 55u, 218u}, {197u, 15u, 31u}}};
 
-    static inline std::array<unsigned int, 3> colors_blackRaw{12, 12, 12};
     static inline double                      colors_scaleDistanceFromBlack = 0.55;
 
     // MULTILINE
@@ -105,7 +132,7 @@ public:
 
     static inline size_t min_plotHeight = 5uz;
 
-    static inline std::string noLabel = "[no label]";
+    static inline std::string_view noLabel = "[no label]"sv;
 
     static inline size_t max_sizeOfValueLabels = 5uz;
 
@@ -144,7 +171,7 @@ public:
     static inline size_t axis_verName_width_vl = 3uz;
     static inline size_t axis_verName_width_vr = 3uz;
 
-    static inline const std::string_view term_setDefault = TermColors::get_basicColor(Color_CVTS::Default);
+    static inline const std::string_view term_setDefault = ANSI::get_fromSGR_direct(ANSI::SGR_map::Reset);
 
     static inline std::array<std::string, 21> const si_prefixes{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
                                                                 "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};

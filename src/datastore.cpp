@@ -83,8 +83,8 @@ void DataStore::append_data(DataStore::DS_CtorObj const &ctorObj) {
 }
 
 void DataStore::append_fakeLabelCol(size_t const sz) {
-    m_data.push_back(
-        Column{Config::noLabel, parsedVal_t::string_like, std::vector(sz, 0u), std::vector<std::string>(sz, "")});
+    m_data.push_back(Column{std::string(Config::noLabel), parsedVal_t::string_like, std::vector(sz, 0u),
+                            std::vector<std::string>(sz, "")});
 }
 
 std::vector<unsigned int> DataStore::compute_filterFlags(std::vector<size_t> const  &colsToGet,
