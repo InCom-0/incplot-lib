@@ -39,9 +39,10 @@ public:
     // 4 rows by 2 cols of braille 'single dots' for composition by 'bitwise or' into all braille chars
     static inline std::array<std::array<char32_t, 2>, 4> braille_map{
         {{U'⡀', U'⢀'}, {U'⠄', U'⠠'}, {U'⠂', U'⠐'}, {U'⠁', U'⠈'}}};
-    static inline char32_t braille_blank = U'⠀';
-    static inline char     space         = ' ';
-    static inline char32_t spaceU32      = U' ';
+    static inline char32_t    braille_blank = U'⠀';
+    static inline char        space         = ' ';
+    static inline char32_t    spaceU32      = U' ';
+    static inline std::string elipsis       = "…";
 
     static inline std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
     static inline std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
@@ -67,20 +68,32 @@ public:
         campbell256.palette[9], campbell256.palette[14], campbell256.palette[11], campbell256.palette[13]};
 
     static inline const std::array<ANSI::SGR_map, 12> paletteSGR_native_fg{
-        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Green),         ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Blue),
-        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Red),           ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Cyan),
-        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Yellow),        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Magenta),
-        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Green),  ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Blue),
-        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Red),    ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Cyan),
-        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Yellow), ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Magenta)};
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Green),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Blue),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Red),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Cyan),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Yellow),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Magenta),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Green),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Blue),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Red),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Cyan),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Yellow),
+        ANSI::ANSI_col16_to_SGRmap_fg(ANSI_Color16::Bright_Magenta)};
 
     static inline const std::array<ANSI::SGR_map, 12> paletteSGR_native_bg{
-        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Green),         ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Blue),
-        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Red),           ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Cyan),
-        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Yellow),        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Magenta),
-        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Green),  ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Blue),
-        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Red),    ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Cyan),
-        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Yellow), ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Magenta)};
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Green),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Blue),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Red),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Cyan),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Yellow),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Magenta),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Green),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Blue),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Red),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Cyan),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Yellow),
+        ANSI::ANSI_col16_to_SGRmap_bg(ANSI_Color16::Bright_Magenta)};
 
     static inline const std::string_view color_Vals1 = ANSI::get_fg(ANSI_Color16::Green);
     static inline const std::string_view color_Vals2 = ANSI::get_fg(ANSI_Color16::Blue);
@@ -98,7 +111,7 @@ public:
 
     static inline std::array<inc_sRGB, 3> colors_defaulRaw{{{19u, 161u, 14u}, {0u, 55u, 218u}, {197u, 15u, 31u}}};
 
-    static inline double                      colors_scaleDistanceFromBlack = 0.55;
+    static inline double colors_scaleDistanceFromBlack = 0.55;
 
     // MULTILINE
     static inline size_t y_interpolationMultiplier = 2uz;

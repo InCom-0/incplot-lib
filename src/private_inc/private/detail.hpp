@@ -80,74 +80,106 @@ constexpr inline std::size_t strlen_utf8(const std::string &str) {
     return length;
 }
 
-constexpr inline std::string trim2Size_leading(std::string const &str, size_t maxSize) {
-    // TODO: Need to somehow handle unicode in labels in this function
+constexpr inline std::size_t conv_utf8CharCount_to_charCount(const std::string &str, size_t utf8CharCount) {
+    std::size_t res = 0;
+    utf8CharCount++;
+    for (char c : str) {
+        if ((c & 0xC0) != 0x80) { utf8CharCount--; }
+        if (utf8CharCount == 0) { return res; }
+        ++res;
+    }
+    return res;
+}
 
-    if (str.size() <= maxSize) { return std::string(maxSize - strlen_utf8(str), Config::space).append(str); }
+constexpr inline std::string trim2Size_leading(std::string const &str, size_t maxSize) {
+    long long const strLen = strlen_utf8(str);
+    if (strLen <= maxSize) { return std::string(maxSize - strLen, Config::space).append(str); }
+
     // Special cases where maxSize is very small
     else if (maxSize < 5) {
         if (maxSize == 0) { return ""; }
-        std::string res(str.begin(), str.begin() + std::min(str.size(), 1uz));
-        while (res.size() < maxSize) { res.push_back('.'); }
+        std::string res(std::max(0ll, static_cast<long long>(maxSize) - strLen), Config::space);
+
+        size_t addFromInput = maxSize - res.size() - 1 + (maxSize >= strLen);
+        res.append(std::string(str.begin(), str.begin() + conv_utf8CharCount_to_charCount(str, addFromInput)));
+
+        // Elipsis is added only if str was shortened
+        if (maxSize < strLen) { res.append(Config::elipsis); }
         return res;
     }
     // Regular case, we know that size of string is larger than maxSize
     else {
         size_t cutPoint = maxSize / 2;
-        return std::string(str.begin(), str.begin() + cutPoint)
-            .append("...")
-            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
+        size_t cp       = conv_utf8CharCount_to_charCount(str, cutPoint);
+        size_t cpNext   = conv_utf8CharCount_to_charCount(str, cutPoint + 1 + (strLen - maxSize));
+
+        return std::string(str.begin(), str.begin() + cp)
+            .append(Config::elipsis)
+            .append(str.begin() + cpNext, str.end());
     }
 }
 constexpr inline std::string trim2Size_leading(std::string &&str, size_t maxSize) {
     return trim2Size_leading(str, maxSize);
 }
 constexpr inline std::string trim2Size_ending(std::string const &str, size_t maxSize) {
-    // TODO: Need to somehow handle unicode in labels in this function
-
-    if (str.size() <= maxSize) {
-        return std::string(str).append(std::string(maxSize - strlen_utf8(str), Config::space));
-    }
+    long long const strLen = strlen_utf8(str);
+    if (strLen <= maxSize) { return std::string(str).append(std::string(maxSize - strLen, Config::space)); }
     // Special cases where maxSize is very small
     else if (maxSize < 5) {
         if (maxSize == 0) { return ""; }
-        std::string res(str.begin(), str.begin() + std::min(str.size(), 1uz));
-        while (res.size() < maxSize) { res.push_back('.'); }
+
+        std::string res(str.begin(),
+                        str.begin() + conv_utf8CharCount_to_charCount(str, maxSize - 1 + (maxSize >= strLen)));
+
+        // Elipsis is added only if str was shortened
+        if (maxSize < strLen) { res.append(Config::elipsis); }
+        else {
+            long long addSpaces = static_cast<long long>(maxSize) - strLen;
+            while (addSpaces-- > 0) { res.push_back(Config::space); }
+        }
         return res;
     }
     // Regular case, we know that size of string is larger than maxSize
     else {
         size_t cutPoint = maxSize / 2;
-        return std::string(str.begin(), str.begin() + cutPoint)
-            .append("...")
-            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
+        size_t cp       = conv_utf8CharCount_to_charCount(str, cutPoint);
+        size_t cpNext   = conv_utf8CharCount_to_charCount(str, cutPoint + 1 + (strLen - maxSize));
+
+        return std::string(str.begin(), str.begin() + cp)
+            .append(Config::elipsis)
+            .append(str.begin() + cpNext, str.end());
     }
 }
 constexpr inline std::string trim2Size_ending(std::string &&str, size_t maxSize) {
     return trim2Size_ending(str, maxSize);
 }
 constexpr inline std::string trim2Size_leadingEnding(std::string const &str, size_t maxSize) {
-    // TODO: Need to somehow handle unicode in labels in this function
-
-    if (str.size() <= maxSize) {
-        return std::string((maxSize - strlen_utf8(str)) / 2, Config::space)
+    long long const strLen = strlen_utf8(str);
+    if (strLen <= maxSize) {
+        return std::string((maxSize - strLen) / 2, Config::space)
             .append(str)
-            .append(
-                std::string(((maxSize - strlen_utf8(str)) / 2) + ((maxSize - strlen_utf8(str)) % 2), Config::space));
+            .append(std::string(maxSize - strLen - ((maxSize - strLen) / 2), Config::space));
     }
     // Special cases where maxSize is very small
     else if (maxSize < 5) {
         if (maxSize == 0) { return ""; }
-        std::string res(str.begin(), str.begin() + std::min(str.size(), 1uz));
-        while (res.size() < maxSize) { res.push_back('.'); }
-        return res;
+        else {
+            std::string res(str.begin(), str.begin() + conv_utf8CharCount_to_charCount(str, maxSize - 1));
+
+            // Elipsis is added only if str was shortened
+            res.append(Config::elipsis);
+            return res;
+        }
     }
     // Regular case, we know that size of string is larger than maxSize
     else {
         size_t cutPoint = maxSize / 2;
-        return std::string(str.begin(), str.begin() + cutPoint)
-            .append("...")
-            .append(str.begin() + cutPoint + 3 + (str.size() - maxSize), str.end());
+        size_t cp       = conv_utf8CharCount_to_charCount(str, cutPoint);
+        size_t cpNext   = conv_utf8CharCount_to_charCount(str, cutPoint + 1 + (strLen - maxSize));
+
+        return std::string(str.begin(), str.begin() + cp)
+            .append(Config::elipsis)
+            .append(str.begin() + cpNext, str.end());
     }
 }
 constexpr inline std::string trim2Size_leadingEnding(std::string const &&str, size_t maxSize) {
