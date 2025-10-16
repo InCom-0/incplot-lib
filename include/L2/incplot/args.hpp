@@ -1,3 +1,5 @@
+#pragma once
+
 #include <argparse/argparse.hpp>
 #include <incplot/desired_plot.hpp>
 
