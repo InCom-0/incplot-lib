@@ -6,6 +6,7 @@
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/err.hpp>
+#include <ranges>
 #include <typeindex>
 #include <utility>
 
@@ -36,6 +37,7 @@ private:
 public:
     std::vector<unsigned int> filterFlags      = {};
     std::vector<ColumnParams> m_colAssessments = {};
+
 
     // BUILDING METHODS
     static std::expected<DesiredPlot, incerr::incerr_code> compute_colAssessments(DesiredPlot    &&dp,
@@ -74,6 +76,12 @@ public:
     std::optional<size_t> availableWidth  = std::nullopt;
     std::optional<size_t> availableHeight = std::nullopt;
 
+    incom::standard::console::color_schemes::scheme16 colScheme = incstd::console::color_schemes::defaultScheme16;
+    std::vector<std::string>                          colScheme_fg_rawANSI;
+    std::vector<std::string>                          colScheme_bg_rawANSI;
+    std::string                                       colScheme_fg_default;
+    std::string                                       colScheme_bg_default;
+
     std::array<ANSI::SGR_map, 12> color_basePalette    = Config::paletteSGR_native_fg;
     std::array<ANSI::SGR_map, 12> color_bckgrndPalette = Config::paletteSGR_native_bg;
 
@@ -86,21 +94,24 @@ public:
     std::optional<bool>   display_filtered_bool = std::nullopt;
 
     struct DP_CtorStruct {
-        std::optional<size_t>          tar_width             = std::nullopt;
-        std::optional<size_t>          tar_height            = std::nullopt;
-        std::optional<std::type_index> plot_type_name        = std::nullopt;
-        std::optional<size_t>          lts_colID             = std::nullopt;
-        std::vector<size_t>            v_colIDs              = {};
-        std::optional<size_t>          c_colID               = std::nullopt;
-        std::array<ANSI::SGR_map, 12>  colors                = Config::paletteSGR_native_fg;
-        std::array<ANSI::SGR_map, 12>  color_bckgrnd         = Config::paletteSGR_native_bg;
-        std::optional<std::string>     lts_colName           = std::nullopt;
-        std::vector<std::string>       v_colNames            = {};
-        std::optional<std::string>     c_colName             = std::nullopt;
-        std::optional<size_t>          availableWidth        = std::nullopt;
-        std::optional<size_t>          availableHeight       = std::nullopt;
-        std::optional<double>          filter_outsideStdDev  = std::nullopt;
-        std::optional<bool>            display_filtered_bool = Config::display_filtered_bool_default;
+        std::optional<size_t>          tar_width      = std::nullopt;
+        std::optional<size_t>          tar_height     = std::nullopt;
+        std::optional<std::type_index> plot_type_name = std::nullopt;
+        std::optional<size_t>          lts_colID      = std::nullopt;
+        std::vector<size_t>            v_colIDs       = {};
+        std::optional<size_t>          c_colID        = std::nullopt;
+
+        incom::standard::console::color_schemes::scheme16 colScheme = incstd::console::color_schemes::defaultScheme16;
+        std::array<ANSI::SGR_map, 12>                     colors    = Config::paletteSGR_native_fg;
+        std::array<ANSI::SGR_map, 12>                     color_bckgrnd = Config::paletteSGR_native_bg;
+
+        std::optional<std::string> lts_colName           = std::nullopt;
+        std::vector<std::string>   v_colNames            = {};
+        std::optional<std::string> c_colName             = std::nullopt;
+        std::optional<size_t>      availableWidth        = std::nullopt;
+        std::optional<size_t>      availableHeight       = std::nullopt;
+        std::optional<double>      filter_outsideStdDev  = std::nullopt;
+        std::optional<bool>        display_filtered_bool = Config::display_filtered_bool_default;
     };
 
     DesiredPlot(DP_CtorStruct &&dp_struct)
@@ -109,8 +120,16 @@ public:
           labelTS_colName(std::move(dp_struct.lts_colName)), values_colIDs(std::move(dp_struct.v_colIDs)),
           values_colNames(std::move(dp_struct.v_colNames)), targetWidth(std::move(dp_struct.tar_width)),
           targetHeight(std::move(dp_struct.tar_height)), availableWidth(std::move(dp_struct.availableWidth)),
-          availableHeight(std::move(dp_struct.availableHeight)), color_basePalette(std::move(dp_struct.colors)),
-          color_bckgrndPalette(std::move(dp_struct.color_bckgrnd)),
+          availableHeight(std::move(dp_struct.availableHeight)), colScheme(std::move(dp_struct.colScheme)),
+          colScheme_fg_rawANSI(
+              std::from_range,
+              std::views::transform(dp_struct.colScheme.palette, [](auto const &srgb) { return ANSI::get_fg(srgb); })),
+          colScheme_bg_rawANSI(
+              std::from_range,
+              std::views::transform(dp_struct.colScheme.palette, [](auto const &srgb) { return ANSI::get_bg(srgb); })),
+          colScheme_fg_default(ANSI::get_fg(dp_struct.colScheme.foreground)),
+          colScheme_bg_default(ANSI::get_bg(dp_struct.colScheme.backgrond)),
+          color_basePalette(std::move(dp_struct.colors)), color_bckgrndPalette(std::move(dp_struct.color_bckgrnd)),
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
           display_filtered_bool(std::move(dp_struct.display_filtered_bool)) {}
     DesiredPlot(DP_CtorStruct const &dp_struct)
@@ -118,9 +137,17 @@ public:
           labelTS_colID(dp_struct.lts_colID), labelTS_colName(dp_struct.lts_colName), values_colIDs(dp_struct.v_colIDs),
           values_colNames(dp_struct.v_colNames), targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
           availableWidth(dp_struct.availableWidth), availableHeight(dp_struct.availableHeight),
-          color_basePalette(dp_struct.colors), color_bckgrndPalette(dp_struct.color_bckgrnd),
-          filter_outsideStdDev(dp_struct.filter_outsideStdDev), display_filtered_bool(dp_struct.display_filtered_bool) {
-    }
+          colScheme(dp_struct.colScheme),
+          colScheme_fg_rawANSI(
+              std::from_range,
+              std::views::transform(dp_struct.colScheme.palette, [](auto const &srgb) { return ANSI::get_fg(srgb); })),
+          colScheme_bg_rawANSI(
+              std::from_range,
+              std::views::transform(dp_struct.colScheme.palette, [](auto const &srgb) { return ANSI::get_bg(srgb); })),
+          colScheme_fg_default(ANSI::get_fg(dp_struct.colScheme.foreground)),
+          colScheme_bg_default(ANSI::get_bg(dp_struct.colScheme.backgrond)), color_basePalette(dp_struct.colors),
+          color_bckgrndPalette(dp_struct.color_bckgrnd), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
+          display_filtered_bool(dp_struct.display_filtered_bool) {}
 
     // Create a new copy and guess_missingParams on it.
     std::expected<DesiredPlot, incerr::incerr_code> build_guessedParamsCPY(this DesiredPlot &self,

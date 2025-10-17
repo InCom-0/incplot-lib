@@ -90,12 +90,13 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
     out_ap.add_argument("-t", "--height").help("Requested height (in characters)").nargs(1).scan<'d', int>();
 
 
+    auto &mex_grp = out_ap.add_mutually_exclusive_group();
     out_ap.add_group("Color related options:");
-    out_ap.add_argument("-d", "--default-colors")
+    mex_grp.add_argument("-d", "--default-colors")
         .help("Draw with [d]efault colors (Windows Terminal Campbell theme)")
         .flag()
         .nargs(0);
-    out_ap.add_argument("-m", "--monochrome").help("Draw in [m]onochromatic colors").flag().nargs(0);
+    mex_grp.add_argument("-m", "--monochrome").help("Draw in [m]onochromatic colors").flag().nargs(0);
 }
 } // namespace terminal_plot
 } // namespace incom

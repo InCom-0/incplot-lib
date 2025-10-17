@@ -7,13 +7,6 @@
 #elif defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
 #endif
 
-void set_cocp() {
-#if defined(_WIN64)
-    SetConsoleOutputCP(CP_UTF8);
-#elif defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
-#endif
-}
-
 #define DATAFOLDER "../../demos/data/"
 
 int main(int argc, char *argv[]) {
