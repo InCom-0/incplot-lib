@@ -568,10 +568,13 @@ auto BarV::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
             auto minV_adj = minV * scalingFactor;
             auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth);
 
+            
+
             for (auto const &val : var) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
+                
 
-                ANSI::SGR_builder oneLine = ANSI::SGR_builder().add_SGR_direct(self.dp.color_basePalette.front());
+                ANSI::SGR_builder oneLine = ANSI::SGR_builder().add_string(self.dp.colScheme_fg_rawANSI.front());
                 for (long long i = rpt; i > 0; --i) { oneLine.add_string("■"sv); }
                 oneLine.reset_all();
                 oneLine.add_string(std::string(self.areaWidth - rpt, Config::space));
@@ -762,7 +765,7 @@ auto BarVM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
         for (; lineID < self.dp.values_colIDs.size(); ++lineID) {
             self.labels_verRight.push_back(
                 std::string(Config::axisLabels_padLeft_vr, Config::space)
-                    .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
+                    .append(self.dp.colScheme_fg_rawANSI.at(lineID))
                     .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                      self.labels_verRightWidth))
                     .append(Config::term_setDefault));
@@ -776,7 +779,7 @@ auto BarVM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
             for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID_2)))
+                        .append(self.dp.colScheme_fg_rawANSI.at(lineID_2))
                         .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
@@ -884,7 +887,7 @@ auto BarVM::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
                 self.plotArea.at((rowID * skipSize) + seriesID)
                     .append(ANSI::SGR_builder()
-                                .add_SGR_direct(self.dp.color_basePalette.at(seriesID))
+                                .add_string(self.dp.colScheme_fg_rawANSI.at(seriesID))
                                 .add_string(detail::convert_u32u8(tmp_u32string))
                                 .reset_all()
                                 .get());
@@ -992,7 +995,7 @@ auto Scatter::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> 
             if (lineID < uniquedCats_vec.size()) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
+                        .append(self.dp.colScheme_fg_rawANSI.at(lineID))
                         .append(detail::trim2Size_ending(uniquedCats_vec.at(lineID), self.labels_verRightWidth))
                         .append(Config::term_setDefault));
             }
@@ -1016,7 +1019,7 @@ auto Scatter::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> 
             if (lineID < (self.dp.values_colIDs.size())) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
+                        .append(self.dp.colScheme_fg_rawANSI.at(lineID))
                         .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
@@ -1269,7 +1272,7 @@ auto BarHM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
             if (lineID == self.areaHeight) { break; }
             self.labels_verRight.push_back(
                 std::string(Config::axisLabels_padLeft_vr, Config::space)
-                    .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID)))
+                    .append(self.dp.colScheme_fg_rawANSI.at(lineID))
                     .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID)).name,
                                                      self.labels_verRightWidth))
                     .append(Config::term_setDefault));
@@ -1285,7 +1288,7 @@ auto BarHM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
             for (size_t lineID_2 = 0; lineID_2 < self.dp.values_colIDs.size(); ++lineID, ++lineID_2) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(lineID_2)))
+                        .append(self.dp.colScheme_fg_rawANSI.at(lineID_2))
                         .append(detail::trim2Size_ending(self.ds.m_data.at(self.dp.values_colIDs.at(lineID_2)).name,
                                                          self.labels_verRightWidth))
                         .append(Config::term_setDefault));
@@ -1434,7 +1437,7 @@ auto BarHM::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
     for (size_t resLineID = 0; auto &resLine : self.plotArea) {
         for (size_t col_inPlotID = 0; col_inPlotID < self.data_rowCount; ++col_inPlotID) {
             for (size_t valColID = 0; valColID < self.values_data.size(); ++valColID) {
-                resLine.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(valColID)));
+                resLine.append(self.dp.colScheme_fg_rawANSI.at(valColID));
                 resLine.append(Config::blocks_ver_str.at(symbolVects[valColID][resLineID][col_inPlotID]));
             }
             for (size_t i = 0; i < 1 + doubleSpace; ++i) { resLine.push_back(Config::space); }
@@ -1528,14 +1531,14 @@ auto BarHS::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
 
         size_t lineID = 0;
 
-        for (auto const [bp, colID] : std::views::zip(
-                 (std::views::reverse(std::views::take(self.dp.color_basePalette, self.dp.values_colIDs.size()))),
+        for (auto const &[ansi_col, colID] : std::views::zip(
+                 (std::views::reverse(std::views::take(self.dp.colScheme_fg_rawANSI, self.dp.values_colIDs.size()))),
                  std::views::reverse(self.dp.values_colIDs))) {
             // Need to break if the area height is smaller than the desired legend height
             if (lineID == self.areaHeight) { break; }
             self.labels_verRight.push_back(
                 std::string(Config::axisLabels_padLeft_vr, Config::space)
-                    .append(ANSI::get_fromSGR_direct(bp))
+                    .append(ansi_col)
                     .append(detail::trim2Size_ending(self.ds.m_data.at(colID).name, self.labels_verRightWidth))
                     .append(Config::term_setDefault));
             lineID++;
@@ -1550,12 +1553,12 @@ auto BarHS::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
              (Config::axisLabels_sizeMultipleForMultilegend_legend_vr * self.dp.values_colIDs.size()))) {
 
             for (size_t lineID_2 = 0;
-                 auto const [bp, colID] : std::views::zip(
-                     (std::views::reverse(std::views::take(self.dp.color_basePalette, self.dp.values_colIDs.size()))),
+                 auto const &[ansi_col, colID] : std::views::zip(
+                     (std::views::reverse(std::views::take(self.dp.colScheme_fg_rawANSI, self.dp.values_colIDs.size()))),
                      std::views::reverse(self.dp.values_colIDs))) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
-                        .append(ANSI::get_fromSGR_direct(bp))
+                        .append(ansi_col)
                         .append(detail::trim2Size_ending(self.ds.m_data.at(colID).name, self.labels_verRightWidth))
                         .append(Config::term_setDefault));
                 lineID++;
@@ -1616,7 +1619,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
             // Full block of current color
             else if (doubleConverted[currentValColIDs[resColID]][resColID] >= bigStepSize) {
-                resLine.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                resLine.append(self.dp.colScheme_fg_rawANSI.at(currentValColIDs[resColID]));
                 resLine.append(Config::blocks_ver_str[8uz]);
                 doubleConverted[currentValColIDs[resColID]][resColID] -= bigStepSize;
             }
@@ -1626,7 +1629,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
                 size_t const numOfSmallSteps =
                     static_cast<size_t>(doubleConverted[currentValColIDs[resColID]][resColID] / smallStepSize);
 
-                resLine.append(ANSI::get_fromSGR_direct(self.dp.color_basePalette.at(currentValColIDs[resColID])));
+                resLine.append(self.dp.colScheme_fg_rawANSI.at(currentValColIDs[resColID]));
                 doubleConverted[currentValColIDs[resColID]][resColID] -= numOfSmallSteps * smallStepSize;
                 currentValColIDs[resColID]++;
 
@@ -1640,8 +1643,7 @@ auto BarHS::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
                 }
                 else {
                     // Append the background color representing the next valCol
-                    resLine.append(
-                        ANSI::get_fromSGR_direct(self.dp.color_bckgrndPalette.at(currentValColIDs[resColID])));
+                    resLine.append(self.dp.colScheme_bg_rawANSI.at(currentValColIDs[resColID]));
 
                     // Subtract from the next valCol value of the remnant of this block
                     // Note_1: This is inaccurate as we may show the remnant bigger than it should be based on the data.

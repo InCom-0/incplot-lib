@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cstddef>
 #include <string>
 #include <string_view>
 
@@ -61,6 +62,8 @@ public:
     static inline inc_sRGB               colors_blackRaw{12, 12, 12};
 
     static inline ANSI_Color16 color_axesDefault = ANSI_Color16::Bright_Black;
+
+    static inline const std::array<size_t, 12uz> colOrderDefault = {2, 4, 1, 6, 3, 5, 10, 12, 9, 14, 11, 13};
 
     static inline const std::array<ANSI::inc_sRGB, 12> paletteRGB_CB_SD{
         campbell256.palette[2], campbell256.palette[4],  campbell256.palette[1],  campbell256.palette[6],
