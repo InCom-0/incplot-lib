@@ -122,6 +122,37 @@ public:
         std::optional<bool>        forceRGB_bool         = Config::forceRGB_bool_default;
     };
 
+private:
+    void ctor_finisher(DP_CtorStruct const &dp_struct) {
+        // Both htmlMode and forceRGB both mean that we will be using SGR [38;2;r;g;bm] for all coloring
+        if ((htmlMode_bool.has_value() && htmlMode_bool.value()) ||
+            (forceRGB_bool.has_value() && forceRGB_bool.value())) {
+            for (auto const &id : dp_struct.colOrder) {
+                colScheme_fg_rawANSI.push_back(ANSI::get_fg(dp_struct.colScheme.palette.at(id)));
+                colScheme_bg_rawANSI.push_back(ANSI::get_bg(dp_struct.colScheme.palette.at(id)));
+            }
+            colScheme_fg_default  = ANSI::get_fg(dp_struct.colScheme.foreground);
+            colScheme_bg_default  = ANSI::get_bg(dp_struct.colScheme.backgrond);
+            colScheme_brightBlack = ANSI::get_bg(dp_struct.colScheme.palette.at(8));
+        }
+        // Otherwise we will use terminal native palette (but not necessarily actually knowing what specific colors they
+        // are) This uses the SGR [30-37m]
+        else {
+            for (auto const &id : dp_struct.colOrder) {
+                colScheme_fg_rawANSI.push_back(std::string(
+                    ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_fg(static_cast<ANSI_Color16>(id)))));
+                colScheme_bg_rawANSI.push_back(std::string(
+                    ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_bg(static_cast<ANSI_Color16>(id)))));
+            }
+
+            colScheme_fg_default = std::string(ANSI::get_fromSGR_direct(ANSI::SGR_map::FG_Default));
+            colScheme_bg_default = std::string(ANSI::get_fromSGR_direct(ANSI::SGR_map::BG_Default));
+            colScheme_brightBlack =
+                std::string(ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_fg(ANSI::ANSI_Color16::Bright_Black)));
+        }
+    }
+
+public:
     DesiredPlot(DP_CtorStruct &&dp_struct)
         : plot_type_name(std::move(dp_struct.plot_type_name)), cat_colID(std::move(dp_struct.c_colID)),
           cat_colName(std::move(dp_struct.c_colName)), labelTS_colID(std::move(dp_struct.lts_colID)),
@@ -135,33 +166,7 @@ public:
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
           display_filtered_bool(std::move(dp_struct.display_filtered_bool)),
           htmlMode_bool(std::move(dp_struct.htmlMode_bool)), forceRGB_bool(std::move(dp_struct.forceRGB_bool)) {
-
-        // Both htmlMode and forceRGB both mean that we will be using SGR [38;2;r;g;bm] for all coloring
-        if ((htmlMode_bool.has_value() && htmlMode_bool.value()) ||
-            (forceRGB_bool.has_value() && forceRGB_bool.value())) {
-            for (auto const &id : dp_struct.colOrder) {
-                colScheme_fg_rawANSI.push_back(ANSI::get_fg(dp_struct.colScheme.palette.at(id)));
-                colScheme_bg_rawANSI.push_back(ANSI::get_bg(dp_struct.colScheme.palette.at(id)));
-            }
-            colScheme_fg_default  = ANSI::get_fg(dp_struct.colScheme.foreground);
-            colScheme_bg_default  = ANSI::get_bg(dp_struct.colScheme.backgrond);
-            colScheme_brightBlack = ANSI::get_bg(dp_struct.colScheme.palette.at(8));
-        }
-        // Otherwise we will use terminal native palette (but not necessarily actually knowing what specific colors they
-        // are) This uses the SGR [30-37m]
-        else {
-            for (auto const &id : dp_struct.colOrder) {
-                colScheme_fg_rawANSI.push_back(std::string(
-                    ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_fg(static_cast<ANSI_Color16>(id)))));
-                colScheme_fg_rawANSI.push_back(std::string(
-                    ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_bg(static_cast<ANSI_Color16>(id)))));
-            }
-
-            colScheme_fg_default = std::string(ANSI::get_fromSGR_direct(ANSI::SGR_map::FG_Default));
-            colScheme_bg_default = std::string(ANSI::get_fromSGR_direct(ANSI::SGR_map::BG_Default));
-            colScheme_brightBlack =
-                std::string(ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_fg(ANSI::ANSI_Color16::Bright_Black)));
-        }
+        ctor_finisher(dp_struct);
     }
     DesiredPlot(DP_CtorStruct const &dp_struct)
         : plot_type_name(dp_struct.plot_type_name), cat_colID(dp_struct.c_colID), cat_colName(dp_struct.c_colName),
@@ -175,33 +180,7 @@ public:
           color_bckgrndPalette(dp_struct.color_bckgrnd), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
           display_filtered_bool(dp_struct.display_filtered_bool), htmlMode_bool(dp_struct.htmlMode_bool),
           forceRGB_bool(dp_struct.forceRGB_bool) {
-
-        // Both htmlMode and forceRGB both mean that we will be using SGR [38;2;r;g;bm] for all coloring
-        if ((htmlMode_bool.has_value() && htmlMode_bool.value()) ||
-            (forceRGB_bool.has_value() && forceRGB_bool.value())) {
-            for (auto const &id : dp_struct.colOrder) {
-                colScheme_fg_rawANSI.push_back(ANSI::get_fg(dp_struct.colScheme.palette.at(id)));
-                colScheme_bg_rawANSI.push_back(ANSI::get_bg(dp_struct.colScheme.palette.at(id)));
-            }
-            colScheme_fg_default  = ANSI::get_fg(dp_struct.colScheme.foreground);
-            colScheme_bg_default  = ANSI::get_bg(dp_struct.colScheme.backgrond);
-            colScheme_brightBlack = ANSI::get_bg(dp_struct.colScheme.palette.at(8));
-        }
-        // Otherwise we will use terminal native palette (but not necessarily actually knowing what specific colors they
-        // are) This uses the SGR [30-37m]
-        else {
-            for (auto const &id : dp_struct.colOrder) {
-                colScheme_fg_rawANSI.push_back(std::string(
-                    ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_fg(static_cast<ANSI_Color16>(id)))));
-                colScheme_fg_rawANSI.push_back(std::string(
-                    ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_bg(static_cast<ANSI_Color16>(id)))));
-            }
-
-            colScheme_fg_default = std::string(ANSI::get_fromSGR_direct(ANSI::SGR_map::FG_Default));
-            colScheme_bg_default = std::string(ANSI::get_fromSGR_direct(ANSI::SGR_map::BG_Default));
-            colScheme_brightBlack =
-                std::string(ANSI::get_fromSGR_direct(ANSI::ANSI_col16_to_SGRmap_fg(ANSI::ANSI_Color16::Bright_Black)));
-        }
+        ctor_finisher(dp_struct);
     }
 
     // Create a new copy and guess_missingParams on it.
