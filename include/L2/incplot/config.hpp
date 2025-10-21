@@ -55,6 +55,8 @@ public:
     // DATA
     static inline double filter_withinStdDevMultiple_default = 6.0;
     static inline bool   display_filtered_bool_default       = true;
+    static inline bool   htmlMode_bool_default               = false;
+    static inline bool   forceRGB_bool_default               = false;
 
 
     // COLORS
