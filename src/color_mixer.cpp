@@ -88,9 +88,9 @@ incstd::color::inc_sRGB ColorMixer::compute_colorOfPosition(
 
     incstd::color::inc_sRGB res{m_fakeZeroColor.r, m_fakeZeroColor.g, m_fakeZeroColor.b};
     for (auto const &[steps, stepSize] : std::views::zip(stepsForPos_perColor, m_stepSize_perColor)) {
-        res.r = std::min(255, static_cast<int>(res.r) + static_cast<int>(steps * stepSize.r));
-        res.g = std::min(255, static_cast<int>(res.g) + static_cast<int>(steps * stepSize.g));
-        res.b = std::min(255, static_cast<int>(res.b) + static_cast<int>(steps * stepSize.b));
+        res.r = std::min(255, std::max(0, static_cast<int>(res.r) + static_cast<int>(steps * stepSize.r)));
+        res.g = std::min(255, std::max(0, static_cast<int>(res.g) + static_cast<int>(steps * stepSize.g)));
+        res.b = std::min(255, std::max(0, static_cast<int>(res.b) + static_cast<int>(steps * stepSize.b)));
     }
     res.r = std::min(m_maxRGBVals.r, res.r);
     res.g = std::min(m_maxRGBVals.g, res.g);
