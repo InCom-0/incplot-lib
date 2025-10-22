@@ -30,11 +30,13 @@ public:
 
 
     ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect = 3uz,
-               palette16 const &selectColorsFrom = color_schemes::defaultScheme16.palette,
-               inc_sRGB         blackRGB         = color_schemes::defaultScheme16.backgrond);
+               palette16 const                &selectColorsFrom = color_schemes::defaultScheme16.palette,
+               std::array<size_t, 12uz> const &colOrder         = Config::colOrderDefault,
+               inc_sRGB                        blackRGB         = color_schemes::defaultScheme16.backgrond);
 
     ColorMixer(size_t num_colorsToSelect = 3uz, palette16 selectColorsFrom = color_schemes::defaultScheme16.palette,
-               inc_sRGB blackRGB = color_schemes::defaultScheme16.backgrond);
+               std::array<size_t, 12uz> const &colOrder = Config::colOrderDefault,
+               inc_sRGB                        blackRGB = color_schemes::defaultScheme16.backgrond);
 
     // Computes how many dots of the same category/color are placed in the same dot position
     // Returns vector representing the maximum per color across the whole plot

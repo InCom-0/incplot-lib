@@ -19,12 +19,13 @@ private:
     std::vector<std::vector<char32_t>>                                          m_canvasBraille;
     std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> m_pointsCountPerPos_perColor;
 
-    color_schemes::scheme16 m_colScheme;
-    std::u32string          s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
+    color_schemes::scheme16  m_colScheme;
+    std::array<size_t, 12uz> m_colOrder;
+    std::u32string           s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
 
     BrailleDrawer() {};
     BrailleDrawer(size_t canvas_width, size_t canvas_height, size_t numOf_categories,
-                  color_schemes::scheme16 const &colScheme)
+                  color_schemes::scheme16 const &colScheme, std::array<size_t, 12uz> const &colOrder)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))),
           m_pointsCountPerPos_perColor(std::vector(
@@ -36,11 +37,11 @@ private:
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)}}}))),
-          m_colScheme{colScheme} {};
+          m_colScheme{colScheme}, m_colOrder{colOrder} {};
 
     void compute_canvasColors() {
         ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor), 3uz, m_colScheme.palette,
-                      m_colScheme.backgrond);
+                      m_colOrder, m_colScheme.backgrond);
         for (size_t rowID = 0; rowID < m_pointsCountPerPos_perColor.size(); ++rowID) {
             for (size_t colID = 0; colID < m_pointsCountPerPos_perColor[rowID].size(); ++colID) {
                 if (m_canvasBraille[rowID][colID] != Config::braille_blank) {
@@ -94,12 +95,12 @@ public:
     static std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
                                                auto                                     &view_varValCols,
                                                std::optional<std::vector<size_t>> const &catIDs_vec,
-                                               color_schemes::scheme16                   colScheme) {
+                                               color_schemes::scheme16 colScheme, std::array<size_t, 12uz> colOrder) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
                          catIDs_vec.has_value() ? get_sortedAndUniqued(catIDs_vec.value()).size()
                                                 : std::ranges::size(view_varValCols),
-                         colScheme);
+                         colScheme, colOrder);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col.value());
         auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);
@@ -158,8 +159,9 @@ public:
     }
 
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
-                                              auto &view_varValCols, color_schemes::scheme16 colScheme) {
-        BrailleDrawer bd(canvas_width, canvas_height, std::ranges::distance(view_varValCols), colScheme);
+                                              auto &view_varValCols, color_schemes::scheme16 colScheme,
+                                              std::array<size_t, 12uz> colOrder) {
+        BrailleDrawer bd(canvas_width, canvas_height, std::ranges::distance(view_varValCols), colScheme, colOrder);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col);
         auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);

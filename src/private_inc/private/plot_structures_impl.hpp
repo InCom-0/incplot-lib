@@ -1122,7 +1122,7 @@ auto Scatter::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> 
     }
 
     self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_data,
-                                                      self.values_data, opt_catIDs_vec, self.dp.colScheme);
+                                                      self.values_data, opt_catIDs_vec, self.dp.colScheme, self.dp.colOrder);
 
     return std::ref(self);
 }
@@ -1149,7 +1149,7 @@ auto Multiline::compute_axis_ht(this auto &&self) -> compute_rt<decltype(self)> 
 auto Multiline::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
     self.plotArea = detail::BrailleDrawer::drawLines(self.areaWidth, self.areaHeight, self.labelTS_data.value(),
-                                                     self.values_data, self.dp.colScheme);
+                                                     self.values_data, self.dp.colScheme, self.dp.colOrder);
     return std::ref(self);
 }
 // ### END MULTILINE ###

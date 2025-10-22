@@ -10,7 +10,7 @@ namespace detail {
 using namespace incstd::color;
 
 ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect,
-                       palette16 const &selectColorsFrom, inc_sRGB blackRGB)
+                       palette16 const &selectColorsFrom, std::array<size_t, 12uz> const &colOrder, inc_sRGB blackRGB)
     : m_maxSteps_perColor(std::move(maxSteps_perColor)), m_blackColor(blackRGB),
       m_stepSize_perColor(num_colorsToSelect, C_StepSize()) {
 
@@ -18,7 +18,7 @@ ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsT
 
     // Construct vector of actual colors (in RGB)
     for (size_t fromColID = 0; fromColID < num_colorsToSelect; ++fromColID) {
-        m_selColors.push_back(selectColorsFrom.at(fromColID));
+        m_selColors.push_back(selectColorsFrom.at(colOrder.at(fromColID)));
     }
 
     // Compute max RGB per channel
@@ -48,8 +48,9 @@ ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsT
     }
 }
 
-ColorMixer::ColorMixer(size_t num_colorsToSelect, palette16 selectColorsFrom, inc_sRGB blackRGB)
-    : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), num_colorsToSelect, selectColorsFrom,
+ColorMixer::ColorMixer(size_t num_colorsToSelect, palette16 selectColorsFrom, std::array<size_t, 12uz> const &colOrder,
+                       inc_sRGB blackRGB)
+    : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), num_colorsToSelect, selectColorsFrom, colOrder,
                  selectColorsFrom.front()) {}
 
 std::vector<size_t> ColorMixer::compute_maxStepsPerColor(
@@ -87,12 +88,9 @@ incstd::color::inc_sRGB ColorMixer::compute_colorOfPosition(
 
     incstd::color::inc_sRGB res{m_fakeZeroColor.r, m_fakeZeroColor.g, m_fakeZeroColor.b};
     for (auto const &[steps, stepSize] : std::views::zip(stepsForPos_perColor, m_stepSize_perColor)) {
-        res.r =
-            std::max(static_cast<int>(m_minRGBVals.r), static_cast<int>(res.r) + static_cast<int>(steps * stepSize.r));
-        res.g =
-            std::max(static_cast<int>(m_minRGBVals.g), static_cast<int>(res.g) + static_cast<int>(steps * stepSize.g));
-        res.b =
-            std::max(static_cast<int>(m_minRGBVals.b), static_cast<int>(res.b) + static_cast<int>(steps * stepSize.b));
+        res.r = std::min(255, static_cast<int>(res.r) + static_cast<int>(steps * stepSize.r));
+        res.g = std::min(255, static_cast<int>(res.g) + static_cast<int>(steps * stepSize.g));
+        res.b = std::min(255, static_cast<int>(res.b) + static_cast<int>(steps * stepSize.b));
     }
     res.r = std::min(m_maxRGBVals.r, res.r);
     res.g = std::min(m_maxRGBVals.g, res.g);

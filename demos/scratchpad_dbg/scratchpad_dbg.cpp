@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
     auto dpCtor            = incplot::CL_Args::get_dpCtorStruct().front();
     // dpCtor.tar_width = 250uz;
     // dpCtor.tar_height      = 12uz;
-    dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarHS));
+    // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarHS));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
     dpCtor.availableHeight = 35;
@@ -27,6 +27,8 @@ int main(int argc, char *argv[]) {
     // dpCtor.filter_outsideStdDev = 0;
     // dpCtor.lts_colID            = 0;
     // dpCtor.v_colIDs        = {2, 3,4,5,6};
+    dpCtor.forceRGB_bool   = true;
+    dpCtor.colScheme       = color_schemes::defaultScheme16;
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));
     // auto ds_t5 = incplot::Parser::parse(std::string_view(irisJSON_t5));
