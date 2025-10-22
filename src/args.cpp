@@ -94,20 +94,17 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
 
 
     auto &mex_grp = out_ap.add_mutually_exclusive_group();
-    out_ap.add_group("Color related options:");
-    mex_grp.add_argument("-d", "--default-colors")
-        .help("Draw with [d]efault colors (Windows Terminal Campbell theme)")
-        .flag()
-        .nargs(0);
-    mex_grp.add_argument("-m", "--monochrome").help("Draw in [m]onochromatic colors").flag().nargs(0);
-
-
-    out_ap.add_group("General output options");
+    out_ap.add_group("Other options:");
     // out_ap.add_argument("-h", "--html")
     //     .help("Convert the output into [h]tml (should 'pipe' the output into a file as emitting html "
     //           "into terminal itself is typically not useful)")
     //     .flag()
     //     .nargs(0);
+    mex_grp.add_argument("-d", "--default-colors")
+        .help("Draw with [d]efault colors (Windows Terminal Campbell theme)")
+        .flag()
+        .nargs(0);
+    mex_grp.add_argument("-m", "--monochrome").help("Draw in [m]onochromatic colors").flag().nargs(0);
     out_ap.add_argument("-r", "--force-rgb")
         .help("Always use the RGB SGR way to output colors (virtually never necessary, exists for hypothetical "
               "compatibility reasons only)")

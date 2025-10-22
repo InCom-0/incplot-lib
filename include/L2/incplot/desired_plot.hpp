@@ -1,13 +1,11 @@
 #pragma once
 
-#include "incstd/color/color_common.hpp"
 #include <expected>
 #include <optional>
 
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/err.hpp>
-#include <ranges>
 #include <typeindex>
 #include <utility>
 
@@ -133,7 +131,7 @@ private:
             }
             colScheme_fg_default  = ANSI::get_fg(dp_struct.colScheme.foreground);
             colScheme_bg_default  = ANSI::get_bg(dp_struct.colScheme.backgrond);
-            colScheme_brightBlack = ANSI::get_bg(dp_struct.colScheme.palette.at(8));
+            colScheme_brightBlack = ANSI::get_fg(dp_struct.colScheme.palette.at(8));
         }
         // Otherwise we will use terminal native palette (but not necessarily actually knowing what specific colors they
         // are) This uses the SGR [30-37m] ... but only for plots where we don't 'blend' colors
