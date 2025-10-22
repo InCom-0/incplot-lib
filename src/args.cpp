@@ -1,3 +1,4 @@
+#include "incstd/console/colorschemes.hpp"
 #include <incplot/args.hpp>
 #include <incplot/plot_structures.hpp>
 #include <incstd/core/typegen.hpp>
@@ -37,8 +38,15 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
         }
         if (auto optVal = inout_ap.present<int>("-c")) { res.back().c_colID = optVal.value(); }
 
-        if (inout_ap.get<bool>("-r")) {}
-        if (inout_ap.get<bool>("-h")) {}
+        if (inout_ap.get<bool>("-r")) { res.back().forceRGB_bool = true; }
+        if (inout_ap.get<bool>("-d")) {
+            res.back().colScheme     = color_schemes::defaultScheme16;
+            res.back().forceRGB_bool = true;
+        }
+        else if (inout_ap.get<bool>("-m")) {
+            res.back().colScheme     = color_schemes::other_sources::monochrome;
+            res.back().forceRGB_bool = true;
+        }
     };
     using namespace incom::standard::typegen;
     if (inout_ap.get<bool>("-B")) { addOne(get_typeIndex<plot_structures::BarV>()); }
