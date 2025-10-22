@@ -6,13 +6,15 @@
 
 namespace incom {
 namespace terminal_plot {
-namespace detail { 
+namespace detail {
 using namespace incstd::color;
 
 ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect,
-                       std::vector<inc_sRGB> selectColorsFrom, inc_sRGB blackRGB)
+                       palette16 const &selectColorsFrom, inc_sRGB blackRGB)
     : m_maxSteps_perColor(std::move(maxSteps_perColor)), m_blackColor(blackRGB),
       m_stepSize_perColor(num_colorsToSelect, C_StepSize()) {
+
+    maxSteps_perColor.resize(num_colorsToSelect);
 
     // Construct vector of actual colors (in RGB)
     for (size_t fromColID = 0; fromColID < num_colorsToSelect; ++fromColID) {
@@ -46,8 +48,9 @@ ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsT
     }
 }
 
-ColorMixer::ColorMixer(size_t num_colorsToSelect, std::vector<inc_sRGB> selectColorsFrom)
-    : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), num_colorsToSelect, selectColorsFrom) {}
+ColorMixer::ColorMixer(size_t num_colorsToSelect, palette16 selectColorsFrom, inc_sRGB blackRGB)
+    : ColorMixer(std::vector<size_t>(selectColorsFrom.size(), 1), num_colorsToSelect, selectColorsFrom,
+                 selectColorsFrom.front()) {}
 
 std::vector<size_t> ColorMixer::compute_maxStepsPerColor(
     std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> const &colorPointCounts) {

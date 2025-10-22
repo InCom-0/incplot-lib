@@ -191,19 +191,19 @@ constexpr size_t get_axisFillerSize(size_t axisLength, size_t axisStepCount) {
 }
 
 constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
-                                                                size_t totalLength) {
+                                                                size_t totalLength, std::string_view axisColor) {
     size_t fillerSize = get_axisFillerSize(totalLength, steps);
 
     std::vector<std::string> res;
     for (size_t i_step = 0; i_step < steps; ++i_step) {
         for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) {
-            res.push_back(ANSI::SGR_builder().color_fg(Config::color_axesDefault).add_string(filler).reset_all().get());
+            res.push_back(ANSI::SGR_builder().add_string(axisColor).add_string(filler).reset_all().get());
         }
-        res.push_back(ANSI::SGR_builder().color_fg(Config::color_axesDefault).add_string(tick).reset_all().get());
+        res.push_back(ANSI::SGR_builder().add_string(axisColor).add_string(tick).reset_all().get());
     }
     size_t sizeOfRest = totalLength - (steps) - (steps * fillerSize);
     for (size_t i_filler = 0; i_filler < sizeOfRest; ++i_filler) {
-        res.push_back(ANSI::SGR_builder().color_fg(Config::color_axesDefault).add_string(filler).reset_all().get());
+        res.push_back(ANSI::SGR_builder().add_string(axisColor).add_string(filler).reset_all().get());
     }
     return res;
 }
@@ -220,7 +220,7 @@ constexpr inline size_t guess_stepsOnVerAxis(long long height, size_t verticalSt
 
 template <typename T>
 requires std::is_arithmetic_v<std::remove_cvref_t<T>>
-constexpr inline std::pair<double, std::string> rebase_2_SIPrefix(T &&value) {
+constexpr inline std::pair<double, std::string_view> rebase_2_SIPrefix(T &&value) {
     if (value == 0) { return {0, ""}; }
     else {
         int target = std::log10(std::abs(value));

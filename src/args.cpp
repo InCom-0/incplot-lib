@@ -37,8 +37,8 @@ std::vector<DesiredPlot::DP_CtorStruct> CL_Args::get_dpCtorStruct(argparse::Argu
         }
         if (auto optVal = inout_ap.present<int>("-c")) { res.back().c_colID = optVal.value(); }
 
-        if (inout_ap.get<bool>("-r")) {  }
-        if (inout_ap.get<bool>("-h")) {  }
+        if (inout_ap.get<bool>("-r")) {}
+        if (inout_ap.get<bool>("-h")) {}
     };
     using namespace incom::standard::typegen;
     if (inout_ap.get<bool>("-B")) { addOne(get_typeIndex<plot_structures::BarV>()); }
@@ -103,11 +103,11 @@ void CL_Args::finishAp(argparse::ArgumentParser &out_ap) {
 
 
     out_ap.add_group("General output options");
-    out_ap.add_argument("-h", "--html")
-        .help("Convert the output into [h]tml (a user should 'pipe' this output into a file as emitting html "
-              "into terminal itself is typically not useful)")
-        .flag()
-        .nargs(0);
+    // out_ap.add_argument("-h", "--html")
+    //     .help("Convert the output into [h]tml (should 'pipe' the output into a file as emitting html "
+    //           "into terminal itself is typically not useful)")
+    //     .flag()
+    //     .nargs(0);
     out_ap.add_argument("-r", "--force-rgb")
         .help("Always use the RGB SGR way to output colors (virtually never necessary, exists for hypothetical "
               "compatibility reasons only)")

@@ -377,13 +377,13 @@ auto BarV::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
 
 auto BarV::compute_axis_vl(this auto &&self) -> compute_rt<decltype(self)> {
     if (self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarV>()) {
-        self.axis_verLeft =
-            detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight, self.areaHeight);
+        self.axis_verLeft = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight,
+                                                          self.areaHeight, self.dp.colScheme_brightBlack);
     }
     // All else should have vl axis ticks according to numeric values
     else {
         auto tmpAxis = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
-                                                     self.areaHeight);
+                                                     self.areaHeight, self.dp.colScheme_brightBlack);
         std::ranges::reverse(tmpAxis);
         self.axis_verLeft = std::move(tmpAxis);
     }
@@ -409,8 +409,9 @@ auto BarV::compute_labels_ht(this auto &&self) -> compute_rt<decltype(self)> {
 
 auto BarV::compute_axis_hb(this auto &&self) -> compute_rt<decltype(self)> {
     // Axis with ticks is contructed according to num of 'steps' which is the num of ticks and the areaWidth
-    self.axis_horBottom = detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b,
-                                                        self.axis_horBottomSteps, self.areaWidth);
+    self.axis_horBottom =
+        detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b, self.axis_horBottomSteps,
+                                      self.areaWidth, self.dp.colScheme_brightBlack);
     return std::ref(self);
 }
 auto BarV::compute_axisName_hb(this auto &&self) -> compute_rt<decltype(self)> {
@@ -432,7 +433,7 @@ auto BarV::compute_labels_hb(this auto &&self) -> compute_rt<decltype(self)> {
             size_t placedChars      = 0;
 
             self.labels_horBottom.push_back(std::string());
-            self.labels_horBottom.back().append(Config::color_Axes);
+            self.labels_horBottom.back().append(self.dp.colScheme_brightBlack);
 
             // Construct the [0:0] point label
             std::string tempStr = detail::format_toMax5length(minV);
@@ -530,16 +531,16 @@ auto BarV::compute_corner_br(this auto &&self) -> compute_rt<decltype(self)> {
 }
 auto BarV::compute_areaCorners(this auto &&self) -> compute_rt<decltype(self)> {
     if (self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarV>()) {
-        self.areaCorner_tl = Config::areaCorner_tl_barV;
-        self.areaCorner_bl = Config::areaCorner_bl_barV;
-        self.areaCorner_tr = Config::areaCorner_tr;
-        self.areaCorner_br = Config::areaCorner_br;
+        self.areaCorner_tl = self.dp.colScheme_brightBlack + Config::areaCorner_tl_barV;
+        self.areaCorner_bl = self.dp.colScheme_brightBlack + Config::areaCorner_bl_barV;
+        self.areaCorner_tr = self.dp.colScheme_brightBlack + Config::areaCorner_tr;
+        self.areaCorner_br = self.dp.colScheme_brightBlack + Config::areaCorner_br;
     }
     else {
-        self.areaCorner_tl = Config::areaCorner_tl;
-        self.areaCorner_bl = Config::areaCorner_bl;
-        self.areaCorner_tr = Config::areaCorner_tr;
-        self.areaCorner_br = Config::areaCorner_br;
+        self.areaCorner_tl = self.dp.colScheme_brightBlack + Config::areaCorner_tl;
+        self.areaCorner_bl = self.dp.colScheme_brightBlack + Config::areaCorner_bl;
+        self.areaCorner_tr = self.dp.colScheme_brightBlack + Config::areaCorner_tr;
+        self.areaCorner_br = self.dp.colScheme_brightBlack + Config::areaCorner_br;
     }
     return std::ref(self);
 }
@@ -568,11 +569,10 @@ auto BarV::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
             auto minV_adj = minV * scalingFactor;
             auto stepSize = (maxV_adj - minV_adj) / (self.areaWidth);
 
-            
 
             for (auto const &val : var) {
                 long long rpt = (val * scalingFactor - minV_adj) / stepSize;
-                
+
 
                 ANSI::SGR_builder oneLine = ANSI::SGR_builder().add_string(self.dp.colScheme_fg_rawANSI.front());
                 for (long long i = rpt; i > 0; --i) { oneLine.add_string("■"sv); }
@@ -814,7 +814,7 @@ auto BarVM::compute_labels_hb(this auto &&self) -> compute_rt<decltype(self)> {
         size_t       placedChars = 0;
 
         self.labels_horBottom.push_back(std::string());
-        self.labels_horBottom.back().append(Config::color_Axes);
+        self.labels_horBottom.back().append(self.dp.colScheme_brightBlack);
 
         // Construct the [0:0] point label == minV
         std::string tempStr = detail::format_toMax5length(minV);
@@ -937,7 +937,8 @@ auto Scatter::compute_labels_vl(this auto &&self) -> compute_rt<decltype(self)> 
         maxVal        = maxVal + (stepSize / characterVerResolution);
 
         // Construct with 'left padding' in place
-        std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
+        std::vector<std::string> res(areaLength + 2,
+                                     std::string(padLeft, Config::space).append(self.dp.colScheme_brightBlack));
 
         // Value label of 'zero point'
         res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
@@ -1043,7 +1044,8 @@ auto Scatter::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> 
 }
 
 auto Scatter::compute_axis_vr(this auto &&self) -> compute_rt<decltype(self)> {
-    self.axis_verRight = detail::create_tickMarkedAxis(Config::axisFiller_r, Config::axisTick_r, 0, self.areaHeight);
+    self.axis_verRight = detail::create_tickMarkedAxis(Config::axisFiller_r, Config::axisTick_r, 0, self.areaHeight,
+                                                       self.dp.colScheme_brightBlack);
     return std::ref(self);
 }
 
@@ -1066,7 +1068,7 @@ auto Scatter::compute_labels_hb(this auto &&self) -> compute_rt<decltype(self)> 
         size_t       placedChars = 0;
 
         self.labels_horBottom.push_back(std::string());
-        self.labels_horBottom.back().append(Config::color_Axes);
+        self.labels_horBottom.back().append(self.dp.colScheme_brightBlack);
 
         // Construct the [0:0] point label (minV - stepsize to make the first label one below the minV)
         std::string tempStr = detail::format_toMax5length(minV - stepSize);
@@ -1120,7 +1122,7 @@ auto Scatter::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> 
     }
 
     self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_data,
-                                                      self.values_data, opt_catIDs_vec, self.dp.color_basePalette);
+                                                      self.values_data, opt_catIDs_vec, self.dp.colScheme);
 
     return std::ref(self);
 }
@@ -1147,7 +1149,7 @@ auto Multiline::compute_axis_ht(this auto &&self) -> compute_rt<decltype(self)> 
 auto Multiline::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 
     self.plotArea = detail::BrailleDrawer::drawLines(self.areaWidth, self.areaHeight, self.labelTS_data.value(),
-                                                     self.values_data, self.dp.color_basePalette);
+                                                     self.values_data, self.dp.colScheme);
     return std::ref(self);
 }
 // ### END MULTILINE ###
@@ -1255,7 +1257,7 @@ auto BarHM::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> 
 }
 
 auto BarHM::compute_axis_hb(this auto &&self) -> compute_rt<decltype(self)> {
-    self.axis_horBottom.push_back(std::string{Config::color_Axes});
+    self.axis_horBottom.push_back(std::string{self.dp.colScheme_brightBlack});
     for (size_t id = 0; id < self.areaWidth; ++id) { self.axis_horBottom.push_back(Config::axisFiller_b); }
     return std::ref(self);
 };
@@ -1346,7 +1348,8 @@ auto BarHM::compute_labels_hb(this auto &&self) -> compute_rt<decltype(self)> {
 
 
     auto computeLabels = [&](auto &var) -> void {
-        std::ranges::fill_n(std::back_inserter(self.labels_horBottom), labelHeight, std::string{Config::color_Axes});
+        std::ranges::fill_n(std::back_inserter(self.labels_horBottom), labelHeight,
+                            std::string{self.dp.colScheme_brightBlack});
         for (auto &lab_line : self.labels_horBottom) { lab_line.push_back(Config::space); }
         if (doubleSpace) {
             for (auto &lab_line : self.labels_horBottom) { lab_line.push_back(Config::space); }
@@ -1486,7 +1489,8 @@ auto BarHS::compute_labels_vl(this auto &&self) -> compute_rt<decltype(self)> {
         maxVal        = maxVal + (stepSize / 8);
 
         // Construct with 'left padding' in place
-        std::vector<std::string> res(areaLength + 2, std::string(padLeft, Config::space).append(Config::color_Axes));
+        std::vector<std::string> res(areaLength + 2,
+                                     std::string(padLeft, Config::space).append(self.dp.colScheme_brightBlack));
 
         // Value label of 'zero point'
         res.front().append(detail::trim2Size_leading(detail::format_toMax5length(minVal), labelsWidth));
@@ -1552,10 +1556,10 @@ auto BarHS::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
         if ((static_cast<size_t>(self.areaHeight) >
              (Config::axisLabels_sizeMultipleForMultilegend_legend_vr * self.dp.values_colIDs.size()))) {
 
-            for (size_t lineID_2 = 0;
-                 auto const &[ansi_col, colID] : std::views::zip(
-                     (std::views::reverse(std::views::take(self.dp.colScheme_fg_rawANSI, self.dp.values_colIDs.size()))),
-                     std::views::reverse(self.dp.values_colIDs))) {
+            for (size_t lineID_2 = 0; auto const &[ansi_col, colID] :
+                                      std::views::zip((std::views::reverse(std::views::take(
+                                                          self.dp.colScheme_fg_rawANSI, self.dp.values_colIDs.size()))),
+                                                      std::views::reverse(self.dp.values_colIDs))) {
                 self.labels_verRight.push_back(
                     std::string(Config::axisLabels_padLeft_vr, Config::space)
                         .append(ansi_col)

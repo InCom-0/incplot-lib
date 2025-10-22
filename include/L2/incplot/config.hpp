@@ -63,8 +63,6 @@ public:
     static inline const std::string_view color_Axes = ANSI::get_fg(ANSI_Color16::Bright_Black);
     static inline inc_sRGB               colors_blackRaw{12, 12, 12};
 
-    static inline ANSI_Color16 color_axesDefault = ANSI_Color16::Bright_Black;
-
     static inline const std::array<size_t, 12uz> colOrderDefault = {2, 4, 1, 6, 3, 5, 10, 12, 9, 14, 11, 13};
 
     static inline const std::array<ANSI::inc_sRGB, 12> paletteRGB_CB_SD{
@@ -174,8 +172,9 @@ public:
 
     static inline const std::string_view term_setDefault = ANSI::get_fromSGR_direct(ANSI::SGR_map::Reset);
 
-    static inline std::array<std::string, 21> const si_prefixes{"q", "r", "y", "z", "a", "f", "p", "n", "μ", "m", "",
-                                                                "k", "M", "G", "T", "P", "E", "Z", "Y", "R", "Q"};
+    static inline std::array<std::string_view, 21> const si_prefixes{"q"sv, "r"sv, "y"sv, "z"sv, "a"sv, "f"sv, "p"sv,
+                                                                     "n"sv, "μ"sv, "m"sv, ""sv,  "k"sv, "M"sv, "G"sv,
+                                                                     "T"sv, "P"sv, "E"sv, "Z"sv, "Y"sv, "R"sv, "Q"sv};
 
     // COLUMN PARAMETERS ANALYSIS SETTINGS
     static inline double timeSeriesIDX_allowanceUP   = 0.1;

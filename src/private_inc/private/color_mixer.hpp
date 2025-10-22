@@ -19,7 +19,7 @@ private:
     };
 
 public:
-    std::vector<inc_sRGB>            m_selColors;
+    std::vector<inc_sRGB>     m_selColors;
     std::vector<C_StepSize>   m_stepSize_perColor;
     std::vector<size_t> const m_maxSteps_perColor;
 
@@ -30,14 +30,11 @@ public:
 
 
     ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect = 3uz,
-               std::vector<inc_sRGB> selectColorsFrom = {Config::colors_defaulRaw.at(0), Config::colors_defaulRaw.at(1),
-                                                         Config::colors_defaulRaw.at(2)},
-               inc_sRGB blackRGB   = Config::colors_blackRaw);
+               palette16 const &selectColorsFrom = color_schemes::defaultScheme16.palette,
+               inc_sRGB         blackRGB         = color_schemes::defaultScheme16.backgrond);
 
-
-    ColorMixer(size_t                num_colorsToSelect = 3uz,
-               std::vector<inc_sRGB> selectColorsFrom = {Config::colors_defaulRaw.at(0), Config::colors_defaulRaw.at(1),
-                                                         Config::colors_defaulRaw.at(2)});
+    ColorMixer(size_t num_colorsToSelect = 3uz, palette16 selectColorsFrom = color_schemes::defaultScheme16.palette,
+               inc_sRGB blackRGB = color_schemes::defaultScheme16.backgrond);
 
     // Computes how many dots of the same category/color are placed in the same dot position
     // Returns vector representing the maximum per color across the whole plot

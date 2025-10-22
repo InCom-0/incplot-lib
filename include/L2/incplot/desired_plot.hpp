@@ -136,7 +136,7 @@ private:
             colScheme_brightBlack = ANSI::get_bg(dp_struct.colScheme.palette.at(8));
         }
         // Otherwise we will use terminal native palette (but not necessarily actually knowing what specific colors they
-        // are) This uses the SGR [30-37m]
+        // are) This uses the SGR [30-37m] ... but only for plots where we don't 'blend' colors
         else {
             for (auto const &id : dp_struct.colOrder) {
                 colScheme_fg_rawANSI.push_back(std::string(

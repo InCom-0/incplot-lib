@@ -152,10 +152,8 @@ std::string Base::build_plotAsString() const {
     // Build horizontal top axis line
     result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
     result.append(labels_verLeft.front());
-    result.append(Config::color_Axes);
     result.append(areaCorner_tl);
     for (auto const &toAppend : axis_horTop) { result.append(toAppend); }
-    result.append(Config::color_Axes);
     result.append(areaCorner_tr);
     result.append(Config::term_setDefault);
     result.append(labels_verRight.front());
@@ -181,10 +179,8 @@ std::string Base::build_plotAsString() const {
     // Add horizontal bottom axis line
     result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
     result.append(labels_verLeft.back());
-    result.append(Config::color_Axes);
     result.append(areaCorner_bl);
     for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
-    result.append(Config::color_Axes);
     result.append(areaCorner_br);
     result.append(Config::term_setDefault);
     result.append(labels_verRight.back());

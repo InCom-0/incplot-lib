@@ -19,15 +19,14 @@ private:
     std::vector<std::vector<char32_t>>                                          m_canvasBraille;
     std::vector<std::vector<std::array<std::array<std::vector<size_t>, 2>, 4>>> m_pointsCountPerPos_perColor;
 
-    std::array<std::u32string, 6> m_colorPallete;
-    std::u32string                s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
+    color_schemes::scheme16 m_colScheme;
+    std::u32string          s_terminalDefault = detail::convert_u32u8(Config::term_setDefault);
 
     BrailleDrawer() {};
     BrailleDrawer(size_t canvas_width, size_t canvas_height, size_t numOf_categories,
-                  std::array<ANSI::SGR_map, 12> const &colorPalette)
+                  color_schemes::scheme16 const &colScheme)
         : m_canvasColors(std::vector(canvas_height, std::vector<std::u32string>(canvas_width, U""))),
           m_canvasBraille(std::vector(canvas_height, std::vector<char32_t>(canvas_width, Config::braille_blank))),
-
           m_pointsCountPerPos_perColor(std::vector(
               canvas_height,
               std::vector(
@@ -37,18 +36,11 @@ private:
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)}}}))),
-          m_colorPallete{detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[0])),
-                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[1])),
-                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[2])),
-                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[3])),
-                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[4])),
-                         detail::convert_u32u8(ANSI::get_fromSGR_direct(colorPalette[5]))} {
-
-
-          };
+          m_colScheme{colScheme} {};
 
     void compute_canvasColors() {
-        ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor));
+        ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor), 3uz, m_colScheme.palette,
+                      m_colScheme.backgrond);
         for (size_t rowID = 0; rowID < m_pointsCountPerPos_perColor.size(); ++rowID) {
             for (size_t colID = 0; colID < m_pointsCountPerPos_perColor[rowID].size(); ++colID) {
                 if (m_canvasBraille[rowID][colID] != Config::braille_blank) {
@@ -102,13 +94,12 @@ public:
     static std::vector<std::string> drawPoints(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
                                                auto                                     &view_varValCols,
                                                std::optional<std::vector<size_t>> const &catIDs_vec,
-                                               std::array<ANSI::SGR_map, 12>             colorPalette) {
+                                               color_schemes::scheme16                   colScheme) {
 
         BrailleDrawer bd(canvas_width, canvas_height,
-                         catIDs_vec.has_value()
-                             ? get_sortedAndUniqued(catIDs_vec.value()).size()
-                             : std::ranges::count_if(view_varValCols, [](auto const &a) { return true; }),
-                         colorPalette);
+                         catIDs_vec.has_value() ? get_sortedAndUniqued(catIDs_vec.value()).size()
+                                                : std::ranges::size(view_varValCols),
+                         colScheme);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col.value());
         auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);
@@ -167,8 +158,8 @@ public:
     }
 
     static std::vector<std::string> drawLines(size_t canvas_width, size_t canvas_height, auto &view_labelTS_col,
-                                              auto &view_varValCols, std::array<ANSI::SGR_map, 12> colorPalette) {
-        BrailleDrawer bd(canvas_width, canvas_height, std::ranges::distance(view_varValCols), colorPalette);
+                                              auto &view_varValCols, color_schemes::scheme16 colScheme) {
+        BrailleDrawer bd(canvas_width, canvas_height, std::ranges::distance(view_varValCols), colScheme);
 
         auto [xMin, xMax] = incom::standard::algos::compute_minMaxMulti(view_labelTS_col);
         auto [yMin, yMax] = incom::standard::algos::compute_minMaxMulti(view_varValCols);
