@@ -207,7 +207,8 @@ std::string Base::build_plotAsString() const {
         result.push_back('\n');
     }
 
-    result.append(footer);
+    for (auto const &footerLine : footer) { result.append(footerLine); }
+
 
     // Add padding on bottom
     for (int i = 0; i < pad_bottom; ++i) { result.push_back('\n'); }

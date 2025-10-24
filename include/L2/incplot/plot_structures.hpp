@@ -115,7 +115,7 @@ public:
 
     std::vector<std::string> plotArea;
 
-    std::string footer = "";
+    std::vector<std::string> footer = {};
 
     // Compute size in bytes (for reserving the output str size), not size in 'displayed characters'
     size_t compute_lengthOfSelf() const;

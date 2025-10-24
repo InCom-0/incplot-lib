@@ -96,6 +96,8 @@ public:
     std::optional<bool>   htmlMode_bool         = std::nullopt;
     std::optional<bool>   forceRGB_bool         = std::nullopt;
 
+    std::vector<std::string> additionalInfo = {};
+
     struct DP_CtorStruct {
         std::optional<size_t>          tar_width      = std::nullopt;
         std::optional<size_t>          tar_height     = std::nullopt;
@@ -118,6 +120,8 @@ public:
         std::optional<bool>        display_filtered_bool = Config::display_filtered_bool_default;
         std::optional<bool>        htmlMode_bool         = Config::htmlMode_bool_default;
         std::optional<bool>        forceRGB_bool         = Config::forceRGB_bool_default;
+
+        std::vector<std::string> additionalInfo = {};
     };
 
 private:
@@ -163,7 +167,8 @@ public:
           color_basePalette(std::move(dp_struct.colors)), color_bckgrndPalette(std::move(dp_struct.color_bckgrnd)),
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
           display_filtered_bool(std::move(dp_struct.display_filtered_bool)),
-          htmlMode_bool(std::move(dp_struct.htmlMode_bool)), forceRGB_bool(std::move(dp_struct.forceRGB_bool)) {
+          htmlMode_bool(std::move(dp_struct.htmlMode_bool)), forceRGB_bool(std::move(dp_struct.forceRGB_bool)),
+          additionalInfo(std::move(dp_struct.additionalInfo)) {
         ctor_finisher(dp_struct);
     }
     DesiredPlot(DP_CtorStruct const &dp_struct)
@@ -177,7 +182,7 @@ public:
           colScheme_brightBlack(ANSI::get_bg(dp_struct.colScheme.palette.at(8))), color_basePalette(dp_struct.colors),
           color_bckgrndPalette(dp_struct.color_bckgrnd), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
           display_filtered_bool(dp_struct.display_filtered_bool), htmlMode_bool(dp_struct.htmlMode_bool),
-          forceRGB_bool(dp_struct.forceRGB_bool) {
+          forceRGB_bool(dp_struct.forceRGB_bool), additionalInfo(dp_struct.additionalInfo) {
         ctor_finisher(dp_struct);
     }
 

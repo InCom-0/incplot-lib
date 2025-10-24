@@ -612,6 +612,8 @@ auto BarV::compute_footer(this auto &&self) -> compute_rt<decltype(self)> {
         res1.pop_back();
         res1.pop_back();
         res1.push_back('\n');
+        self.footer.push_back(res1);
+        res1.clear();
     }
     if (std::ranges::any_of(self.dp.filterFlags, [](auto const &ff) { return ff & 0b10; })) {
         res1.append("\n");
@@ -630,8 +632,11 @@ auto BarV::compute_footer(this auto &&self) -> compute_rt<decltype(self)> {
         res1.pop_back();
         res1.pop_back();
         res1.push_back('\n');
+        self.footer.push_back(res1);
+        res1.clear();
     }
-    self.footer = res1;
+
+    for (auto const &addInfoLine : self.dp.additionalInfo) { self.footer.push_back(addInfoLine); }
     return std::ref(self);
 }
 // ### END BAR V ###
@@ -1121,8 +1126,9 @@ auto Scatter::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> 
         opt_catIDs_vec = std::visit(create_catIDs_vec, self.cat_data.value());
     }
 
-    self.plotArea = detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_data,
-                                                      self.values_data, opt_catIDs_vec, self.dp.colScheme, self.dp.colOrder);
+    self.plotArea =
+        detail::BrailleDrawer::drawPoints(self.areaWidth, self.areaHeight, self.labelTS_data, self.values_data,
+                                          opt_catIDs_vec, self.dp.colScheme, self.dp.colOrder);
 
     return std::ref(self);
 }
