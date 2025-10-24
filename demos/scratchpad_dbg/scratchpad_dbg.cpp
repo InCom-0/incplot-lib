@@ -1,5 +1,6 @@
 #include <incplot.hpp>
 #include <incstd/incstd_all.hpp>
+#include <iostream>
 
 
 #if defined(_WIN64)
@@ -16,7 +17,7 @@ int main(int argc, char *argv[]) {
 
     set_cocp();
 
-    auto dpCtor            = incplot::CL_Args::get_dpCtorStruct().front();
+    auto dpCtor            = incplot::DesiredPlot::DP_CtorStruct{};
     // dpCtor.tar_width = 250uz;
     // dpCtor.tar_height      = 12uz;
     // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarHS));

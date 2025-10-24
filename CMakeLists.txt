@@ -12,7 +12,6 @@ add_library(incplot-lib STATIC)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
 
 set(INCPLOT_LIB_SRC
-    args.cpp
     color_mixer.cpp
     datastore.cpp
     desired_plot.cpp
@@ -54,7 +53,6 @@ target_link_libraries(incplot-lib PRIVATE
     utf-cpp::utf-cpp)
 
 target_link_libraries(incplot-lib PUBLIC
-    argparse::argparse
     magic_enum::magic_enum
     incstd::incstd
     incerr::incerr)
