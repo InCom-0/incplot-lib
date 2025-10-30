@@ -163,7 +163,7 @@ std::string Base::build_plotAsString() const {
     // Add plot area lines
     for (long long i = 0; i < areaHeight; ++i) {
         result.append(std::string(pad_left, Config::space));
-        if (axisName_verLeft_bool) { result.push_back(axisName_verLeft.at(i)); }
+        if (axisName_verLeft_bool) { result.append(incom::terminal_plot::detail::get_utf8CharAt(axisName_verLeft, i)); }
         result.append(std::string((Config::axis_verName_width_vl - 1) * axisName_verLeft_bool, Config::space));
         result.append(labels_verLeft.at(i + 1));
         result.append(axis_verLeft.at(i));
@@ -171,7 +171,7 @@ std::string Base::build_plotAsString() const {
         result.append(axis_verRight.at(i));
         result.append(labels_verRight.at(i + 1));
         result.append(std::string((Config::axis_verName_width_vr - 1) * axisName_verRight_bool, Config::space));
-        if (axisName_verRight_bool) { result.push_back(axisName_verRight.at(i)); }
+        if (axisName_verRight_bool) { result.append(incom::terminal_plot::detail::get_utf8CharAt(axisName_verRight, i)); }
         result.append(std::string(pad_right, Config::space));
         result.push_back('\n');
     }

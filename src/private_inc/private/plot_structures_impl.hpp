@@ -326,12 +326,12 @@ auto BarV::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> {
 auto BarV::compute_axisName_vl(this auto &&self) -> compute_rt<decltype(self)> {
     if (self.axisName_verLeft_bool) {
         if (self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarV>()) {
-            self.axisName_verLeft =
-                detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
+            self.axisName_verLeft = detail::trim2Size_leadingEnding(
+                self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
         }
         else {
-            self.axisName_verLeft =
-                detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaHeight);
+            self.axisName_verLeft = detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name,
+                                                                    self.areaHeight);
         }
     }
     return std::ref(self);
@@ -712,8 +712,8 @@ auto BarVM::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> 
 }
 auto BarVM::compute_axisName_vl(this auto &&self) -> compute_rt<decltype(self)> {
     if (self.axisName_verLeft_bool) {
-        self.axisName_verLeft =
-            detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name, self.areaHeight);
+        self.axisName_verLeft = detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.labelTS_colID.value()).name,
+                                                                self.areaHeight);
     }
     return std::ref(self);
 }
@@ -914,8 +914,8 @@ auto BarVM::compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> {
 auto Scatter::compute_axisName_vl(this auto &&self) -> compute_rt<decltype(self)> {
     if (self.axisName_verLeft_bool) {
         if (self.dp.values_colIDs.size() == 1) {
-            self.axisName_verLeft =
-                detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name, self.areaHeight);
+            self.axisName_verLeft = detail::trim2Size_leadingEnding(self.ds.m_data.at(self.dp.values_colIDs.at(0)).name,
+                                                                    self.areaHeight);
         }
     }
     return std::ref(self);

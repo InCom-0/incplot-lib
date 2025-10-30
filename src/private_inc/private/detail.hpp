@@ -91,6 +91,22 @@ constexpr inline std::size_t conv_utf8CharCount_to_charCount(const std::string &
     return res;
 }
 
+constexpr inline std::string_view get_utf8CharAt(const std::string &str, size_t utf8CharAt) {
+    std::size_t beginPos  = 0;
+    size_t      id        = 0;
+    utf8CharAt           += 2;
+    for (char c : str) {
+        if ((c & 0xC0) != 0x80) {
+            utf8CharAt--;
+            if (utf8CharAt == 1) { beginPos = id; }
+            else if (utf8CharAt == 0) { break; }
+        }
+        ++id;
+    }
+    return std::string_view(str.begin() + beginPos, str.begin() + id);
+}
+
+
 constexpr inline std::string trim2Size_leading(std::string const &str, size_t maxSize) {
     long long const strLen = strlen_utf8(str);
     if (strLen <= maxSize) { return std::string(maxSize - strLen, Config::space).append(str); }
