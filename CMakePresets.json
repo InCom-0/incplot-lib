@@ -9,7 +9,14 @@
                 "_gcc",
                 "_debug",
                 "MSYS_ucrt_PATH"
-            ]
+            ],
+            "vendor": {
+                "visualStudio": {
+                    "cmake.debugConfig": {
+                        "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe"
+                    }
+                }
+            }
         },
         {
             "name": "MSYS2_ucrt_gcc_Release",
@@ -19,7 +26,14 @@
                 "_gcc",
                 "_release",
                 "MSYS_ucrt_PATH"
-            ]
+            ],
+            "vendor": {
+                "visualStudio": {
+                    "cmake.debugConfig": {
+                        "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe"
+                    }
+                }
+            }
         },
         {
             "name": "MSVC_Debug",
@@ -91,7 +105,8 @@
             "binaryDir": "${sourceDir}/build/",
             "generator": "Ninja",
             "cacheVariables": {
-                "CMAKE_EXPORT_COMPILE_COMMANDS": true
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+                "CPM_SOURCE_CACHE": "../.cache/CPM"
             }
         },
         {
@@ -128,27 +143,13 @@
         {
             "name": "_MSVC",
             "hidden": true,
-            "toolchainFile": "toolchain/Windows.MSVC.toolchain.cmake",
-            "vendor": {
-                "visualStudio": {
-                    "cmake.debugConfig": {
-                        "miDebuggerPath": ""
-                    }
-                }
-            }
+            "toolchainFile": "cmake/toolchain/Windows.MSVC.toolchain.cmake"
         },
         {
             "name": "MSYS_ucrt_PATH",
             "hidden": true,
             "environment": {
                 "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
-            },
-            "vendor": {
-                "visualStudio": {
-                    "cmake.debugConfig": {
-                        "miDebuggerPath": "C:/msys64/ucrt64/bin/gdb.exe"
-                    }
-                }
             }
         }
     ]

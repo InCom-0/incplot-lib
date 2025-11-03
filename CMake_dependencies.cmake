@@ -1,52 +1,13 @@
-include(FetchContent)
+include(cmake/CPM.cmake)
 
-FetchContent_Declare(
-    nlh_json
-    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+CPMAddPackage(
+  NAME     nlh_json
+  URL      https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+  URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa
 )
-FetchContent_MakeAvailable(nlh_json)
 
-
-FetchContent_Declare(
-    csv2
-    GIT_REPOSITORY https://github.com/p-ranav/csv2.git
-    GIT_TAG master
-)
-FetchContent_MakeAvailable(csv2)
-
-FetchContent_Declare(
-    incstd
-    GIT_REPOSITORY https://github.com/InCom-0/incstd
-    GIT_TAG main
-)
-FetchContent_MakeAvailable(incstd)
-
-FetchContent_Declare(
-    incerr
-    GIT_REPOSITORY https://github.com/InCom-0/incerr
-    GIT_TAG main
-)
-FetchContent_MakeAvailable(incerr)
-
-FetchContent_Declare(
-    utf-cpp
-    GIT_REPOSITORY https://github.com/InCom-0/utf-cpp
-    GIT_TAG master
-)
-FetchContent_MakeAvailable(utf-cpp)
-
-FetchContent_Declare(
-    magic_enum
-    GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
-    GIT_TAG v0.9.7
-)
-FetchContent_MakeAvailable(magic_enum)
-
-# FetchContent_Declare (
-#     tracy
-#     GIT_REPOSITORY https://github.com/wolfpld/tracy.git
-#     GIT_TAG master
-#     GIT_SHALLOW TRUE
-#     GIT_PROGRESS FALSE
-# )
-# FetchContent_MakeAvailable(tracy)
+CPMAddPackage("gh:p-ranav/csv2#master")
+CPMAddPackage("gh:InCom-0/incstd#main")
+CPMAddPackage("gh:InCom-0/incerr#main")
+CPMAddPackage("gh:InCom-0/utf-cpp#master")
+CPMAddPackage("gh:Neargye/magic_enum@0.9.7")
