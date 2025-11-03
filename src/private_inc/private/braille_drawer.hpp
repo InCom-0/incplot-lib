@@ -57,12 +57,16 @@ private:
         // Gotta start rows from the back because axes cross bottom left and 'row 0' is top left
         for (int rowID = m_canvasBraille.size() - 1; rowID > -1; --rowID) {
             std::u32string oneLine;
+            std::u32string lastColor;
             for (size_t colID = 0; colID < m_canvasBraille.front().size(); ++colID) {
                 if (m_canvasColors[rowID][colID].empty()) { oneLine.push_back(m_canvasBraille[rowID][colID]); }
                 else {
-                    oneLine.append(m_canvasColors[rowID][colID]);
+                    if (lastColor != m_canvasColors[rowID][colID]) {
+                        oneLine.append(m_canvasColors[rowID][colID]);
+                        lastColor = m_canvasColors[rowID][colID];
+                    }
                     oneLine.push_back(m_canvasBraille[rowID][colID]);
-                    oneLine.append(s_terminalDefault);
+                    // oneLine.append(s_terminalDefault);
                 }
             }
             res.push_back(detail::convert_u32u8(oneLine));
