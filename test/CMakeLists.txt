@@ -32,6 +32,6 @@ target_sources(UnitTest
     inc/)
 
 target_link_libraries(UnitTest PRIVATE incplot-lib incstd::incstd gtest_main gmock_main)
-if(((CMAKE_CXX_COMPILER_ID MATCHES "GNU") ))
+if(USING_LIBSTDCXX)
     target_link_libraries(UnitTest PRIVATE "-lstdc++exp")
 endif()

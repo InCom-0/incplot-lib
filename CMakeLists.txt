@@ -37,9 +37,10 @@ target_sources(incplot-lib
 
 target_compile_features(incplot-lib PUBLIC cxx_std_23)
 
+### This attempts to compile sample program to find out if we are using libc++(USING_LIBCXX) or libstdc++(USING_LIBSTDCXX)
+include(cmake/stdlibQuery.cmake)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    include(cmake/stdlibQuery.cmake)
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         message(STATUS "GCC Compiler")
         message(STATUS "Using libstdc++")
