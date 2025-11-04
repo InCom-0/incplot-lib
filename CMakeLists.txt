@@ -37,28 +37,27 @@ target_sources(incplot-lib
 
 target_compile_features(incplot-lib PUBLIC cxx_std_23)
 
-if(MINGW)
-    message(STATUS "GNU ABI")
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-            message(STATUS "GCC Compiler")
-            target_link_options(incplot-lib PUBLIC -static -static-libgcc -static-libstdc++)
 
-        elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            message(STATUS "Clang Compiler")
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    include(cmake/stdlibQuery.cmake)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        message(STATUS "GCC Compiler")
+        message(STATUS "Using libstdc++")
+        target_link_options(incplot-lib PUBLIC -static -static-libgcc -static-libstdc++)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
+        message(STATUS "Clang Compiler")
+        if(USING_LIBCXX)
+            message(STATUS "Using libc++")
             target_link_options(incplot-lib PUBLIC -static -stdlib=libc++ -static-libstdc++)
-
+        elseif(USING_LIBSTDCXX)
+            message(STATUS "Using libstdc++")
+            target_link_options(incplot-lib PUBLIC -static -static-libgcc -static-libstdc++)
         endif()
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        message(STATUS "MSVC Compiler")
+    else()
+        message(WARNING "You are using an unexpected compiler (ie. neither GCC, Clang, AppleClang, MSVC). All bets are off.")
     endif()
-endif()
-
-
-if(MINGW AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
-    target_link_options(incplot-lib PUBLIC -static -static-libgcc -static-libstdc++)
-endif()
-
-if((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (CMAKE_BUILD_TYPE STREQUAL "Release") AND (CMAKE_CXX_COMPILER_ID MATCHES "GNU"))
-    target_link_options(incplot-lib PUBLIC -static-libgcc -static-libstdc++)
 endif()
 
 
