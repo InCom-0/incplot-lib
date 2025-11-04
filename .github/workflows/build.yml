@@ -129,9 +129,9 @@ jobs:
         icon: ["🟧"]
         sys: [linux]
         runs-on: [ubuntu-24.04, ubuntu-24.04-arm]
-        compiler: ["gcc"]
-        compiler-ver: ["14"]
-        build-type: ["Release", "Debug"]
+        compiler: [gcc, clang]
+        # compiler-ver: [15, 21]
+        build-type: [Release, Debug]
         target: ["all"]
         cmake-override: [""]
 
@@ -142,17 +142,16 @@ jobs:
             platform: "arm64"
 
           - compiler: "gcc"
-            compiler-ver: "14"
-            install: |
-              sudo apt install gcc-14 g++-14
-              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
-              sudo update-alternatives --set gcc /usr/bin/gcc-14
+            compiler-setupname: "gcc"
+            compiler-ver: "15"
+            # install: |
+            #   sudo apt install gcc-14 g++-14
+            #   sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
+            #   sudo update-alternatives --set gcc /usr/bin/gcc-14
 
-          # Temporarily disabled CLANG because libstc++ is not up to date
-          # - compiler: "clang"
-          #   compiler-ver: "20"
-          #   install: |
-          #     setup-cpp --compiler llvm-20
+          - compiler: "clang"
+            compiler-setupname: "llvm"
+            compiler-ver: "21"
 
         exclude:
           - compiler: "gcc"
@@ -172,10 +171,11 @@ jobs:
         uses: aminya/setup-cpp@v1
         with:
           setup-cpp: true
+          compiler: ${{matrix.compiler-setupname}}-${{matrix.compiler-ver}}
 
-      - name: Create Build Environment
-        run: |
-          ${{matrix.install}}
+      # - name: Create Build Environment
+      #   run: |
+      #     {{matrix.install}}
 
       - name: Configure
         run: |
