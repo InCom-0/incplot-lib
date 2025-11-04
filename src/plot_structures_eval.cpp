@@ -171,7 +171,9 @@ std::string Base::build_plotAsString() const {
         result.append(axis_verRight.at(i));
         result.append(labels_verRight.at(i + 1));
         result.append(std::string((Config::axis_verName_width_vr - 1) * axisName_verRight_bool, Config::space));
-        if (axisName_verRight_bool) { result.append(incom::terminal_plot::detail::get_utf8CharAt(axisName_verRight, i)); }
+        if (axisName_verRight_bool) {
+            result.append(incom::terminal_plot::detail::get_utf8CharAt(axisName_verRight, i));
+        }
         result.append(std::string(pad_right, Config::space));
         result.push_back('\n');
     }
@@ -228,7 +230,10 @@ guess_rt BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
     else {
         // Suitable: 1) string_like AND 2) not selected as catCol AND 3) not selected as valCol
         auto filter2 = std::views::filter(
-            std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
+            std::views::transform(
+                std::views::zip(ds.m_data, dp.m_colAssessments),
+                [ij = 0uz](auto const &item) mutable { return std::tuple_cat(std::make_tuple(ij++), std::tie(item)); }),
+            [&](auto const &ca) {
                 bool const stringLike = std::get<0>(std::get<1>(ca)).colType == parsedVal_t::string_like;
                 bool const tsLike     = std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex;
                 bool const notSelectedElsewhere =
@@ -441,7 +446,11 @@ guess_rt Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds)
     // If TScol not specified then find a suitable one (the first one from the left)
     else {
         for (auto const &fvItem : std::views::filter(
-                 std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
+                 std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
+                                       [ij = 0uz](auto const &item) mutable {
+                                           return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                       }),
+                 [&](auto const &ca) {
                      return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
                             (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
                             (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
@@ -578,11 +587,16 @@ guess_rt Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &d
 
     // If TScol not specified then find a suitable one (the first one from the left)
     else {
-        for (auto const &fvItem : std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
-                 return std::get<1>(ca).is_timeSeriesLikeIndex &&
-                        (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                        std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
-             })) {
+        for (auto const &fvItem : std::views::filter(
+                 std::views::transform(dp.m_colAssessments,
+                                       [ij = 0uz](auto const &item) mutable {
+                                           return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                       }),
+                 [&](auto const &ca) {
+                     return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                            (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                            std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+                 })) {
 
             dp.labelTS_colID = std::get<0>(fvItem);
             return dp_pr;

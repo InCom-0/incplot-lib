@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <ranges>
+#include <tuple>
 #include <utility>
 #include <variant>
 
@@ -207,15 +208,27 @@ public:
             auto olSet = [&](auto const &oneCol) -> void {
                 // yValCol needs to be arithmetic
                 if constexpr (std::is_arithmetic_v<std::ranges::range_value_t<std::remove_cvref_t<decltype(oneCol)>>>) {
-                    for (auto const &[pointA, pointB] : (std::views::zip(oneCol, xValues) | std::views::pairwise)) {
+                    size_t const sz = std::min(oneCol.size(), xValues.size());
+                    for (size_t i = 0; (i + 1) < sz; ++i) {
                         auto intpLine = construct_interpolatedLine(
-                            pointA, pointB, (std::abs((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
-                            std::abs(std::get<1>(pointB) - std::get<1>(pointA)) / xStepSize);
+                            std::tie(oneCol.at(i), xValues.at(i)), std::tie(oneCol.at(i + 1), xValues.at(i + 1)),
+                            (std::abs((oneCol.at(i + 1) - oneCol.at(i)) / yStepSize)),
+                            std::abs(xValues.at(i + 1) - xValues.at(i)) / xStepSize);
 
                         for (auto const &[first, second] : std::ranges::views::zip(intpLine.first, intpLine.second)) {
                             placePointOnCanvas(first, second, catID);
                         }
                     }
+
+                    // for (auto const &[pointA, pointB] : (std::views::zip(oneCol, xValues) | std::views::pairwise)) {
+                    //     auto intpLine = construct_interpolatedLine(
+                    //         pointA, pointB, (std::abs((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
+                    //         std::abs(std::get<1>(pointB) - std::get<1>(pointA)) / xStepSize);
+
+                    //     for (auto const &[first, second] : std::ranges::views::zip(intpLine.first, intpLine.second)) {
+                    //         placePointOnCanvas(first, second, catID);
+                    //     }
+                    // }
                 }
             };
             std::visit(olSet, one_yValCol);

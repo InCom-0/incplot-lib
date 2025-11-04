@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <functional>
 #include <limits>
+#include <numeric>
 #include <optional>
 #include <ranges>
+#include <tuple>
 #include <utility>
 
 #include <incplot/desired_plot.hpp>
@@ -102,19 +104,26 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_colAssessme
     auto is_tsli = [&](auto const &vecRef) -> bool {
         auto const &vec = vecRef;
         if constexpr (std::is_arithmetic_v<typename std::remove_reference_t<decltype(vec)>::value_type>) {
+            auto compute_voch = [&]() -> std::vector<double> {
+                std::vector<double> voch;
+                for (size_t i = 0; (i + 1) < vec.size(); ++i) { voch.push_back((vec[i + 1] - vec[i])); }
+                return voch;
+            };
 
-            auto   vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
-                                    return (std::get<1>(pr) - std::get<0>(pr));
-                                });
-            double avg          = std::ranges::fold_left_first(vecOfChanges, std::plus()).value() /
-                         static_cast<double>(vecOfChanges.size());
+            std::vector<double> vecOfChanges = compute_voch();
+            double avg = std::reduce(vecOfChanges.begin(), vecOfChanges.end(), 0.0, std::plus()) / vecOfChanges.size();
+
+            // auto   vecOfChanges = std::views::pairwise(vec) | std::views::transform([](auto const &pr) {
+            //                         return (std::get<1>(pr) - std::get<0>(pr));
+            //                     });
+            // double avg          = std::ranges::fold_left_first(vecOfChanges, std::plus()).value() /
+            //              static_cast<double>(vecOfChanges.size());
             auto allowHigh = avg + static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceUP));
             auto allowLow  = avg - static_cast<decltype(avg)>(std::abs(avg * Config::timeSeriesIDX_allowanceDOWN));
 
             return std::ranges::all_of(vecOfChanges,
                                        [&](auto const &chng) { return (allowLow < chng && chng < allowHigh); });
         }
-
         else { return false; }
     };
 
@@ -235,7 +244,9 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
     // labelTS_colID was specified
     else if (dp.labelTS_colID.has_value()) {
         if (ds.m_data.at(dp.labelTS_colID.value()).colType == parsedVal_t::string_like) {
-            if (dp.values_colIDs.size() < 2) { dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarV>(); }
+            if (dp.values_colIDs.size() < 2) {
+                dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarV>();
+            }
             else { dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarHM>(); }
         }
         else {
@@ -249,28 +260,40 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_plotType(Desi
 
     // labelTS_colID is not specified
     else {
-        if (tsLikeIndexCols_count != 0) { dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::Multiline>(); }
+        if (tsLikeIndexCols_count != 0) {
+            dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::Multiline>();
+        }
         else if (dp.values_colIDs.size() == 0) {
             // No TSlikeCol and one useable val col
-            if (useableValCols_count == 1) { dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarV>(); }
+            if (useableValCols_count == 1) {
+                dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarV>();
+            }
 
             // No TSlikeCol and more than one useable val col
             else { dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarHM>(); }
         }
-        else if (dp.values_colIDs.size() == 1) { dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarV>(); }
+        else if (dp.values_colIDs.size() == 1) {
+            dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarV>();
+        }
         else { dp.plot_type_name = incstd::typegen::get_typeIndex<plot_structures::BarHM>(); }
     }
     return dp;
 }
 std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(DesiredPlot &&dp, DataStore const &ds) {
     if (dp.labelTS_colID.has_value()) { return dp; }
+    ColumnParams a;
 
     if (dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::Multiline>()) {
-        for (auto const &fvItem : std::views::filter(std::views::enumerate(dp.m_colAssessments), [&](auto const &ca) {
-                 return std::get<1>(ca).is_timeSeriesLikeIndex &&
-                        (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                        std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
-             })) {
+        for (auto const &fvItem : std::views::filter(
+                 std::views::transform(dp.m_colAssessments,
+                                       [ij = 0uz](auto const &item) mutable {
+                                           return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                       }),
+                 [&](auto const &ca) {
+                     return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                            (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                            std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+                 })) {
 
             dp.labelTS_colID = std::get<0>(fvItem);
             return dp;
@@ -280,7 +303,11 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
     }
     else if (dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::Scatter>()) {
         for (auto const &fvItem : std::views::filter(
-                 std::views::enumerate(std::views::zip(ds.m_data, dp.m_colAssessments)), [&](auto const &ca) {
+                 std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
+                                       [ij = 0uz](auto const &item) mutable {
+                                           return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                       }),
+                 [&](auto const &ca) {
                      return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
                             (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
                             (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
@@ -298,9 +325,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
              dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarVM>() ||
              dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHM>() ||
              dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHS>()) {
-        for (auto const &fvItem : std::views::filter(std::views::enumerate(ds.m_data), [](auto const &ct) {
-                 return std::get<1>(ct).colType == parsedVal_t::string_like;
-             })) {
+        for (auto const &fvItem :
+             std::views::filter(std::views::transform(ds.m_data,
+                                                      [ij = 0uz](auto const &item) mutable {
+                                                          return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                                      }),
+                                [](auto const &ct) { return std::get<1>(ct).colType == parsedVal_t::string_like; })) {
             dp.labelTS_colID = std::get<0>(fvItem);
             return dp;
         }

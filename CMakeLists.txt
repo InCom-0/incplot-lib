@@ -5,7 +5,7 @@ project(incplot-lib)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  add_compile_options(/utf-8)
+    add_compile_options(/utf-8)
 endif()
 
 add_library(incplot-lib STATIC)
@@ -24,17 +24,17 @@ list(TRANSFORM INCPLOT_LIB_SRC PREPEND ${CMAKE_CURRENT_SOURCE_DIR}/src/)
 target_sources(incplot-lib PRIVATE ${INCPLOT_LIB_SRC})
 target_sources(incplot-lib
     PUBLIC
-        FILE_SET pub_headers
-        TYPE HEADERS
-        BASE_DIRS
-                include/L2/)
+    FILE_SET pub_headers
+    TYPE HEADERS
+    BASE_DIRS
+    include/L2/)
 target_sources(incplot-lib
     PRIVATE
-        FILE_SET priv_headers
-        TYPE HEADERS
-        BASE_DIRS
-                src/private_inc/)
-                
+    FILE_SET priv_headers
+    TYPE HEADERS
+    BASE_DIRS
+    src/private_inc/)
+
 target_compile_features(incplot-lib PUBLIC cxx_std_23)
 
 if(MINGW AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
@@ -42,7 +42,7 @@ if(MINGW AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
 endif()
 
 if((CMAKE_SYSTEM_NAME STREQUAL "Darwin") AND (CMAKE_BUILD_TYPE STREQUAL "Release"))
-  target_link_options(incplot-lib PUBLIC -static-libgcc -static-libstdc++)
+    target_link_options(incplot-lib PUBLIC -static-libgcc -static-libstdc++)
 endif()
 
 
@@ -51,6 +51,7 @@ target_link_libraries(incplot-lib PRIVATE
     nlohmann_json::nlohmann_json
     csv2::csv2
     utf-cpp::utf-cpp)
+
 
 target_link_libraries(incplot-lib PUBLIC
     magic_enum::magic_enum
