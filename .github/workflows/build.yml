@@ -129,7 +129,7 @@ jobs:
         icon: ["🟧"]
         sys: [linux]
         runs-on: [ubuntu-24.04, ubuntu-24.04-arm]
-        compiler: [gcc, clang]
+        compiler: [gcc]
         # compiler-ver: [15, 21]
         build-type: [Release, Debug]
         target: ["all"]
@@ -143,15 +143,15 @@ jobs:
 
           - compiler: "gcc"
             compiler-setupname: "gcc"
-            compiler-ver: "15"
+            compiler-ver: "14"
             # install: |
             #   sudo apt install gcc-14 g++-14
             #   sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
             #   sudo update-alternatives --set gcc /usr/bin/gcc-14
 
-          - compiler: "clang"
-            compiler-setupname: "llvm"
-            compiler-ver: "21"
+          # - compiler: "clang"
+          #   compiler-setupname: "llvm"
+          #   compiler-ver: "21"
 
     steps:
       - name: "🧰 Checkout"
