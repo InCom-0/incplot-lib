@@ -180,7 +180,6 @@ jobs:
         sys: [macos]
         runs-on: [macos-15, macos-15-intel]
         compiler: ["gcc"]
-        # compiler-ver: ["14"]
         build-type: ["Release", "Debug"]
         target : ["all"]
 
@@ -191,22 +190,14 @@ jobs:
             platform: "x86_64"
 
           - compiler: "gcc"
+            compiler-setupname: "gcc"
             compiler-ver: "15"
             cmake-override: "-DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15"
-            install:
-          # - compiler: "clang"
-          #   compiler-ver: "20"
-          #   cmake-override: ""
-          #   install: |
-          #     setup-cpp --compiler llvm-20
 
-        exclude:
-          - compiler: "gcc"
-            compiler-ver: "20"
           - compiler: "clang"
-            compiler-ver: "14"
-          - compiler: "clang"
-            compiler-ver: "15"
+            compiler-setupname: "llvm"
+            compiler-ver: "21"
+            cmake-override: "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++"
 
 
     steps:
@@ -217,11 +208,8 @@ jobs:
       uses: aminya/setup-cpp@v1
       with:
         setup-cpp: true
-        compiler: ${{matrix.compiler}}-${{matrix.compiler-ver}}
+        compiler: ${{matrix.compiler-setupname}}-${{matrix.compiler-ver}}
 
-    - name: Create Build Environment
-      run: |
-        ${{matrix.install}}
     - name: Configure
       run: |
         cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
