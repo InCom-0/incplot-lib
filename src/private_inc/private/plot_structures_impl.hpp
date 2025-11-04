@@ -601,12 +601,16 @@ auto BarV::compute_footer(this auto &&self) -> compute_rt<decltype(self)> {
         res1.push_back('\n');
         res1.append("Warning:\n");
         res1.append("The following rows were filtered out because they contained 'null' values:\n");
-        auto viewOfFiltered = std::views::transform(self.dp.filterFlags,
-                                                    [ij = 0uz](auto const &item) mutable {
-                                                        return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
-                                                    }) |
-                              std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b1; }) |
-                              std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
+
+        auto enumerated = std::views::transform(self.dp.filterFlags,
+                                                [ij = 0uz](auto const &item) mutable {
+                                                    return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                                }) |
+                          std::ranges::to<std::vector>();
+
+        auto viewOfFiltered = std::views::filter(enumerated, [](auto const &pr) { return std::get<1>(pr) & 0b1; }) |
+                              std::views::transform([](auto const &pr2) { return std::get<0>(pr2); });
+
         for (auto const &f_item : viewOfFiltered) {
             res1.append(std::to_string(f_item));
             res1.push_back(',');
@@ -624,12 +628,15 @@ auto BarV::compute_footer(this auto &&self) -> compute_rt<decltype(self)> {
         res1.append(std::format(
             "The following rows were filtered out because they contained extreme values outside {}σ from mean:\n",
             self.dp.filter_outsideStdDev.value()));
-        auto viewOfFiltered = std::views::transform(self.dp.filterFlags,
-                                                    [ij = 0uz](auto const &item) mutable {
-                                                        return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
-                                                    }) |
-                              std::views::filter([](auto const &pr) { return std::get<1>(pr) & 0b10; }) |
-                              std::views::transform([](auto const &&pr2) { return std::get<0>(pr2); });
+            
+        auto enumerated = std::views::transform(self.dp.filterFlags,
+                                                [ij = 0uz](auto const &item) mutable {
+                                                    return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                                }) |
+                          std::ranges::to<std::vector>();
+
+        auto viewOfFiltered = std::views::filter(enumerated, [](auto const &pr) { return std::get<1>(pr) & 0b10; }) |
+                              std::views::transform([](auto const &pr2) { return std::get<0>(pr2); });
         for (auto const &f_item : viewOfFiltered) {
             res1.append(std::to_string(f_item));
             res1.push_back(',');

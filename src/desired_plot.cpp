@@ -284,16 +284,17 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
     ColumnParams a;
 
     if (dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::Multiline>()) {
-        for (auto const &fvItem : std::views::filter(
-                 std::views::transform(dp.m_colAssessments,
-                                       [ij = 0uz](auto const &item) mutable {
-                                           return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
-                                       }),
-                 [&](auto const &ca) {
-                     return std::get<1>(ca).is_timeSeriesLikeIndex &&
-                            (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                            std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
-                 })) {
+        auto enumerated = std::views::transform(dp.m_colAssessments,
+                                                [ij = 0uz](auto const &item) mutable {
+                                                    return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                                }) |
+                          std::ranges::to<std::vector>();
+
+        for (auto const &fvItem : std::views::filter(enumerated, [&](auto const &ca) {
+                 return std::get<1>(ca).is_timeSeriesLikeIndex &&
+                        (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                        std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+             })) {
 
             dp.labelTS_colID = std::get<0>(fvItem);
             return dp;
@@ -302,17 +303,18 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
         return std::unexpected(incerr_c::make(GTSC_noTimeSeriesLikeColumnForMultiline));
     }
     else if (dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::Scatter>()) {
-        for (auto const &fvItem : std::views::filter(
-                 std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
-                                       [ij = 0uz](auto const &item) mutable {
-                                           return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
-                                       }),
-                 [&](auto const &ca) {
-                     return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
-                            (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                            (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
-                            std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
-                 })) {
+        auto enumerated = std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
+                                                [ij = 0uz](auto const &item) mutable {
+                                                    return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                                }) |
+                          std::ranges::to<std::vector>();
+
+        for (auto const &fvItem : std::views::filter(enumerated, [&](auto const &ca) {
+                 return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
+                        (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+                        (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
+                        std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+             })) {
 
             dp.labelTS_colID = std::get<0>(fvItem);
             return dp;
@@ -325,12 +327,15 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_TSCol(Desired
              dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarVM>() ||
              dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHM>() ||
              dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarHS>()) {
-        for (auto const &fvItem :
-             std::views::filter(std::views::transform(ds.m_data,
-                                                      [ij = 0uz](auto const &item) mutable {
-                                                          return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
-                                                      }),
-                                [](auto const &ct) { return std::get<1>(ct).colType == parsedVal_t::string_like; })) {
+
+        auto enumerated = std::views::transform(ds.m_data,
+                                                [ij = 0uz](auto const &item) mutable {
+                                                    return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+                                                }) |
+                          std::ranges::to<std::vector>();
+
+        for (auto const &fvItem : std::views::filter(
+                 enumerated, [](auto const &ct) { return std::get<1>(ct).colType == parsedVal_t::string_like; })) {
             dp.labelTS_colID = std::get<0>(fvItem);
             return dp;
         }
