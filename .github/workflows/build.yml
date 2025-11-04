@@ -59,6 +59,7 @@ jobs:
         buildenv: [msys2]
         msystem: [ucrt64, clang64]
         build-type: [Release, Debug]
+        compiler: [gcc, clang]
         platform: ["x86_64"]
         target: ["all"]
         cmake-override: [""]
@@ -72,11 +73,14 @@ jobs:
             compiler: clang
             compiler-ver: 21
             add-to-pacboy: "clang:p"
-            
+
           - msystem: clang64
             compiler: clang
             compiler-ver: 21
             add-to-pacboy: ""
+        exclude:
+          - msystem: clang64
+            compiler: gcc
 
     defaults:
       run:
