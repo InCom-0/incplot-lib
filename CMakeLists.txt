@@ -8,6 +8,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     add_compile_options(/utf-8)
 endif()
 
+
+########################################################
+### Target specification ###
+########################################################
+
 add_library(incplot-lib STATIC)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
 
@@ -36,6 +41,22 @@ target_sources(incplot-lib
     src/private_inc/)
 
 target_compile_features(incplot-lib PUBLIC cxx_std_23)
+
+include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
+target_link_libraries(incplot-lib PRIVATE
+    nlohmann_json::nlohmann_json
+    csv2::csv2
+    utf-cpp::utf-cpp)
+
+target_link_libraries(incplot-lib PUBLIC
+    magic_enum::magic_enum
+    incstd::incstd
+    incerr::incerr)
+
+
+##########################################################################
+### Settings the right options to statically compile when 'Release' ###
+##########################################################################
 
 ### This attempts to compile sample program to find out if we are using libc++(USING_LIBCXX) or libstdc++(USING_LIBSTDCXX)
 include(cmake/stdlibQuery.cmake)
@@ -73,18 +94,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 
-include(CMake_dependencies.cmake) ### Loads and declares the requires external libraries using both vcpkg and CMake's FetchContent.
-target_link_libraries(incplot-lib PRIVATE
-    nlohmann_json::nlohmann_json
-    csv2::csv2
-    utf-cpp::utf-cpp)
-
-
-target_link_libraries(incplot-lib PUBLIC
-    magic_enum::magic_enum
-    incstd::incstd
-    incerr::incerr)
-
+##########################################################################
+### Subdirs - tests demos and the like ###
+##########################################################################
 
 option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
 if(INCPLOT_BUILD_DEMOS)

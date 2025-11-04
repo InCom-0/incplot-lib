@@ -88,6 +88,7 @@ jobs:
             compiler: clang
             compiler-ver: 21
             add-to-pacboy: ""
+            
         exclude:
           - msystem: clang64
             compiler: gcc
@@ -144,10 +145,6 @@ jobs:
           - compiler: "gcc"
             compiler-setupname: "gcc"
             compiler-ver: "14"
-            # install: |
-            #   sudo apt install gcc-14 g++-14
-            #   sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 --slave /usr/bin/g++ g++ /usr/bin/g++-14 --slave /usr/bin/gcov gcov /usr/bin/gcov-14
-            #   sudo update-alternatives --set gcc /usr/bin/gcc-14
 
           # - compiler: "clang"
           #   compiler-setupname: "llvm"
@@ -162,10 +159,6 @@ jobs:
         with:
           setup-cpp: true
           compiler: ${{matrix.compiler-setupname}}-${{matrix.compiler-ver}}
-
-      # - name: Create Build Environment
-      #   run: |
-      #     {{matrix.install}}
 
       - name: Configure
         run: |
