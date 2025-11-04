@@ -7,43 +7,53 @@ on:
   workflow_dispatch:
 
 jobs:
-  # MSVC TURNED OFF UNTIL MSVC SUPPORTS THE required C++23 features
-  # Windows-MSVC:
-  #   name: ${{ matrix.icon }} windows (${{matrix.platform}}, ${{matrix.buildenv}}, ${{matrix.compiler}}-${{matrix.compiler-ver}}, ${{matrix.build-type}})
-  #   runs-on: ${{matrix.runs-on}}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       runs-on: ["windows-2025"]
-  #       sys: [windows]
-  #       icon: ['🟦']
-  #       buildenv: [VS2022]
+  Windows-MSVC:
+    name: ${{ matrix.icon }} windows (${{matrix.platform}}, ${{matrix.compiler}}-${{matrix.compiler-ver}}, ${{matrix.build-type}})
+    runs-on: ${{matrix.runs-on}}
+    strategy:
+      fail-fast: false
+      matrix:
+        runs-on: [windows-2025, windows-11-arm]
+        sys: [windows]
+        icon: ['⬜']
+        buildenv: [VS2022]
+        compiler: ["MSVC"]
+        mode: ["cxx23"]
+        build-type: ["Release", "Debug"]
+        target : ["all"]
+        cmake-override: [""]
+        include:
+          - compiler: "MSVC"
+            compiler-ver: "19"
+          - runs-on: windows-2025
+            platform: "x86_64"
+          - runs-on: windows-11-arm
+            platform: "arm64"
 
-  #       compiler: ["MSVC"]
-  #       platform: ["x86_64"]
-  #       mode: ["cxx23"]
-  #       build-type: ["Release", "Debug"]
-  #       target : ["all"]
-  #       cmake-override: [""]
-  #       include:
-  #         - compiler: "MSVC"
-  #           compiler-ver: ["19"]
+    steps:
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
 
-  #   steps:
-  #   - name: '🧰 Checkout'
-  #     uses: actions/checkout@v4
+    - uses: TheMrMilchmann/setup-msvc-dev@v3
+      with:
+        arch: ${{matrix.platform}}
+        
+    - name: Configure git credentials
+      run: |
+        git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/" |
+        git lfs install
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+    - name: 'Configure'
+      run: cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
 
-  #   - uses: seanmiddleditch/gha-setup-ninja@master
-  #   - uses: TheMrMilchmann/setup-msvc-dev@v3
-  #     with:
-  #       arch: ${{matrix.platform}}
+    - name: '🚧 Build'
+      run: cmake --build build --target ${{matrix.target}}
 
-  #   - name: 'Configure'
-  #     shell: bash
-  #     run: cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
-
-  #   - name: '🚧 Build'
-  #     run: cmake --build build --target ${{matrix.target}}
+      
 
   # Based on https://github.com/msys2/setup-msys2/blob/main/examples/cmake.yml
   Windows-MSYS:
