@@ -153,16 +153,6 @@ jobs:
             compiler-setupname: "llvm"
             compiler-ver: "21"
 
-        exclude:
-          - compiler: "gcc"
-            compiler-ver: "20"
-          - compiler: "gcc"
-            compiler-ver: "21"
-          - compiler: "clang"
-            compiler-ver: "14"
-          - compiler: "clang"
-            compiler-ver: "15"
-
     steps:
       - name: "🧰 Checkout"
         uses: actions/checkout@v4
