@@ -47,7 +47,7 @@ jobs:
 
   # Based on https://github.com/msys2/setup-msys2/blob/main/examples/cmake.yml
   Windows-MSYS:
-    name: ${{ matrix.icon }} windows (${{matrix.platform}}, ${{matrix.buildenv}}, ${{matrix.compiler}}-${{matrix.compiler-ver}}, ${{matrix.build-type}})
+    name: ${{ matrix.icon }} windows (${{matrix.platform}}, ${{matrix.msystem}}, ${{matrix.compiler}}-${{matrix.compiler-ver}}, ${{matrix.build-type}})
     runs-on: ${{matrix.runs-on}}
     strategy:
       fail-fast: false
@@ -66,12 +66,17 @@ jobs:
           - msystem: ucrt64
             compiler: gcc
             compiler-ver: 15
+            add-to-pacboy: ""
+
           - msystem: ucrt64
             compiler: clang
             compiler-ver: 21
+            add-to-pacboy: "clang:p"
+            
           - msystem: clang64
             compiler: clang
             compiler-ver: 21
+            add-to-pacboy: ""
 
     defaults:
       run:
@@ -90,6 +95,7 @@ jobs:
             make
           pacboy: >-
             toolchain:p
+             ${{matrix.add-to-pacboy}}
             cmake:p
             ninja:p
 
