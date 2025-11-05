@@ -2,7 +2,7 @@ CPMAddPackage("gh:google/googletest@1.17.0")
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 enable_testing()
 
-if((TARGET gtest) AND (CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC"))
+if((TARGET gtest) AND (CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "GNU"))
     target_compile_options(gtest PRIVATE -Wno-character-conversion)
 endif()
 
