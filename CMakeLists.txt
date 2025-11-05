@@ -56,46 +56,6 @@ target_link_libraries(incplot-lib PUBLIC
 
 
 ##########################################################################
-### Settings the right options to statically compile when 'Release' ###
-##########################################################################
-
-### This attempts to compile sample program to find out if we are using libc++(USING_LIBCXX) or libstdc++(USING_LIBSTDCXX)
-include(cmake/stdlibQuery.cmake)
-
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        message(STATUS "GCC Compiler")
-        message(STATUS "Using libstdc++")
-        target_link_options(incplot-lib PUBLIC -static-libgcc -static-libstdc++)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang|AppleClang")
-        message(STATUS "Clang Compiler")
-        if(APPLE)
-            if(USING_LIBCXX)
-                message(STATUS "Using libc++")
-                target_link_options(incplot-lib PUBLIC -stdlib=libc++)
-            elseif(USING_LIBSTDCXX)
-                message(STATUS "Using libstdc++")
-                target_link_options(incplot-lib PUBLIC -static-libgcc -static-libstdc++)
-            endif()
-        else()
-            target_link_options(incplot-lib PUBLIC -static)
-            if(USING_LIBCXX)
-                message(STATUS "Using libc++")
-                target_link_options(incplot-lib PUBLIC -stdlib=libc++ -Wl,-Bstatic -lc++ -lc++abi -Wl,-Bdynamic)
-            elseif(USING_LIBSTDCXX)
-                message(STATUS "Using libstdc++")
-                target_link_options(incplot-lib PUBLIC -static-libgcc -static-libstdc++)
-            endif()
-        endif()
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        message(STATUS "MSVC Compiler")
-    else()
-        message(WARNING "You are using an unexpected compiler (ie. neither GCC, Clang, AppleClang, MSVC). All bets are off.")
-    endif()
-endif()
-
-
-##########################################################################
 ### Subdirs - tests demos and the like ###
 ##########################################################################
 
