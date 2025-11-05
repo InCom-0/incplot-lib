@@ -4,8 +4,9 @@ project(incplot-lib)
 # set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
     add_compile_options(/utf-8)
+    add_compile_definitions(NOMINMAX)
 endif()
 
 

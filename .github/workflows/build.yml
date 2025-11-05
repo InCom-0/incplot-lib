@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  Windows-MSVC:
+  Windows:
     name: ${{ matrix.icon }} windows (${{matrix.platform}}, ${{matrix.compiler}}-${{matrix.compiler-ver}}, ${{matrix.build-type}})
     runs-on: ${{matrix.runs-on}}
     strategy:
@@ -17,7 +17,7 @@ jobs:
         sys: [windows]
         icon: ['⬜']
         buildenv: [VS2022]
-        compiler: ["MSVC"]
+        compiler: [MSVC, clang-cl]
         mode: ["cxx23"]
         build-type: ["Release", "Debug"]
         target : ["all"]
@@ -30,13 +30,19 @@ jobs:
           - runs-on: windows-11-arm
             platform: "arm64"
 
+        # Can't use clang-cl on windows-arm?
+        # Leaving this be for the time being
+        exclude:
+          - runs-on: windows-11-arm
+            compiler: clang-cl
+
     steps:
     - name: '🧰 Checkout'
       uses: actions/checkout@v5
       with:
         submodules: recursive
 
-    - uses: TheMrMilchmann/setup-msvc-dev@v3
+    - uses: TheMrMilchmann/setup-msvc-dev@v4
       with:
         arch: ${{matrix.platform}}
         
@@ -48,7 +54,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
     - name: 'Configure'
-      run: cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
+      run: cmake --preset Win_${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
 
     - name: '🚧 Build'
       run: cmake --build build --target ${{matrix.target}}
@@ -92,33 +98,44 @@ jobs:
         exclude:
           - msystem: clang64
             compiler: gcc
-
+    
     defaults:
       run:
         shell: msys2 {0}
     steps:
-      - name: "🧰 Checkout"
-        uses: actions/checkout@v4
 
-      - name: "${{ matrix.icon }} Setup MSYS2"
-        uses: msys2/setup-msys2@v2.27.0
-        with:
-          msystem: ${{matrix.msystem}}
-          update: true
-          install: >-
-            git
-            make
-          pacboy: >-
-            toolchain:p
-             ${{matrix.add-to-pacboy}}
-            cmake:p
-            ninja:p
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
 
-      - name: "Configure"
-        run: cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
+    - name: '${{ matrix.icon }} Setup MSYS2'
+      uses: msys2/setup-msys2@v2.29.0
+      with:
+        msystem: ${{matrix.msystem}}
+        update: true
+        install: >-
+          git
+          make
+        pacboy: >-
+          toolchain:p
+          ${{matrix.add-to-pacboy}}
+          cmake:p
+          ninja:p
 
-      - name: "🚧 Build"
-        run: cmake --build build --target ${{matrix.target}}
+    - name: Configure git credentials
+      run: |
+        git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 'Configure'
+      run: cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
+
+    - name: '🚧 Build'
+      run: cmake --build build --target ${{matrix.target}}
+
+
 
   # Based on https://github.com/tcbrindle/flux/blob/main/.github/workflows/linux.yml
   Linux-Ubuntu:
@@ -167,6 +184,8 @@ jobs:
       - name: "🚧 Build"
         run: cmake --build build --target ${{matrix.target}}
 
+
+        
   macOS:
     name: ${{ matrix.icon }} macos (${{matrix.platform}}, ${{matrix.compiler}}-${{matrix.compiler-ver}}, ${{matrix.build-type}})
     runs-on: ${{ matrix.runs-on }}
@@ -176,7 +195,7 @@ jobs:
         icon: ["⬛"]
         sys: [macos]
         runs-on: [macos-15, macos-15-intel]
-        compiler: ["gcc", "clang"]
+        compiler: [clang]
         build-type: ["Release", "Debug"]
         target: ["all"]
 
@@ -186,10 +205,10 @@ jobs:
           - runs-on: macos-15-intel
             platform: "x86_64"
 
-          - compiler: "gcc"
-            compiler-setupname: "gcc"
-            compiler-ver: "15"
-            cmake-override: "-DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15"
+          # - compiler: "gcc"
+          #   compiler-setupname: "gcc"
+          #   compiler-ver: "15"
+          #   cmake-override: "-DCMAKE_C_COMPILER=gcc-15 -DCMAKE_CXX_COMPILER=g++-15"
 
           - compiler: "clang"
             compiler-setupname: "llvm"
@@ -199,19 +218,29 @@ jobs:
              -DCMAKE_CXX_FLAGS=\"-stdlib=libc++ -I$(brew --prefix llvm)/include/c++/v1\" \
              -DCMAKE_EXE_LINKER_FLAGS=\"-stdlib=libc++ -L$(brew --prefix llvm)/lib/c++\""
 
+
     steps:
-      - name: "🧰 Checkout"
-        uses: actions/checkout@v4
+    - name: '🧰 Checkout'
+      uses: actions/checkout@v5
+      with:
+        submodules: recursive
 
-      - name: Setup Cpp
-        uses: aminya/setup-cpp@v1
-        with:
-          setup-cpp: true
-          compiler: ${{matrix.compiler-setupname}}-${{matrix.compiler-ver}}
+    - name: Setup Cpp
+      uses: aminya/setup-cpp@v1
+      with:
+        setup-cpp: true
+        compiler: ${{matrix.compiler-setupname}}-${{matrix.compiler-ver}}
 
-      - name: Configure
-        run: |
-          cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
 
-      - name: "🚧 Build"
-        run: cmake --build build --target ${{matrix.target}}
+    - name: Configure git credentials
+      run: |
+        git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Configure
+      run: |
+        cmake --preset ${{matrix.compiler}}_${{matrix.build-type}} ${{matrix.cmake-override}}
+
+    - name: '🚧 Build'
+      run: cmake --build build --target ${{matrix.target}}
