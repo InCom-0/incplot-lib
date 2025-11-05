@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
     auto dpCtor            = incplot::DesiredPlot::DP_CtorStruct{};
     // dpCtor.tar_width = 250uz;
     // dpCtor.tar_height      = 12uz;
-    dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarV));
+    // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::Scatter));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
     dpCtor.availableHeight = 35;

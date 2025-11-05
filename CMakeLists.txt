@@ -59,6 +59,8 @@ target_link_libraries(incplot-lib PUBLIC
 ### Subdirs - tests demos and the like ###
 ##########################################################################
 
+include(cmake/stdlibQuery.cmake)
+
 option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
 if(INCPLOT_BUILD_DEMOS)
     add_subdirectory(demos)
