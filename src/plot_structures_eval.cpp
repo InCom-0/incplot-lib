@@ -228,36 +228,59 @@ guess_rt BarV::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds) {
         }
     }
     else {
-        // Suitable: 1) string_like AND 2) not selected as catCol AND 3) not selected as valCol
-        auto enumerated = std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
-                                                [ij = 0uz](auto const &item) mutable {
-                                                    return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
-                                                }) |
-                          std::ranges::to<std::vector>();
+        std::optional<std::pair<size_t, size_t>> locRes = std::nullopt;
 
-        auto filter2 = std::views::filter(enumerated, [&](auto const &ca) {
-            bool const stringLike = std::get<0>(std::get<1>(ca)).colType == parsedVal_t::string_like;
-            bool const tsLike     = std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex;
+        for (size_t i = 0; i < std::min(ds.m_data.size(), dp.m_colAssessments.size()); ++i) {
+            bool const stringLike = ds.m_data.at(i).colType == parsedVal_t::string_like;
+            bool const tsLike     = dp.m_colAssessments.at(i).is_timeSeriesLikeIndex;
             bool const notSelectedElsewhere =
-                (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+                (dp.cat_colID.has_value() ? i != dp.cat_colID.value() : true) &&
+                std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == i; });
 
-            return (stringLike || tsLike) && notSelectedElsewhere;
-        });
+            if ((stringLike || tsLike) && notSelectedElsewhere) {
+                if (not dp.m_colAssessments.at(i).is_allValuesIdentical) {
+                    if (locRes.has_value()) {
+                        if (locRes->second < dp.m_colAssessments.at(i).categoryCount) {
+                            locRes = std::make_pair(i, dp.m_colAssessments.at(i).categoryCount);
+                        }
+                    }
+                    else { locRes = std::make_pair(i, dp.m_colAssessments.at(i).categoryCount); }
+                }
+            }
+        }
 
-        // Best == the one with the most "categories" ie. least number of identical strings in rows
-        auto bestForLabels = std::ranges::max_element(filter2, [](auto const &lhs, auto const &rhs) {
-            bool const lhs_AllTheSame = std::get<1>(std::get<1>(lhs)).is_allValuesIdentical;
-            bool const rhs_AllTheSame = std::get<1>(std::get<1>(rhs)).is_allValuesIdentical;
-            bool const catCount_lhsSmaller =
-                std::get<1>(std::get<1>(lhs)).categoryCount < std::get<1>(std::get<1>(rhs)).categoryCount;
-            return (lhs_AllTheSame && (not rhs_AllTheSame)) || catCount_lhsSmaller;
-        });
+        // NEW LOGIC BELOW THAT DOESN'T WORK WITHOUT ENUMERATE VIEW FOR ALL C++ STD LIBS
 
-        if (bestForLabels == filter2.end()) {
+        // // Suitable: 1) string_like AND 2) not selected as catCol AND 3) not selected as valCol
+        // auto enumerated = std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
+        //                                         [ij = 0uz](auto const &item) mutable {
+        //                                             return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+        //                                         }) |
+        //                   std::ranges::to<std::vector>();
+
+        // auto filter2 = std::views::filter(enumerated, [&](auto const &ca) {
+        //     bool const stringLike = std::get<0>(std::get<1>(ca)).colType == parsedVal_t::string_like;
+        //     bool const tsLike     = std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex;
+        //     bool const notSelectedElsewhere =
+        //         (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+        //         std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+
+        //     return (stringLike || tsLike) && notSelectedElsewhere;
+        // });
+
+        // // Best == the one with the most "categories" ie. least number of identical strings in rows
+        // auto bestForLabels = std::ranges::max_element(filter2, [](auto const &lhs, auto const &rhs) {
+        //     bool const lhs_AllTheSame = std::get<1>(std::get<1>(lhs)).is_allValuesIdentical;
+        //     bool const rhs_AllTheSame = std::get<1>(std::get<1>(rhs)).is_allValuesIdentical;
+        //     bool const catCount_lhsSmaller =
+        //         std::get<1>(std::get<1>(lhs)).categoryCount < std::get<1>(std::get<1>(rhs)).categoryCount;
+        //     return (lhs_AllTheSame && (not rhs_AllTheSame)) || catCount_lhsSmaller;
+        // });
+
+        if (not locRes.has_value()) {
             return std::unexpected(incerr_c::make(GTSC_noStringLikeColumnForLabelsForBarPlot));
         }
-        else { dp.labelTS_colID = std::get<0>(*bestForLabels); }
+        else { dp.labelTS_colID = locRes->first; }
     }
     return dp_pr;
 }
@@ -447,22 +470,40 @@ guess_rt Scatter::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds)
 
     // If TScol not specified then find a suitable one (the first one from the left)
     else {
-        auto enumerated = std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
-                                                [ij = 0uz](auto const &item) mutable {
-                                                    return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
-                                                }) |
-                          std::ranges::to<std::vector>();
+        std::vector<std::tuple<size_t, std::add_lvalue_reference_t<decltype(ds.m_data)::value_type>,
+                               std::add_lvalue_reference_t<decltype(dp.m_colAssessments)::value_type>>>
+            enuTest;
 
-        for (auto const &fvItem : std::views::filter(enumerated, [&](auto const &ca) {
-                 return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
-                        (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
-                        (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
-                        std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
-             })) {
+        for (size_t i = 0; i < std::min(ds.m_data.size(), dp.m_colAssessments.size()); ++i) {
+            if ((not dp.m_colAssessments.at(i).is_timeSeriesLikeIndex) &&
+                (dp.cat_colID.has_value() ? i != dp.cat_colID.value() : true) &&
+                (ds.m_data.at(i).colType != parsedVal_t::string_like) &&
+                std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == i; })) {
 
-            dp.labelTS_colID = std::get<0>(fvItem);
-            return dp_pr;
+                dp.labelTS_colID = i;
+                return dp_pr;
+            }
         }
+
+        // NEW LOGIC BELOW THAT DOESN'T WORK WITHOUT ENUMERATE VIEW FOR ALL C++ STD LIBS
+
+        // auto enumerated = std::views::transform(std::views::zip(ds.m_data, dp.m_colAssessments),
+        //                                         [ij = 0uz](auto const &item) mutable {
+        //                                             return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
+        //                                         }) |
+        //                   std::ranges::to<std::vector>();
+
+        // for (auto const &fvItem : std::views::filter(enumerated, [&](auto const &ca) {
+        //          return (not std::get<1>(std::get<1>(ca)).is_timeSeriesLikeIndex) &&
+        //                 (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&
+        //                 (std::get<0>(std::get<1>(ca)).colType != parsedVal_t::string_like) &&
+        //                 std::ranges::none_of(dp.values_colIDs, [&](auto const &a) { return a == std::get<0>(ca); });
+        //      })) {
+
+        //     dp.labelTS_colID = std::get<0>(fvItem);
+        //     return dp_pr;
+        // }
+
         // If there are none (therefore none of the for loops execute at all) then return unexpected
         return std::unexpected(incerr_c::make(GTSC_noUnusedXvalColumnForScatter));
     }
@@ -595,7 +636,7 @@ guess_rt Multiline::guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &d
                                                     return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
                                                 }) |
                           std::ranges::to<std::vector>();
-                          
+
         for (auto const &fvItem : std::views::filter(enumerated, [&](auto const &ca) {
                  return std::get<1>(ca).is_timeSeriesLikeIndex &&
                         (dp.cat_colID.has_value() ? std::get<0>(ca) != dp.cat_colID.value() : true) &&

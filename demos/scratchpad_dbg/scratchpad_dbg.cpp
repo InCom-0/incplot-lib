@@ -1,3 +1,4 @@
+#include "incplot/plot_structures.hpp"
 #include <incplot.hpp>
 #include <incstd/incstd_all.hpp>
 #include <iostream>
@@ -20,7 +21,7 @@ int main(int argc, char *argv[]) {
     auto dpCtor            = incplot::DesiredPlot::DP_CtorStruct{};
     // dpCtor.tar_width = 250uz;
     // dpCtor.tar_height      = 12uz;
-    // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarHS));
+    dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::BarV));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
     dpCtor.availableHeight = 35;
@@ -42,7 +43,7 @@ int main(int argc, char *argv[]) {
     std::string_view wine_small{DATAFOLDER "wine_quality_data_small.csv"sv};
     std::string_view german_eco{DATAFOLDER "german_economy.tsv"sv};
 
-    auto data = incstd::filesys::get_file_textual(german_eco);
+    auto data = incstd::filesys::get_file_textual(wine);
     if (not data.has_value()) { std::exit(1); }
 
     auto ds = parsers::Parser::parse(data.value());
