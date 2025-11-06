@@ -1,7 +1,8 @@
-#include "incplot/plot_structures.hpp"
-#include <incplot.hpp>
-#include <incstd/incstd_all.hpp>
 #include <iostream>
+
+#include <incplot.hpp>
+#include <incstd/console/ansi2html.hpp>
+#include <incstd/incstd_all.hpp>
 
 
 #if defined(_WIN64)
@@ -54,8 +55,15 @@ int main(int argc, char *argv[]) {
 
     // auto test_possibilities = evaluate_onePSpossibility(dpCtor, ds.value());
 
+    auto ansiPlot = incplot::make_plot_collapseUnExp(dpCtor, data.value());
+    auto ath = incstd::console::AnsiToHtml();
 
-    std::cout << incplot::make_plot_collapseUnExp(dpCtor, data.value()) << '\n';
+
+    std::cout << ansiPlot << '\n';
+
+    std::cout << ath.convert(ansiPlot);
+
+    
 
 
     return 0;

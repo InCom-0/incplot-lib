@@ -175,10 +175,12 @@ std::string Base::build_plotAsString() const {
             result.append(incom::terminal_plot::detail::get_utf8CharAt(axisName_verRight, i));
         }
         result.append(std::string(pad_right, Config::space));
+        result.append(Config::term_setDefault);
         result.push_back('\n');
     }
 
     // Add horizontal bottom axis line
+    result.append(Config::term_setDefault);
     result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
     result.append(labels_verLeft.back());
     result.append(areaCorner_bl);
