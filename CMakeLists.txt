@@ -47,7 +47,8 @@ include(CMake_dependencies.cmake) ### Loads and declares the requires external l
 target_link_libraries(incplot-lib PRIVATE
     nlohmann_json::nlohmann_json
     csv2::csv2
-    utf-cpp::utf-cpp)
+    utf-cpp::utf-cpp
+    incsfntly::incsfntly)
 
 target_link_libraries(incplot-lib PUBLIC
     magic_enum::magic_enum
