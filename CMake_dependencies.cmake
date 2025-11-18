@@ -7,7 +7,7 @@ CPMAddPackage(
   EXCLUDE_FROM_ALL TRUE
 )
 
-CPMAddPackage("gh:p-ranav/csv2@0.1")
+CPMAddPackage("gh:p-ranav/csv2#master")
 CPMAddPackage("gh:InCom-0/incstd#main")
 CPMAddPackage("gh:InCom-0/incerr#main")
 CPMAddPackage("gh:InCom-0/utf-cpp#master")
