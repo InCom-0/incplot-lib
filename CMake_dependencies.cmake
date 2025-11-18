@@ -4,9 +4,10 @@ CPMAddPackage(
   NAME     nlh_json
   URL      https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
   URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa
+  EXCLUDE_FROM_ALL TRUE
 )
 
-CPMAddPackage("gh:p-ranav/csv2#master")
+CPMAddPackage("gh:p-ranav/csv2@0.1")
 CPMAddPackage("gh:InCom-0/incstd#main")
 CPMAddPackage("gh:InCom-0/incerr#main")
 CPMAddPackage("gh:InCom-0/utf-cpp#master")
