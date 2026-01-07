@@ -58,7 +58,6 @@ target_link_libraries(incplot-lib PRIVATE
     utf-cpp::utf-cpp)
 
 target_link_libraries(incplot-lib PUBLIC
-    magic_enum::magic_enum
     incstd::incstd
     incerr::incerr)
 
