@@ -1,18 +1,26 @@
 cmake_minimum_required(VERSION 3.30...4.0)
 
-project(incplot-lib)
-# set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+project(incplot-lib
+    HOMEPAGE_URL "https://github.com/InCom-0/incplot-lib"
+    DESCRIPTION
+    "Library implementing the core features necessary to make inplot work."
+    LANGUAGES CXX)
 
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+
+#####################################################################
+### Platform specifics + hacks + LTO ###
+#####################################################################
 if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
     add_compile_options(/utf-8)
     add_compile_definitions(NOMINMAX)
 endif()
 
 
-########################################################
+####################################################################
 ### Target specification ###
-########################################################
+####################################################################
 
 add_library(incplot-lib STATIC)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
@@ -56,11 +64,8 @@ target_link_libraries(incplot-lib PUBLIC
 
 
 ##########################################################################
-### Subdirs - tests demos and the like ###
+### Subdirs - tests, demos and the like ###
 ##########################################################################
-
-include(cmake/stdlibQuery.cmake)
-
 option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
 if(INCPLOT_BUILD_DEMOS)
     add_subdirectory(demos)
