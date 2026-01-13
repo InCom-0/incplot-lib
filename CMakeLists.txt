@@ -10,6 +10,13 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 #####################################################################
+### Staging ###
+#####################################################################
+include(cmake/StageOutputs.cmake)
+stageOutputDirsFor(OTFCCXX)
+
+
+#####################################################################
 ### Platform specifics + hacks + LTO ###
 #####################################################################
 if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT MATCHES "MSVC")
@@ -21,8 +28,7 @@ endif()
 ####################################################################
 ### Target specification ###
 ####################################################################
-
-add_library(incplot-lib STATIC)
+add_library(incplot-lib)
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
 
 set(INCPLOT_LIB_SRC
@@ -55,11 +61,18 @@ include(CMake_dependencies.cmake) ### Loads and declares the requires external l
 target_link_libraries(incplot-lib PRIVATE
     nlohmann_json::nlohmann_json
     csv2::csv2
-    utf-cpp::utf-cpp)
+    utf-cpp::utf-cpp
+    otfccxx-lib
+)
 
 target_link_libraries(incplot-lib PUBLIC
     incstd::incstd
-    incerr::incerr)
+    incerr::incerr
+)
+
+if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+    target_link_libraries(incplot-lib PRIVATE stdc++exp)
+endif()
 
 
 ##########################################################################

@@ -11,7 +11,7 @@
 #elif defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
 #endif
 
-#define DATAFOLDER "../../demos/data/"
+#define DATAFOLDER "../../../demos/data/"
 
 int main(int argc, char *argv[]) {
 
