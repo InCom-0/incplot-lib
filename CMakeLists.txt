@@ -3,17 +3,22 @@ cmake_minimum_required(VERSION 3.30...4.0)
 project(incplot-lib
     HOMEPAGE_URL "https://github.com/InCom-0/incplot-lib"
     DESCRIPTION
-    "Library implementing the core features necessary to make inplot work."
+    "Library implementing the core features necessary to make incplot work."
     LANGUAGES CXX)
-
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(INCPLOT-LIB_BUILD_SHARED_LIB "Build a shared version of incplot-lib" ${BUILD_SHARED_LIBS})
+
+option(INCPLOT-LIB_BUILD_DEMOS "Build demo executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
+option(INCPLOT-LIB_BUILD_TESTS "Build test executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
+
 
 #####################################################################
 ### Staging ###
 #####################################################################
 include(cmake/StageOutputs.cmake)
-stageOutputDirsFor(OTFCCXX)
+stageOutputDirsFor(INCPLOT-LIB)
 
 
 #####################################################################
@@ -28,7 +33,12 @@ endif()
 ####################################################################
 ### Target specification ###
 ####################################################################
-add_library(incplot-lib)
+if(INCPLOT-LIB_BUILD_SHARED_LIB)
+    add_library(incplot-lib SHARED)
+else()
+    add_library(incplot-lib STATIC)
+endif()
+
 add_library(incplot-lib::incplot-lib ALIAS incplot-lib)
 
 set(INCPLOT_LIB_SRC
@@ -74,16 +84,27 @@ if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     target_link_libraries(incplot-lib PRIVATE stdc++exp)
 endif()
 
+set_target_properties(incplot-lib PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+if(INCPLOT-LIB_BUILD_SHARED_LIB)
+    set_target_properties(incplot-lib PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN YES
+    )
+    target_compile_definitions(incplot-lib
+        PRIVATE INCPLOT_LIB_EXPORTS
+        PUBLIC INCPLOT_LIB_SHARED
+    )
+endif()
+
 
 ##########################################################################
 ### Subdirs - tests, demos and the like ###
 ##########################################################################
-option(INCPLOT_BUILD_DEMOS "Build demo executables" ${PROJECT_IS_TOP_LEVEL})
-if(INCPLOT_BUILD_DEMOS)
+if(INCPLOT-LIB_BUILD_DEMOS)
     add_subdirectory(demos)
 endif()
 
-option(INCPLOT_BUILD_TESTS "Build test executables" ${PROJECT_IS_TOP_LEVEL})
-if(INCPLOT_BUILD_TESTS)
+if(INCPLOT-LIB_BUILD_TESTS)
     add_subdirectory(test)
 endif()
