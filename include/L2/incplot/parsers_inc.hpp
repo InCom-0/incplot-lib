@@ -31,7 +31,7 @@ enum class CellType {
     string_like
 };
 
-class Parser {
+class INCPLOT_LIB_API Parser {
 
     // TYPE ALIAS
     using parser_return_t = std::expected<DataStore::vec_pr_varCol_t, incerr_c>;
@@ -52,9 +52,10 @@ class Parser {
                                                                              std::string_view const &sv);
 
     // PARSE USING RANAV::CSV2
-    static std::expected<DataStore::DS_CtorObj, incerr_c> parse_usingCSV2(auto &&csv2Reader, std::string_view const trimmed);
+    static std::expected<DataStore::DS_CtorObj, incerr_c> parse_usingCSV2(auto                 &&csv2Reader,
+                                                                          std::string_view const trimmed);
 
-    
+
 public:
     // MAIN INTENDED INTERFACE METHOD
     // Dispatches the string_view to the right parser and constructs DataStore

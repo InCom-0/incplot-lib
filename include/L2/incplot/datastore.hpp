@@ -10,6 +10,8 @@
 #include <variant>
 #include <vector>
 
+#include <incplot/_common.hpp>
+
 
 namespace incom {
 namespace terminal_plot {
@@ -22,7 +24,7 @@ enum class parsedVal_t {
 };
 
 // Data storage for the actual data that are to be plotted
-class DataStore {
+class INCPLOT_LIB_API DataStore {
 public:
     // TYPE ALIAS
     using varCol_t        = std::variant<std::vector<std::string>, std::vector<long long>, std::vector<double>>;

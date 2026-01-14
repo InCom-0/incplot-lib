@@ -85,7 +85,7 @@ enum class Unexp_parser {
     CSV_unhandledCellType,
 };
 
-std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e);
+INCPLOT_LIB_API std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e);
 // std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e);
 
 

@@ -551,13 +551,12 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::compute_filterFlags
     return dp;
 };
 
-std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams(this DesiredPlot &&self,
-                                                                                 DataStore const   &ds) {
+std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams(DataStore const &ds) {
     // Guesses the missing 'desired parameters' and returns a DesiredPlot with those filled in
     // Variation on a 'builder pattern'
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
-    return DesiredPlot::compute_colAssessments(std::forward<decltype(self)>(self), ds)
+    return DesiredPlot::compute_colAssessments(std::move(*this), ds)
         .and_then(std::bind_back(DesiredPlot::transform_namedColsIntoIDs, ds))
         .and_then(std::bind_back(DesiredPlot::guess_plotType, ds))
         .and_then(std::bind_back(DesiredPlot::guess_TSCol, ds))

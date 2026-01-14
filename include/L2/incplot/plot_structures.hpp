@@ -49,7 +49,7 @@ auto evaluate_PSs(DesiredPlot dp, DataStore const &ds);
 // is to be able to easily customize and also possibly 'partially customize' as needed. You always have to make the
 // 'Base' class a friend ... this enables really nice static compile-time polymorphism coupled with 'deducing this'
 // feature of C++23
-class Base {
+class INCPLOT_LIB_API Base {
 protected:
     // LEGACY WAY TO ACCESS DATA ... local views into the data held in DataStore
 
@@ -183,7 +183,7 @@ protected:
     auto compute_footer(this auto &&self) -> compute_rt<decltype(self)> = delete;
 };
 
-class BarV : public Base {
+class INCPLOT_LIB_API BarV : public Base {
     friend class Base;
     using Base::Base;
 
@@ -237,7 +237,7 @@ protected:
     auto compute_footer(this auto &&self) -> compute_rt<decltype(self)>;
 };
 
-class BarVM : public BarV {
+class INCPLOT_LIB_API BarVM : public BarV {
     friend class Base;
     using BarV::BarV;
 
@@ -268,7 +268,7 @@ protected:
 };
 
 
-class Scatter : public BarV {
+class INCPLOT_LIB_API Scatter : public BarV {
     friend class Base;
     using BarV::BarV;
 
@@ -303,7 +303,7 @@ protected:
     auto compute_plot_area(this auto &&self) -> compute_rt<decltype(self)>;
 };
 
-class Multiline : public Scatter {
+class INCPLOT_LIB_API Multiline : public Scatter {
     friend class Base;
     using Scatter::Scatter;
 
@@ -327,7 +327,7 @@ protected:
     auto compute_plot_area(this auto &&self) -> compute_rt<decltype(self)>;
 };
 
-class BarHM : public Multiline {
+class INCPLOT_LIB_API BarHM : public Multiline {
     friend class Base;
     using Multiline::Multiline;
 
@@ -353,7 +353,7 @@ protected:
     auto compute_plot_area(this auto &&self) -> compute_rt<decltype(self)>;
 };
 
-class BarHS : public BarHM {
+class INCPLOT_LIB_API BarHS : public BarHM {
     friend class Base;
     using BarHM::BarHM;
 

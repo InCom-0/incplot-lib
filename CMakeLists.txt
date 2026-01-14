@@ -8,17 +8,17 @@ project(incplot-lib
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(INCPLOT-LIB_BUILD_SHARED_LIB "Build a shared version of incplot-lib" ${BUILD_SHARED_LIBS})
+option(incplot-lib_BUILD_SHARED_LIB "Build a shared version of incplot-lib" ${BUILD_SHARED_LIBS})
 
-option(INCPLOT-LIB_BUILD_DEMOS "Build demo executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
-option(INCPLOT-LIB_BUILD_TESTS "Build test executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
+option(incplot-lib_BUILD_DEMOS "Build demo executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
+option(incplot-lib_BUILD_TESTS "Build test executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
 
 
 #####################################################################
 ### Staging ###
 #####################################################################
 include(cmake/StageOutputs.cmake)
-stageOutputDirsFor(INCPLOT-LIB)
+stageOutputDirsFor(incplot-lib)
 
 
 #####################################################################
@@ -33,7 +33,7 @@ endif()
 ####################################################################
 ### Target specification ###
 ####################################################################
-if(INCPLOT-LIB_BUILD_SHARED_LIB)
+if(incplot-lib_BUILD_SHARED_LIB)
     add_library(incplot-lib SHARED)
 else()
     add_library(incplot-lib STATIC)
@@ -86,7 +86,7 @@ endif()
 
 set_target_properties(incplot-lib PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
-if(INCPLOT-LIB_BUILD_SHARED_LIB)
+if(incplot-lib_BUILD_SHARED_LIB)
     set_target_properties(incplot-lib PROPERTIES
         CXX_VISIBILITY_PRESET hidden
         VISIBILITY_INLINES_HIDDEN YES
@@ -101,11 +101,11 @@ endif()
 ##########################################################################
 ### Subdirs - tests, demos and the like ###
 ##########################################################################
-if(INCPLOT-LIB_BUILD_DEMOS)
+if(incplot-lib_BUILD_DEMOS)
     add_subdirectory(demos)
 endif()
 
-if(INCPLOT-LIB_BUILD_TESTS)
+if(incplot-lib_BUILD_TESTS)
     add_subdirectory(test)
 endif()
 
@@ -114,7 +114,7 @@ endif()
 ### Installing, packaging ###
 #####################################################################
 
-# INSTALLATION NOT AVAILABLE SO FAR UNTIL DEPENDENCIES FIXED
+# TODO: INSTALLATION NOT AVAILABLE until incerr and incstd are made into installable libraries themselves
 
 # if(BUILD_SHARED_LIBS)
 #     install(

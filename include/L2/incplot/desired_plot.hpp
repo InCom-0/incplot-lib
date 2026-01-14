@@ -16,7 +16,7 @@ namespace terminal_plot {
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
 // Basically 4 important things: 1) Type of plot, 2) Labels to use (if any), 3) Values to use, 4) Size in 'chars'
-class DesiredPlot {
+class INCPLOT_LIB_API DesiredPlot {
 private:
     struct ColumnParams {
         size_t categoryCount;
@@ -196,7 +196,7 @@ public:
     // Variation on a 'builder pattern'
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
-    std::expected<DesiredPlot, incerr::incerr_code> guess_missingParams(this DesiredPlot &&self, DataStore const &ds);
+    std::expected<DesiredPlot, incerr::incerr_code> guess_missingParams(DataStore const &ds);
 
     template <typename... PSs>
     std::expected<DesiredPlot, incerr::incerr_code> guess_mostLikely();

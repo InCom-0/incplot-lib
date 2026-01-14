@@ -5,6 +5,7 @@
 #include <string>
 #include <string_view>
 
+#include <incplot/_common.hpp>
 #include <incstd/incstd_console.hpp>
 
 
@@ -16,7 +17,7 @@ using namespace incom::standard::color;
 using namespace incom::standard::console;
 using namespace incom::standard::console::color_schemes::windows_terminal;
 
-class Config {
+class INCPLOT_LIB_API Config {
 public:
     // UNICODE SYMBOLS IN PLOT
     static inline std::string axisTick_l = "┤";
@@ -53,10 +54,10 @@ public:
     static inline std::array<char32_t, 4>    blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
 
     // DATA
-    static inline double filter_withinStdDevMultiple_default = 6.0;
-    static inline bool   display_filtered_bool_default       = true;
-    static inline bool   htmlMode_bool_default               = false;
-    static inline bool   forceRGB_bool_default               = false;
+    static inline constexpr double filter_withinStdDevMultiple_default = 6.0;
+    static inline constexpr bool   display_filtered_bool_default       = true;
+    static inline constexpr bool   htmlMode_bool_default               = false;
+    static inline constexpr bool   forceRGB_bool_default               = false;
 
 
     // COLORS
