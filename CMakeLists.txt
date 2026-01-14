@@ -80,7 +80,8 @@ target_link_libraries(incplot-lib PUBLIC
     incerr::incerr
 )
 
-if(MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+#  TODO: Remove some time in the future when the exp verison of standard library is not longer necessary
+if(MINGW)
     target_link_libraries(incplot-lib PRIVATE stdc++exp)
 endif()
 
