@@ -72,7 +72,7 @@ target_link_libraries(incplot-lib PRIVATE
     nlohmann_json::nlohmann_json
     csv2::csv2
     utf-cpp::utf-cpp
-    otfccxx-lib
+    otfccxx::otfccxx
 )
 
 target_link_libraries(incplot-lib PUBLIC
@@ -108,3 +108,54 @@ endif()
 if(INCPLOT-LIB_BUILD_TESTS)
     add_subdirectory(test)
 endif()
+
+
+#####################################################################
+### Installing, packaging ###
+#####################################################################
+
+# INSTALLATION NOT AVAILABLE SO FAR UNTIL DEPENDENCIES FIXED
+
+# if(BUILD_SHARED_LIBS)
+#     install(
+#         TARGETS incplot-lib
+#         EXPORT incplot-lib_target
+#         RUNTIME_DEPENDENCY_SET incplot-lib_depset
+#         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         FILE_SET pub_headers
+#         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#     )
+
+#     # When compling with MinGW we need to include the runtime DLLs along in the package
+#     if(MINGW)
+#         get_filename_component(INCPLOT_LIB_CXX_COMPILER_DIR ${CMAKE_CXX_COMPILER} DIRECTORY)
+#         install(
+#             RUNTIME_DEPENDENCY_SET incplot-lib_depset
+#             PRE_EXCLUDE_REGEXES
+#             [[api-ms-.*]]
+#             [[ext-ms-.*]]
+#             POST_INCLUDE_REGEXES
+#             [[libstdc\+\+*]]
+#             [[libgcc_s*]]
+#             [[libwoff2*]]
+#             [[libharfbuzz*]]
+#             [[libxxhash*]]
+#             POST_EXCLUDE_REGEXES
+#             [[\\*.dll]]
+#             DIRECTORIES
+#             ${INCPLOT_LIB_CXX_COMPILER_DIR}
+#         )
+#     endif()
+
+#     # Creating a script for being able to use 'find_package')
+#     install(
+#         EXPORT incplot-lib_target
+#         NAMESPACE incplot-lib::
+#         DESTINATION lib/cmake/incplot-lib
+#     )
+
+# else()
+#     message(STATUS "Installing incplot-lib is not available because it is being built as STATIC library")
+# endif(BUILD_SHARED_LIBS)

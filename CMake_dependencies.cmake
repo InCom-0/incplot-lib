@@ -4,7 +4,7 @@ if(NOT CPM_USE_LOCAL_PACKAGES)
   set(CPM_USE_LOCAL_PACKAGES ON)
 endif()
 
-CPMAddPackage(URI "gh:InCom-0/otfccxx-lib#main")
+CPMAddPackage(URI "gh:InCom-0/otfccxx#main")
 
 CPMAddPackage(
   NAME nlohmann_json
