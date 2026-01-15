@@ -9,16 +9,21 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(incplot-lib_BUILD_SHARED_LIB "Build a shared version of incplot-lib" ${BUILD_SHARED_LIBS})
+option(incplot-lib_STAGE_OUTPUTS "Stage build output artifacts into proper directory structure" ON)
 
 option(incplot-lib_BUILD_DEMOS "Build demo executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
 option(incplot-lib_BUILD_TESTS "Build test executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
+
+include(cmake/stdlibQuery.cmake)
 
 
 #####################################################################
 ### Staging ###
 #####################################################################
 include(cmake/StageOutputs.cmake)
-stageOutputDirsFor(incplot-lib)
+if(incplot-lib_STAGE_OUTPUTS)
+    stageOutputDirsFor(incplot-lib)
+endif()
 
 
 #####################################################################
@@ -81,7 +86,7 @@ target_link_libraries(incplot-lib PUBLIC
 )
 
 #  TODO: Remove some time in the future when the exp verison of standard library is not longer necessary
-if(MINGW)
+if(USING_LIBSTDCXX)
     target_link_libraries(incplot-lib PRIVATE stdc++exp)
 endif()
 

@@ -17,7 +17,7 @@ using namespace incom::standard::color;
 using namespace incom::standard::console;
 using namespace incom::standard::console::color_schemes::windows_terminal;
 
-class INCPLOT_LIB_API Config {
+class Config {
 public:
     // UNICODE SYMBOLS IN PLOT
     static inline std::string axisTick_l = "┤";
