@@ -1,5 +1,5 @@
 add_executable(incplot_scratchpad_dbg ${CMAKE_CURRENT_SOURCE_DIR}/scratchpad_dbg/scratchpad_dbg.cpp)
-target_link_libraries(incplot_scratchpad_dbg PRIVATE incplot-lib incstd::incstd)
+target_link_libraries(incplot_scratchpad_dbg PRIVATE incplot-lib incstd::incstd otfccxx::otfccxx)
 if(USING_LIBSTDCXX)
     target_link_libraries(incplot_scratchpad_dbg PRIVATE "-lstdc++exp")
 endif()

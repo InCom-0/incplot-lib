@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <concepts>
 #include <cstddef>
 #include <cstdlib>
 #include <expected>
@@ -6,6 +7,7 @@
 #include <limits>
 #include <optional>
 #include <ranges>
+#include <type_traits>
 #include <utility>
 #include <variant>
 
@@ -128,6 +130,9 @@ std::string Base::build_plotAsString() const {
     std::string result;
     result.reserve(compute_lengthOfSelf());
 
+    // TODO: Finish this
+    auto codePoint_set = compute_CPSinPS();
+
     // Add padding on top
     for (int i = 0; i < pad_top; ++i) { result.push_back('\n'); }
 
@@ -217,6 +222,54 @@ std::string Base::build_plotAsString() const {
     // Add padding on bottom
     for (int i = 0; i < pad_bottom; ++i) { result.push_back('\n'); }
     return result;
+}
+
+// TODO: Improve this somehow so that only the actual visible codepoints get collected (not the ANSI sequences)
+ankerl::unordered_dense::set<uint32_t> Base::compute_CPSinPS() const {
+    ankerl::unordered_dense::set<uint32_t> res;
+
+    auto addCPs = [&](this auto const &self, auto const &from) {
+        if constexpr (std::same_as<std::string, std::remove_cvref_t<decltype(from)>>) {
+            std::u32string const tmpu32str = incom::terminal_plot::detail::convert_u32u8(from);
+            for (auto const u32char : tmpu32str) { res.insert(u32char); }
+        }
+        else if constexpr (std::ranges::range<decltype(from)>) {
+            for (auto const &item : from) { self(item); }
+        }
+        else { static_assert(false); }
+    };
+
+    addCPs(axisName_verLeft);
+    addCPs(labels_verLeft);
+    addCPs(axis_verLeft);
+
+    addCPs(axis_verRight);
+    addCPs(labels_verRight);
+    addCPs(axisName_verRight);
+
+    addCPs(axisName_horTop);
+    addCPs(labels_horTop);
+    addCPs(axis_horTop);
+
+    addCPs(axis_horBottom);
+    addCPs(labels_horBottom);
+    addCPs(axisName_horBottom);
+
+    addCPs(corner_topLeft);
+    addCPs(corner_bottomLeft);
+    addCPs(corner_bottomRight);
+    addCPs(corner_topRight);
+
+    addCPs(areaCorner_tl);
+    addCPs(areaCorner_bl);
+    addCPs(areaCorner_br);
+    addCPs(areaCorner_tr);
+
+    addCPs(plotArea);
+
+    addCPs(footer);
+
+    return res;
 }
 // ### END BASE ###
 

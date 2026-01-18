@@ -2,14 +2,16 @@
 
 #include <expected>
 #include <functional>
-#include <incplot/datastore.hpp>
-#include <incplot/desired_plot.hpp>
 #include <limits>
 #include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+#include <ankerl/unordered_dense.h>
+#include <incplot/datastore.hpp>
+#include <incplot/desired_plot.hpp>
 
 
 namespace incom {
@@ -181,6 +183,9 @@ protected:
     auto compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> = delete;
 
     auto compute_footer(this auto &&self) -> compute_rt<decltype(self)> = delete;
+
+protected:
+    ankerl::unordered_dense::set<uint32_t> compute_CPSinPS() const;
 };
 
 class INCPLOT_LIB_API BarV : public Base {
