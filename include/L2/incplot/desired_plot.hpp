@@ -6,6 +6,7 @@
 #include <incplot/config.hpp>
 #include <incplot/datastore.hpp>
 #include <incplot/err.hpp>
+// #include <otfccxx/otfccxx.hpp>
 #include <typeindex>
 #include <utility>
 
@@ -39,21 +40,19 @@ public:
 
 
     // BUILDING METHODS
-    static std::expected<DesiredPlot, incerr::incerr_code> compute_colAssessments(DesiredPlot    &&dp,
-                                                                                  DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> compute_colAssessments(DesiredPlot &&dp, DataStore const &ds);
 
-    static std::expected<DesiredPlot, incerr::incerr_code> transform_namedColsIntoIDs(DesiredPlot    &&dp,
-                                                                                      DataStore const &ds);
-    static std::expected<DesiredPlot, incerr::incerr_code> guess_sizes(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, incerr::incerr_code> guess_plotType(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, incerr::incerr_code> guess_TSCol(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, incerr::incerr_code> guess_catCol(DesiredPlot &&dp, DataStore const &ds);
-    static std::expected<DesiredPlot, incerr::incerr_code> guess_valueCols(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> transform_namedColsIntoIDs(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> guess_sizes(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> guess_plotType(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> guess_TSCol(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> guess_catCol(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> guess_valueCols(DesiredPlot &&dp, DataStore const &ds);
 
-    static std::expected<DesiredPlot, incerr::incerr_code> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> guess_TFfeatures(DesiredPlot &&dp, DataStore const &ds);
 
-    static void compute_filterFlags_r_void(DesiredPlot &dp, DataStore const &ds);
-    static std::expected<DesiredPlot, incerr::incerr_code> compute_filterFlags(DesiredPlot &&dp, DataStore const &ds);
+    static void                                 compute_filterFlags_r_void(DesiredPlot &dp, DataStore const &ds);
+    static std::expected<DesiredPlot, incerr_c> compute_filterFlags(DesiredPlot &&dp, DataStore const &ds);
 
 
     std::optional<std::type_index> plot_type_name = std::nullopt;
@@ -98,6 +97,10 @@ public:
 
     std::vector<std::string> additionalInfo = {};
 
+    std::vector<std::vector<std::byte>> htmlMode_ttfs_toSubset;
+    std::vector<std::vector<std::byte>> htmlMode_ttfs_catBackup;
+    std::vector<std::vector<std::byte>> htmlMode_ttfs_lastResort;
+
     struct DP_CtorStruct {
         std::optional<size_t>          tar_width      = std::nullopt;
         std::optional<size_t>          tar_height     = std::nullopt;
@@ -122,6 +125,10 @@ public:
         std::optional<bool>        forceRGB_bool         = Config::forceRGB_bool_default;
 
         std::vector<std::string> additionalInfo = {};
+
+        std::vector<std::vector<std::byte>> htmlMode_ttfs_toSubset   = {};
+        std::vector<std::vector<std::byte>> htmlMode_ttfs_catBackup  = {};
+        std::vector<std::vector<std::byte>> htmlMode_ttfs_lastResort = {};
     };
 
 private:
@@ -168,7 +175,10 @@ public:
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
           display_filtered_bool(std::move(dp_struct.display_filtered_bool)),
           htmlMode_bool(std::move(dp_struct.htmlMode_bool)), forceRGB_bool(std::move(dp_struct.forceRGB_bool)),
-          additionalInfo(std::move(dp_struct.additionalInfo)) {
+          additionalInfo(std::move(dp_struct.additionalInfo)),
+          htmlMode_ttfs_toSubset(std::move(dp_struct.htmlMode_ttfs_toSubset)),
+          htmlMode_ttfs_catBackup(std::move(dp_struct.htmlMode_ttfs_catBackup)),
+          htmlMode_ttfs_lastResort(std::move(dp_struct.htmlMode_ttfs_lastResort)) {
         ctor_finisher(dp_struct);
     }
     DesiredPlot(DP_CtorStruct const &dp_struct)
@@ -182,13 +192,15 @@ public:
           colScheme_brightBlack(ANSI::get_bg(dp_struct.colScheme.palette.at(8))), color_basePalette(dp_struct.colors),
           color_bckgrndPalette(dp_struct.color_bckgrnd), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
           display_filtered_bool(dp_struct.display_filtered_bool), htmlMode_bool(dp_struct.htmlMode_bool),
-          forceRGB_bool(dp_struct.forceRGB_bool), additionalInfo(dp_struct.additionalInfo) {
+          forceRGB_bool(dp_struct.forceRGB_bool), additionalInfo(dp_struct.additionalInfo),
+          htmlMode_ttfs_toSubset(dp_struct.htmlMode_ttfs_toSubset),
+          htmlMode_ttfs_catBackup(dp_struct.htmlMode_ttfs_catBackup),
+          htmlMode_ttfs_lastResort(dp_struct.htmlMode_ttfs_catBackup) {
         ctor_finisher(dp_struct);
     }
 
     // Create a new copy and guess_missingParams on it.
-    std::expected<DesiredPlot, incerr::incerr_code> build_guessedParamsCPY(this DesiredPlot &self,
-                                                                           DataStore const  &ds) {
+    std::expected<DesiredPlot, incerr_c> build_guessedParamsCPY(this DesiredPlot &self, DataStore const &ds) {
         return DesiredPlot(self).guess_missingParams(ds);
     }
 
@@ -196,10 +208,20 @@ public:
     // Variation on a 'builder pattern'
     // Normally called 'in place' on 'DesiredPlot' instance constructed as rvalue
     // If impossible to guess or otherwise the user desires something impossible returns Err_plotSpecs.
-    std::expected<DesiredPlot, incerr::incerr_code> guess_missingParams(DataStore const &ds);
+    std::expected<DesiredPlot, incerr_c> guess_missingParams(DataStore const &ds);
 
-    template <typename... PSs>
-    std::expected<DesiredPlot, incerr::incerr_code> guess_mostLikely();
+
+    // template <typename... PSs>
+    // std::expected<DesiredPlot, incerr_c> guess_mostLikely();
+
+
+    // Takes the 'htmlMode_ttfs_*' and 'codePointsToKeep' and creates minified versions of those fonts
+    // Uses otfccxx library under the hood to do this
+    std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr_c>
+    create_minifiedFonts_woff2Base64_bestEffort(std::span<const uint32_t> codePointsToKeep);
+
+    std::expected<std::vector<std::string>, incerr_c> create_minifiedFonts_woff2Base64(
+        std::span<const uint32_t> codePointsToKeep);
 };
 
 

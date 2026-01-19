@@ -25,8 +25,14 @@ std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp, std::string_vi
     auto ds = parsers::Parser::parse(inputData);
     if (not ds.has_value()) { return std::unexpected(ds.error()); }
 
-    auto lam_get_bpas = [](auto &&ps_var) {
-        return std::visit([&](auto &&ps) -> std::string { return ps.build_plotAsString(); }, ps_var);
+    auto lam_get_bpas = [&](auto &&ps_var) {
+        auto visi = [&](auto &&ps) -> std::string {
+            // Deal with t
+
+            
+            return ps.build_plotAsString(); };
+
+        return std::visit(visi, ps_var);
     };
 
     // 1) If dp plot_type_name is set then: a) evaluate that one, if not b) evaluate all and then reduce to the most

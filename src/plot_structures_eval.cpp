@@ -224,6 +224,7 @@ std::string Base::build_plotAsString() const {
     return result;
 }
 
+
 // TODO: Improve this somehow so that only the actual visible codepoints get collected (not the ANSI sequences)
 ankerl::unordered_dense::set<uint32_t> Base::compute_CPSinPS() const {
     ankerl::unordered_dense::set<uint32_t> res;

@@ -7,8 +7,8 @@
 
 namespace incom {
 namespace terminal_plot {
-
 using namespace std::literals;
+using incerr_c = incerr::incerr_code;
 
 enum class Unexp_plotSpecs {
     // No value '0'
@@ -46,8 +46,6 @@ enum class Unexp_plotSpecs {
     GZS_heightTooSmall,
     CAPF_unhandledError,
 };
-
-
 enum class Unexp_plotDrawer {
     // No value '0'
     BPS_dpIsNullopt = 1,
@@ -85,7 +83,19 @@ enum class Unexp_parser {
     CSV_unhandledCellType,
 };
 
-INCPLOT_LIB_API std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e);
+enum class Unexp_HTML {
+    // No value '0'
+    CMF_unknownError = 1,
+    CMF_noFontsToMinify,
+    CMF_subsetterError,
+    CMF_subsetter_someRequestedCPsAreMissing,
+    CMF_modifierError,
+    CMF_converterError,
+
+    HTMLMode_unhandledError
+};
+
+// INCPLOT_LIB_API std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e);
 // std::string_view incerr_msg_dispatch(Unexp_plotDrawer &&e);
 
 
@@ -95,6 +105,7 @@ INCPLOT_LIB_API std::string_view incerr_msg_dispatch(Unexp_plotSpecs &&e);
 INCERR_REGISTER(incom::terminal_plot::Unexp_plotSpecs, incom::terminal_plot);
 INCERR_REGISTER(incom::terminal_plot::Unexp_plotDrawer, incom::terminal_plot);
 INCERR_REGISTER(incom::terminal_plot::Unexp_parser, incom::terminal_plot);
+INCERR_REGISTER(incom::terminal_plot::Unexp_HTML, incom::terminal_plot);
 
 #undef INCERR_REGISTER
 

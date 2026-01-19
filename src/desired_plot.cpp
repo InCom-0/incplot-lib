@@ -1,8 +1,12 @@
+#include "incplot/err.hpp"
 #include <algorithm>
+#include <expected>
 #include <functional>
+#include <incstd/color/pigment.hpp>
 #include <limits>
 #include <numeric>
 #include <optional>
+#include <otfccxx/otfccxx.hpp>
 #include <ranges>
 #include <tuple>
 #include <utility>
@@ -17,7 +21,7 @@ namespace incom {
 namespace terminal_plot {
 
 using enum Unexp_plotSpecs;
-using incerr_c = incerr::incerr_code;
+// using incerr_c = incerr::incerr_code;
 
 // Encapsulates the 'instructions' information about the kind of plot that is desired by the user
 // Big feature is that it includes logic for 'auto guessing' the 'instructions' that were not provided explicitly
@@ -567,9 +571,61 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams
         .and_then(std::bind_back(DesiredPlot::compute_filterFlags, ds));
 }
 
-template <typename... PSs>
-std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_mostLikely() {
-    return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+// template <typename... PSs>
+// std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_mostLikely() {
+//     return std::unexpected(incerr_c::make(GVC_selectYvalColIsUnuseable));
+// }
+
+std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr_c> DesiredPlot::
+    create_minifiedFonts_woff2Base64_bestEffort(std::span<const uint32_t> codePointsToKeep) {
+
+    // There are no fonts to minify (makes no sense to call this in such a case)
+    if (htmlMode_ttfs_toSubset.empty() && htmlMode_ttfs_catBackup.empty() && htmlMode_ttfs_lastResort.empty()) {
+        return std::unexpected(incerr_c::make(Unexp_HTML::CMF_noFontsToMinify));
+    }
+
+    // Subsetting
+    otfccxx::Subsetter subsetter;
+    for (auto const &oneTTF : htmlMode_ttfs_toSubset) { subsetter.add_ff_toSubset(oneTTF); }
+    for (auto const &oneTTF : htmlMode_ttfs_catBackup) { subsetter.add_ff_categoryBackup(oneTTF); }
+    for (auto const &oneTTF : htmlMode_ttfs_lastResort) { subsetter.add_ff_lastResort(oneTTF); }
+    subsetter.add_toKeep_CPs(codePointsToKeep);
+
+    auto subsRes = subsetter.execute_bestEffort();
+    if (not subsRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_subsetterError)); }
+
+
+    // Modification
+    // TODO: Logic for modifying the individual minified fonts so that they are size-compatible
+
+    std::vector<std::string> res;
+    for (auto const &oneFont : subsRes->first) {
+
+        auto modi = otfccxx::Modifier(oneFont);
+        if (auto tmpRes = modi.change_makeMonospaced_byEmRatio(0.6); not tmpRes.has_value()) {
+            return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
+        };
+
+        auto exp_modifiedFont = modi.exportResult();
+        if (not exp_modifiedFont.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError)); }
+
+        auto pushRes =
+            otfccxx::Converter::encode_Woff2(exp_modifiedFont.value()).and_then(otfccxx::Converter::encode_base64);
+        if (not pushRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_converterError)); }
+        else { res.push_back(pushRes.value()); }
+    }
+
+    return std::make_pair(std::move(res), std::move(subsRes->second));
+}
+
+std::expected<std::vector<std::string>, incerr_c> DesiredPlot::create_minifiedFonts_woff2Base64(
+    std::span<const uint32_t> codePointsToKeep) {
+    return create_minifiedFonts_woff2Base64_bestEffort(codePointsToKeep)
+        .and_then([](std::pair<std::vector<std::string>, std::vector<uint32_t>> const &br)
+                      -> std::expected<std::vector<std::string>, incerr_c> {
+            if (br.second.empty()) { return br.first; }
+            return std::unexpected(incerr_c::make(Unexp_HTML::CMF_subsetter_someRequestedCPsAreMissing));
+        });
 }
 
 } // namespace terminal_plot
