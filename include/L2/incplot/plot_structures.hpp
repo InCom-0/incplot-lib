@@ -136,6 +136,8 @@ public:
 
     std::string build_plotAsString() const;
 
+    ankerl::unordered_dense::set<uint32_t> compute_CPSinPS() const;
+
 protected:
     static guess_rt guess_TSCol(guess_firstParamType &&dp_pr, DataStore const &ds)      = delete;
     static guess_rt guess_catCol(guess_firstParamType &&dp_pr, DataStore const &ds)     = delete;
@@ -183,9 +185,6 @@ protected:
     auto compute_plot_area(this auto &&self) -> compute_rt<decltype(self)> = delete;
 
     auto compute_footer(this auto &&self) -> compute_rt<decltype(self)> = delete;
-
-protected:
-    ankerl::unordered_dense::set<uint32_t> compute_CPSinPS() const;
 };
 
 class INCPLOT_LIB_API BarV : public Base {

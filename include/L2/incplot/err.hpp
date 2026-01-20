@@ -92,6 +92,8 @@ enum class Unexp_HTML {
     CMF_modifierError,
     CMF_converterError,
 
+    MP_notInHTMLMode,
+
     HTMLMode_unhandledError
 };
 

@@ -1,11 +1,17 @@
+#include "incplot/err.hpp"
 #include <algorithm>
+#include <cstdint>
+#include <format>
 #include <functional>
+#include <ranges>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <variant>
 
 #include <incplot.hpp>
+#include <incstd/console/ansi2html.hpp>
 #include <incstd/core/variant_utils.hpp>
 #include <magic_enum/magic_enum.hpp>
 #include <private/detail.hpp>
@@ -25,12 +31,39 @@ std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp, std::string_vi
     auto ds = parsers::Parser::parse(inputData);
     if (not ds.has_value()) { return std::unexpected(ds.error()); }
 
-    auto lam_get_bpas = [&](auto &&ps_var) {
-        auto visi = [&](auto &&ps) -> std::string {
-            // Deal with t
+    auto lam_buildPAS = [&](auto &&ps_var) {
+        auto visi = [&](auto &&ps) -> std::expected<std::string, incerr_c> {
+            // HTML mode:
+            // 1) Create AnsiToHtml converter
+            // 2) Build normal output as if outputting ANSI sequences
+            // 3) Convert that output into HTML
+            if (dp.htmlMode_bool.has_value() && dp.htmlMode_bool.value()) {
+                auto rs = dp.create_minifiedFonts_woff2Base64_bestEffort(ps.compute_CPSinPS());
 
-            
-            return ps.build_plotAsString(); };
+                if (not rs.has_value()) { return std::unexpected(rs.error()); }
+                if (not rs->second.empty()) {
+                    dp.additionalInfo.push_back(
+                        std::string("The following codepoints weren't found in any of the provided fonts:\n"sv));
+                    dp.additionalInfo.push_back(std::format("{:n}\n", rs->second));
+                }
+
+                auto vi = std::views::transform(rs->first, [](auto const &oneFont) {
+                    return AnsiToHtml::Options::FontFace{
+                        .sources = {AnsiToHtml::Options::FontFaceSource::embedded(oneFont)}};
+                });
+
+                auto ath_converter = incstd::console::AnsiToHtml(AnsiToHtml::Options{
+                    .font_faces = std::vector<AnsiToHtml::Options::FontFace>{vi.begin(), vi.end()},
+                });
+
+                std::string ansiRes = ps.build_plotAsString();
+                return ath_converter.convert(std::string_view(ansiRes.begin() + 1, ansiRes.end() - 1));
+            }
+
+            // Classic mode:
+            else { return ps.build_plotAsString(); }
+            std::unreachable();
+        };
 
         return std::visit(visi, ps_var);
     };
@@ -42,12 +75,12 @@ std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp, std::string_vi
     if (dp.plot_type_name.has_value()) {
         return evaluate_onePSpossibility(dp, ds.value())
             .and_then(std::bind_back(build_plotStructure, ds.value()))
-            .transform(lam_get_bpas);
+            .and_then(lam_buildPAS);
     }
     else {
         return evaluate_allPSpossibilities(dp, ds.value())
             .and_then(std::bind_back(build_plotStructure, ds.value()))
-            .transform(lam_get_bpas);
+            .and_then(lam_buildPAS);
     }
     std::unreachable();
 }

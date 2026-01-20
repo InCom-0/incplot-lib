@@ -1,4 +1,3 @@
-#include "incplot/err.hpp"
 #include <algorithm>
 #include <expected>
 #include <functional>
@@ -602,9 +601,9 @@ std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr
     for (auto const &oneFont : subsRes->first) {
 
         auto modi = otfccxx::Modifier(oneFont);
-        if (auto tmpRes = modi.change_makeMonospaced_byEmRatio(0.6); not tmpRes.has_value()) {
-            return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
-        };
+        // if (auto tmpRes = modi.change_makeMonospaced_byEmRatio(0.6); not tmpRes.has_value()) {
+        //     return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
+        // };
 
         auto exp_modifiedFont = modi.exportResult();
         if (not exp_modifiedFont.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError)); }
