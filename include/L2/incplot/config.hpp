@@ -57,6 +57,7 @@ public:
     static inline constexpr double filter_withinStdDevMultiple_default = 6.0;
     static inline constexpr bool   display_filtered_bool_default       = true;
     static inline constexpr bool   htmlMode_bool_default               = false;
+    static inline constexpr size_t htmlMode_fontSize_default           = 12uz;
     static inline constexpr bool   forceRGB_bool_default               = false;
 
 
