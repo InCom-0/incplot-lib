@@ -93,6 +93,7 @@ public:
     std::optional<double> filter_outsideStdDev  = std::nullopt;
     std::optional<bool>   display_filtered_bool = std::nullopt;
     std::optional<bool>   htmlMode_bool         = std::nullopt;
+    std::optional<bool>   htmlModeCanvas_bool   = std::nullopt;
     std::optional<size_t> htmlMode_fontSize     = std::nullopt;
     std::optional<bool>   forceRGB_bool         = std::nullopt;
 
@@ -123,6 +124,7 @@ public:
         std::optional<double>      filter_outsideStdDev  = std::nullopt;
         std::optional<bool>        display_filtered_bool = Config::display_filtered_bool_default;
         std::optional<bool>        htmlMode_bool         = Config::htmlMode_bool_default;
+        std::optional<bool>        htmlModeCanvas_bool   = Config::htmlMode_bool_default;
         std::optional<size_t>      htmlMode_fontSize     = Config::htmlMode_fontSize_default;
         std::optional<bool>        forceRGB_bool         = Config::forceRGB_bool_default;
 
@@ -176,8 +178,10 @@ public:
           color_basePalette(std::move(dp_struct.colors)), color_bckgrndPalette(std::move(dp_struct.color_bckgrnd)),
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
           display_filtered_bool(std::move(dp_struct.display_filtered_bool)),
-          htmlMode_bool(std::move(dp_struct.htmlMode_bool)), htmlMode_fontSize(std::move(dp_struct.htmlMode_fontSize)),
-          forceRGB_bool(std::move(dp_struct.forceRGB_bool)), additionalInfo(std::move(dp_struct.additionalInfo)),
+          htmlMode_bool(std::move(dp_struct.htmlMode_bool)),
+          htmlModeCanvas_bool(std::move(dp_struct.htmlModeCanvas_bool)),
+          htmlMode_fontSize(std::move(dp_struct.htmlMode_fontSize)), forceRGB_bool(std::move(dp_struct.forceRGB_bool)),
+          additionalInfo(std::move(dp_struct.additionalInfo)),
           htmlMode_ttfs_toSubset(std::move(dp_struct.htmlMode_ttfs_toSubset)),
           htmlMode_ttfs_catBackup(std::move(dp_struct.htmlMode_ttfs_catBackup)),
           htmlMode_ttfs_lastResort(std::move(dp_struct.htmlMode_ttfs_lastResort)) {
@@ -194,8 +198,9 @@ public:
           colScheme_brightBlack(ANSI::get_bg(dp_struct.colScheme.palette.at(8))), color_basePalette(dp_struct.colors),
           color_bckgrndPalette(dp_struct.color_bckgrnd), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
           display_filtered_bool(dp_struct.display_filtered_bool), htmlMode_bool(dp_struct.htmlMode_bool),
-          htmlMode_fontSize(dp_struct.htmlMode_fontSize), forceRGB_bool(dp_struct.forceRGB_bool),
-          additionalInfo(dp_struct.additionalInfo), htmlMode_ttfs_toSubset(dp_struct.htmlMode_ttfs_toSubset),
+          htmlModeCanvas_bool(dp_struct.htmlModeCanvas_bool), htmlMode_fontSize(dp_struct.htmlMode_fontSize),
+          forceRGB_bool(dp_struct.forceRGB_bool), additionalInfo(dp_struct.additionalInfo),
+          htmlMode_ttfs_toSubset(dp_struct.htmlMode_ttfs_toSubset),
           htmlMode_ttfs_catBackup(dp_struct.htmlMode_ttfs_catBackup),
           htmlMode_ttfs_lastResort(dp_struct.htmlMode_ttfs_catBackup) {
         ctor_finisher(dp_struct);
