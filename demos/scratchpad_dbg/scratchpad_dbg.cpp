@@ -28,13 +28,13 @@ int main(int argc, char *argv[]) {
     // dpCtor.plot_type_name  = std::type_index(typeid(plot_structures::Scatter));
     // dpCtor.tar_width = 100;
     // dpCtor.availableWidth  = 200;
-    dpCtor.availableHeight = 50;
-    dpCtor.availableWidth  = 250;
+    dpCtor.availableHeight = 30;
+    dpCtor.availableWidth  = 200;
     // dpCtor.filter_outsideStdDev = 0;
     // dpCtor.lts_colID            = 0;
     // dpCtor.v_colIDs        = {2, 3,4,5,6};
-    dpCtor.forceRGB_bool   = true;
-    dpCtor.htmlMode_bool   = true;
+    // dpCtor.forceRGB_bool   = true;
+    // dpCtor.htmlMode_bool   = true;
     dpCtor.colScheme       = color_schemes::defaultScheme16;
 
     // auto ds = incplot::parsers::Parser::parse(std::string_view(wineJSON));

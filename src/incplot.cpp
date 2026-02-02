@@ -26,64 +26,6 @@ using enum Unexp_plotDrawer;
 
 
 namespace detail {
-std::expected<std::string, incerr_c> _make_plot(DesiredPlot &&dp, std::string_view inputData) {
-    using namespace incom::terminal_plot;
-    auto ds = parsers::Parser::parse(inputData);
-    if (not ds.has_value()) { return std::unexpected(ds.error()); }
-
-    auto lam_buildPAS = [&](auto &&ps_var) {
-        auto visi = [&](auto &&ps) -> std::expected<std::string, incerr_c> {
-            // HTML mode:
-            // 1) Create AnsiToHtml converter
-            // 2) Build normal output as if outputting ANSI sequences
-            // 3) Convert that output into HTML
-            if (dp.htmlMode_bool.has_value() && dp.htmlMode_bool.value()) {
-                auto rs = dp.create_minifiedFonts_woff2Base64_bestEffort(ps.compute_CPSinPS());
-
-                if (not rs.has_value()) { return std::unexpected(rs.error()); }
-                if (not rs->second.empty()) {
-                    dp.additionalInfo.push_back(
-                        std::string("The following codepoints weren't found in any of the provided fonts:\n"sv));
-                    dp.additionalInfo.push_back(std::format("{:n}\n", rs->second));
-                }
-
-                auto vi = std::views::transform(rs->first, [](auto const &oneFont) {
-                    return AnsiToHtml::Options::FontFace{
-                        .sources = {AnsiToHtml::Options::FontFaceSource::embedded(oneFont)}};
-                });
-
-                auto ath_converter = incstd::console::AnsiToHtml(AnsiToHtml::Options{
-                    .font_faces = std::vector<AnsiToHtml::Options::FontFace>{vi.begin(), vi.end()},
-                });
-
-                std::string ansiRes = ps.build_plotAsString();
-                return ath_converter.convert(std::string_view(ansiRes.begin() + 1, ansiRes.end() - 1));
-            }
-
-            // Classic mode:
-            else { return ps.build_plotAsString(); }
-            std::unreachable();
-        };
-
-        return std::visit(visi, ps_var);
-    };
-
-    // 1) If dp plot_type_name is set then: a) evaluate that one, if not b) evaluate all and then reduce to the most
-    // likely
-    // 2) Build the right plot_structure inside a variant
-    // 3) Generate plotAsString from the plot_structure variant created in step 2
-    if (dp.plot_type_name.has_value()) {
-        return evaluate_onePSpossibility(dp, ds.value())
-            .and_then(std::bind_back(build_plotStructure, ds.value()))
-            .and_then(lam_buildPAS);
-    }
-    else {
-        return evaluate_allPSpossibilities(dp, ds.value())
-            .and_then(std::bind_back(build_plotStructure, ds.value()))
-            .and_then(lam_buildPAS);
-    }
-    std::unreachable();
-}
 auto _get_vpt_mpNames2Types(DesiredPlot const &dp, DataStore const &ds) {
     return std::invoke(
         [&]<size_t... IDXs>(std::index_sequence<IDXs...>) {
@@ -99,7 +41,68 @@ auto _get_vpt_mpNames2Types(DesiredPlot const &dp, DataStore const &ds) {
 // Making the plot
 // IE: 1) evaluate possibilities, 2) build plotStructure, 3) render into a final string (or render error message)
 std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::string_view inputData) {
-    return detail::_make_plot(std::forward<decltype(dp_ctrs)>(dp_ctrs), inputData);
+    using namespace incom::terminal_plot;
+    auto ds = parsers::Parser::parse(inputData);
+    if (not ds.has_value()) { return std::unexpected(ds.error()); }
+
+    auto lam_buildPAS = [&](auto &&ps_var) {
+        auto visi = [&](auto &&ps) -> std::expected<std::string, incerr_c> {
+            // HTML mode:
+            // 1) Create AnsiToHtml converter
+            // 2) Build normal output as if outputting ANSI sequences
+            // 3) Convert that output into HTML
+            bool const canvas_mode = dp_ctrs.htmlModeCanvas_bool.has_value() && dp_ctrs.htmlModeCanvas_bool.value();
+            bool const html_mode   = dp_ctrs.htmlMode_bool.has_value() && dp_ctrs.htmlMode_bool.value();
+            if (canvas_mode || html_mode) {
+                auto rs = dp_ctrs.create_minifiedFonts_woff2Base64_bestEffort(ps.compute_CPSinPS());
+
+                if (not rs.has_value()) { return std::unexpected(rs.error()); }
+                if (not rs->second.empty()) {
+                    dp_ctrs.additionalInfo.push_back(
+                        std::string("The following codepoints weren't found in any of the provided fonts:\n"sv));
+                    dp_ctrs.additionalInfo.push_back(std::format("{:n}\n", rs->second));
+                }
+
+                auto vi = std::views::transform(rs->first, [](auto const &oneFont) {
+                    return AnsiToHtml::Options::FontFace{
+                        .sources = {AnsiToHtml::Options::FontFaceSource::embedded(oneFont)}};
+                });
+
+                auto ath_converter = incstd::console::AnsiToHtml(AnsiToHtml::Options{
+                    .font_faces = std::vector<AnsiToHtml::Options::FontFace>{vi.begin(), vi.end()},
+                });
+
+                std::string const ansiRes = ps.build_plotAsString();
+                if (canvas_mode) {
+                    // TODO: Change placehodler implementation same as non canvas ... to valid canvas implementation
+                    return ath_converter.convert(std::string_view(ansiRes.begin() + 1, ansiRes.end() - 1));
+                }
+                else { return ath_converter.convert(std::string_view(ansiRes.begin() + 1, ansiRes.end() - 1)); }
+            }
+
+            // Classic mode:
+            else { return ps.build_plotAsString(); }
+            std::unreachable();
+        };
+
+        return std::visit(visi, ps_var);
+    };
+
+    // 1) If dp plot_type_name is set then: a) evaluate that one, if not b) evaluate all and then reduce to the most
+    // likely
+    // 2) Build the right plot_structure inside a variant
+    // 3) Generate plotAsString from the plot_structure variant created in step 2
+    if (dp_ctrs.plot_type_name.has_value()) {
+        return evaluate_onePSpossibility(dp_ctrs, ds.value())
+            .and_then(std::bind_back(build_plotStructure, ds.value()))
+            .and_then(lam_buildPAS);
+    }
+    else {
+        return evaluate_allPSpossibilities(dp_ctrs, ds.value())
+            .and_then(std::bind_back(build_plotStructure, ds.value()))
+            .and_then(lam_buildPAS);
+    }
+    std::unreachable();
 }
 
 std::string make_plot_collapseUnExp(DesiredPlot &&dp_ctrs, std::string_view inputData) {
