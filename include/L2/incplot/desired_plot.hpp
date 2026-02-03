@@ -202,7 +202,7 @@ public:
           forceRGB_bool(dp_struct.forceRGB_bool), additionalInfo(dp_struct.additionalInfo),
           htmlMode_ttfs_toSubset(dp_struct.htmlMode_ttfs_toSubset),
           htmlMode_ttfs_catBackup(dp_struct.htmlMode_ttfs_catBackup),
-          htmlMode_ttfs_lastResort(dp_struct.htmlMode_ttfs_catBackup) {
+          htmlMode_ttfs_lastResort(dp_struct.htmlMode_ttfs_lastResort) {
         ctor_finisher(dp_struct);
     }
 
