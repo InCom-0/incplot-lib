@@ -6,6 +6,7 @@ if(__STDLIB_ALREADY_RUN)
     return()
 endif()
 
+
 include(CheckCXXSourceCompiles)
 
 # libc++
@@ -68,6 +69,15 @@ elseif(__STDLIB_COUNT GREATER 1)
         "  MSVC STL   = ${USING_MSVC_STL}\n"
         "Please report this configuration as a bug."
     )
+endif()
+
+# ---- Post message about the result
+if(USING_LIBSTDCXX)
+  message(STATUS "Using libstdc++")
+elseif(USING_LIBCXX)
+  message(STATUS "Using libc++")
+elseif(USING_MSVC_STL)
+  message(STATUS "Using MSVC STL")
 endif()
 
 set_property(GLOBAL PROPERTY STDLIB_DETECTED TRUE)
