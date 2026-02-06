@@ -11,6 +11,9 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(incplot-lib_BUILD_SHARED_LIB "Build a shared version of incplot-lib" ${BUILD_SHARED_LIBS})
 option(incplot-lib_STAGE_OUTPUTS "Stage build output artifacts into proper directory structure" ON)
 
+option(incplot-lib_USE_LOCAL_PACKAGES "Use local (usually system installed) packages for dependencies." ON)
+option(incplot-lib_USE_LOCAL_PACKAGES_ONLY "Forbid the build system from downloading missing dependencies." OFF)
+
 option(incplot-lib_BUILD_DEMOS "Build demo executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
 option(incplot-lib_BUILD_TESTS "Build test executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
 
