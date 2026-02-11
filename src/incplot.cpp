@@ -60,7 +60,17 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::strin
                 if (not rs->second.empty()) {
                     dp_ctrs.additionalInfo.push_back(
                         std::string("The following codepoints weren't found in any of the provided fonts:\n"sv));
-                    dp_ctrs.additionalInfo.push_back(std::format("{:n}\n", rs->second));
+                    // Exchange the below for the std::format version (commented below once on GCC 15 everywhere)
+                    std::string concat;
+                    for (uint32_t const &oneCP : rs->second) {
+                        concat.append(std::to_string(oneCP));
+                        concat.push_back(',');
+                        concat.push_back(' ');
+                    }
+                    concat.pop_back();
+                    concat.pop_back();
+                    dp_ctrs.additionalInfo.push_back(std::move(concat));
+                    // dp_ctrs.additionalInfo.push_back(std::format("{:n}\n", rs->second));
                 }
 
                 auto vi = std::views::transform(rs->first, [](auto const &oneFont) {
