@@ -9,7 +9,11 @@ endif()
 include(cmake/CPM.cmake)
 
 
-CPMAddPackage(URI "gh:InCom-0/otfccxx#main")
+CPMAddPackage(
+    URI "gh:InCom-0/otfccxx#main"
+    OPTIONS "otfccxx_BUILD_SHARED_LIB ${incplot-lib_BUILD_SHARED_LIB}"
+    NAME otfccxx
+)
 
 CPMAddPackage(
   NAME nlohmann_json
