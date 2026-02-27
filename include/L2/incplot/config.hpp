@@ -44,7 +44,8 @@ public:
     static inline char32_t    braille_blank = U'⠀';
     static inline char        space         = ' ';
     static inline char32_t    spaceU32      = U' ';
-    static inline std::string elipsis       = "…";
+    static inline std::string elipsis       = "⁝";
+    static inline std::string elipsis_hor       = "…";
 
     static inline std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
     static inline std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
