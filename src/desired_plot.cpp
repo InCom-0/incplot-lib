@@ -594,16 +594,21 @@ std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr
     if (not subsRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_subsetterError)); }
 
 
+    // TODO: We need to find out the 'advanceWidth to emSize' ratio for the lastResort font.
+    // TODO: We will then use that to set that ratio for all the other plots
+    for (auto const &oneFont : std::views::reverse(subsRes->first) | std::views::take(1)) {
+        auto modi = otfccxx::Modifier(oneFont);
+    }
+
     // Modification
     // TODO: Logic for modifying the individual minified fonts so that they are size-compatible
-
     std::vector<std::string> res;
     for (auto const &oneFont : subsRes->first) {
 
         auto modi = otfccxx::Modifier(oneFont);
-        // if (auto tmpRes = modi.change_makeMonospaced_byEmRatio(0.6); not tmpRes.has_value()) {
-        //     return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
-        // };
+        if (auto tmpRes = modi.change_makeMonospaced_byEmRatio(0.5); not tmpRes.has_value()) {
+            return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
+        };
 
         auto exp_modifiedFont = modi.exportResult();
         if (not exp_modifiedFont.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError)); }
