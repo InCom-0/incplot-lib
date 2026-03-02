@@ -10,10 +10,10 @@
 #include <tuple>
 #include <utility>
 
-#include <incplot/desired_plot.hpp>
-#include <incplot/plot_structures.hpp>
+#include <incplot-lib/desired_plot.hpp>
+#include <incplot-lib/plot_structures.hpp>
 #include <incstd/incstd_all.hpp>
-#include <private/detail.hpp>
+#include <incplot-lib_private/detail.hpp>
 
 
 namespace incom {

@@ -12,9 +12,9 @@
 #include <typeindex>
 #include <variant>
 
-#include <incplot/plot_structures.hpp>
+#include <incplot-lib/plot_structures.hpp>
 #include <incstd/core/typegen.hpp>
-#include <private/braille_drawer.hpp>
+#include <incplot-lib_private/braille_drawer.hpp>
 
 
 namespace incom {

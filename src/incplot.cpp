@@ -1,4 +1,3 @@
-#include "incplot/err.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <format>
@@ -10,12 +9,12 @@
 #include <utility>
 #include <variant>
 
-#include <incplot.hpp>
+#include <incplot-lib.hpp>
 #include <incstd/console/ansi2html.hpp>
 #include <incstd/core/variant_utils.hpp>
 #include <magic_enum/magic_enum.hpp>
-#include <private/detail.hpp>
-#include <private/plot_structures_impl.hpp>
+#include <incplot-lib_private/detail.hpp>
+#include <incplot-lib_private/plot_structures_impl.hpp>
 
 
 namespace incom {

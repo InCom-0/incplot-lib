@@ -11,9 +11,9 @@
 #include <utility>
 #include <variant>
 
-#include <incplot/plot_structures.hpp>
+#include <incplot-lib/plot_structures.hpp>
 #include <incstd/core/algos.hpp>
-#include <private/detail.hpp>
+#include <incplot-lib_private/detail.hpp>
 
 
 namespace incom {

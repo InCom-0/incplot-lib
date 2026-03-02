@@ -3,8 +3,8 @@
 #include <expected>
 #include <string_view>
 
-#include <incplot/datastore.hpp>
-#include <incplot/err.hpp>
+#include <incplot-lib/datastore.hpp>
+#include <incplot-lib/err.hpp>
 
 
 namespace incom {

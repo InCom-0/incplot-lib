@@ -8,7 +8,7 @@
 #include <variant>
 
 #include <incstd/core/algos.hpp>
-#include <private/detail.hpp>
+#include <incplot-lib_private/detail.hpp>
 
 
 namespace incom {

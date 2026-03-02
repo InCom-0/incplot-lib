@@ -3,9 +3,9 @@
 #include <expected>
 #include <optional>
 
-#include <incplot/config.hpp>
-#include <incplot/datastore.hpp>
-#include <incplot/err.hpp>
+#include <incplot-lib/config.hpp>
+#include <incplot-lib/datastore.hpp>
+#include <incplot-lib/err.hpp>
 // #include <otfccxx/otfccxx.hpp>
 #include <typeindex>
 #include <utility>

@@ -2,7 +2,7 @@
 #include <format>
 #include <string_view>
 
-#include <incplot/err.hpp>
+#include <incplot-lib/err.hpp>
 
 
 namespace incom {

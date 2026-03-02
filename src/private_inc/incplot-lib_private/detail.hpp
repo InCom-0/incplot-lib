@@ -9,7 +9,7 @@
 #include <string_view>
 #include <type_traits>
 
-#include <private/color_mixer.hpp>
+#include <incplot-lib_private/color_mixer.hpp>
 #include <ww898/utf_converters.hpp>
 
 

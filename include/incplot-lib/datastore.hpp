@@ -10,7 +10,7 @@
 #include <variant>
 #include <vector>
 
-#include <incplot/_common.hpp>
+#include <incplot-lib/_common.hpp>
 
 
 namespace incom {

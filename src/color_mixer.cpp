@@ -1,6 +1,6 @@
 
 #include <algorithm>
-#include <private/color_mixer.hpp>
+#include <incplot-lib_private/color_mixer.hpp>
 #include <ranges>
 
 

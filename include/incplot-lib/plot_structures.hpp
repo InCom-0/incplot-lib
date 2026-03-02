@@ -10,8 +10,8 @@
 #include <vector>
 
 #include <ankerl/unordered_dense.h>
-#include <incplot/datastore.hpp>
-#include <incplot/desired_plot.hpp>
+#include <incplot-lib/datastore.hpp>
+#include <incplot-lib/desired_plot.hpp>
 
 
 namespace incom {

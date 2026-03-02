@@ -15,7 +15,7 @@
 #include <csv2/reader.hpp>
 #include <nlohmann/json.hpp>
 
-#include <incplot/parsers_inc.hpp>
+#include <incplot-lib/parsers_inc.hpp>
 
 namespace incom {
 namespace terminal_plot {

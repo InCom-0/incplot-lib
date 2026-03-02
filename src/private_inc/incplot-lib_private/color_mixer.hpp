@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 
-#include <incplot/config.hpp>
+#include <incplot-lib/config.hpp>
 
 namespace incom {
 namespace terminal_plot {

@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-#include <incplot/_common.hpp>
+#include <incplot-lib/_common.hpp>
 #include <incstd/incstd_console.hpp>
 
 

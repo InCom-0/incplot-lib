@@ -2,7 +2,7 @@
 #include <string_view>
 
 
-#include <incplot.hpp>
+#include <incplot-lib.hpp>
 #include <incstd/console/ansi2html.hpp>
 #include <incstd/incstd_all.hpp>
 #include <otfccxx/otfccxx.hpp>

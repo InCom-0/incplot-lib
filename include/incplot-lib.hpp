@@ -1,7 +1,7 @@
 #pragma once
 
-#include <incplot/parsers_inc.hpp>
-#include <incplot/plot_structures.hpp>
+#include <incplot-lib/parsers_inc.hpp>
+#include <incplot-lib/plot_structures.hpp>
 #include <variant>
 
 
