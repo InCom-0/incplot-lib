@@ -77,9 +77,9 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::strin
                         .sources = {AnsiToHtml::Options::FontFaceSource::embedded(oneFont)}};
                 });
 
-                auto ath_converter = incstd::console::AnsiToHtml(AnsiToHtml::Options{
-                    .font_faces = std::vector<AnsiToHtml::Options::FontFace>{vi.begin(), vi.end()},
-                });
+                auto ath_converter = incstd::console::AnsiToHtml(
+                    AnsiToHtml::Options{.font_faces = std::vector<AnsiToHtml::Options::FontFace>{vi.begin(), vi.end()},
+                                        .schm       = incstd::console::color_schemes::conv_s16s256(dp_ctrs.colScheme)});
 
                 std::string const ansiRes = ps.build_plotAsString();
                 if (canvas_mode) {
