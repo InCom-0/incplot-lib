@@ -2,7 +2,7 @@ incplot-lib is a library implementing the core features necessary to make [inplo
 
 Naturally though, it can potentially be used for other things as well
 
-## Main logical structural ##
+## Main logical structure ##
 
 * Parser - Parse a text-based input (JSON, JSON Lines, NDJSON, CSV, TSV) into DataStore type
 * DataStore - A way to store the data to be plotted in a sensible manner
@@ -20,13 +20,25 @@ Naturally though, it can potentially be used for other things as well
 * Uses flexible design patterns combining both classic OOP and functional programming features of C++23 (ie. monadic operations)
 * Combines classic inheritance, 'builder pattern', 'deducing this' from C++23 and std::expected and its monadic operations from C++23 into one design pattern that is easy to change/refactor/add to, that is way less error prone, has great error handling and stellar performance characteristics through compile-time polymorphism ... mostly seen in 'plot_structures_impl.hpp'
 * Generally doesn't use pointer semantics anywhere (unmanaged or managed)
+* To do what it does incplot-lib requires a number of dependencies.
+    * One bigger group is related to being able to manipulate/modify/work with fonts (enables html output) 
+    * Secondly there are dependencies requires for parsing of input data
+    * Thirdly, there are generic utility libraries
 
 ## External libraries used ##
-
+* [otfccxx](https://github.com/InCom-0/otfccxx)
+    * [harfbuzz](https://github.com/harfbuzz/harfbuzz)
+    * [otfcc_cmake](https://github.com/InCom-0/otfcc_cmake)
+    * [fmem](https://github.com/InCom-0/fmem)
+    * [woff2](https://github.com/InCom-0/woff2)
+    * [base64tl](https://github.com/InCom-0/base64)
+    
 * [nlohmann-json](https://github.com/nlohmann/json)
 * [csv2](https://github.com/p-ranav/csv2)
 * [argparse](https://github.com/p-ranav/argparse)
 * [utf-cpp](https://github.com/ww898/utf-cpp)
 * [magic_enum](https://github.com/Neargye/magic_enum)
 * [incstd](https://github.com/InCom-0/incstd)
+    * [xxHash](https://github.com/Cyan4973/xxHash)
+    * [unordered_dense](https://github.com/martinus/unordered_dense)
 * [incerr](https://github.com/InCom-0/incerr)
