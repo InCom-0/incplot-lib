@@ -27,6 +27,22 @@ using NLMjson  = nlohmann::ordered_json;
 using incerr_c = incerr::incerr_code;
 using enum Unexp_parser;
 
+namespace {
+static inline bool parse_double(std::string_view sv, double &out) {
+    // TODO: Remove this workaround once not needed
+#if defined(_LIBCPP_VERSION) && defined(_LIBCPP_HAS_NO_CHARCONV_FLOATING_POINT)
+    // libc++ without floating-point from_chars
+    std::string tmp(sv);
+    char       *end = nullptr;
+    out             = std::strtod(tmp.c_str(), &end);
+    return end != tmp.c_str() && *end == '\0';
+#else
+    auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), out);
+    return ec == std::errc{} && ptr == sv.data() + sv.size();
+#endif
+}
+} // namespace
+
 static bool validate_jsonSameness(NLMjson const &json_A, NLMjson const &json_B) {
     if (json_A.size() != json_B.size()) { return false; }
 
@@ -68,9 +84,8 @@ CellType Parser::assess_cellType(auto const &csvCell) {
 
     if (ptr == (rv.data() + rv.size())) { return CellType::ll_like; }
 
-    double dblOut   = 0.0;
-    auto [ptr2, _2] = std::from_chars(rv.data(), rv.data() + rv.size(), dblOut);
-    if (ptr2 == (rv.data() + rv.size())) { return CellType::double_like; }
+    double dblOut = 0.0;
+    if (parse_double(rv, dblOut)) { return CellType::double_like; }
 
     return CellType::string_like;
 }
@@ -79,20 +94,14 @@ double Parser::conv_cellToDouble(auto const &csvCell) {
     std::string_view rv  = csvCell.read_view();
     double           res = 0.0;
 
-    auto [ptr, ec] = std::from_chars(rv.data(), rv.data() + rv.size(), res);
+    auto ok = parse_double(rv, res);
 
-    if (ec == std::errc()) { return res; }
-    else if (ec == std::errc::invalid_argument) {
+    if (ok) { return res; }
+    else {
         std::print("{}\n{}{}\n", "Error in conv_cellToDouble, not convertable to double",
                    "Encountered while parsing: ", rv);
         std::exit(1);
     }
-    else if (ec == std::errc::result_out_of_range) {
-        std::print("{}\n{}{}\n", "Error in conv_cellToDouble, range error in std::from_chars",
-                   "Encountered while parsing: ", rv);
-        std::exit(1);
-    }
-    else { assert(false); }
     std::unreachable();
 }
 long long Parser::conv_cellToLongLong(auto const &csvCell) {
