@@ -11,7 +11,7 @@ using namespace std::literals;
 using incerr_c = incerr::incerr_code;
 
 enum class Unexp_plotSpecs {
-    // No value '0'
+    plotSpecs_OK,
     TNCII_colByNameNotExist = 1,
     GPT_explicitlySpecifiedDifferentPlotType,
     GPT_zeroUseableValueColumns,
@@ -47,7 +47,7 @@ enum class Unexp_plotSpecs {
     CAPF_unhandledError,
 };
 enum class Unexp_plotDrawer {
-    // No value '0'
+    plotDrawer_OK,
     BPS_dpIsNullopt = 1,
     BPS_typeIndexInDPisNotIn_var_plotTypes,
     EVAPS_dpIsNullopt,
@@ -62,7 +62,7 @@ enum class Unexp_plotDrawer {
     V_PD_nonspecificError,
 };
 enum class Unexp_parser {
-    // No value '0'
+    parser_OK,
     JSON_malformattedArrayLike = 1,
     JSON_objectsNotOfSameSize,
     JSON_valueTypeDoesntMatch,
@@ -84,7 +84,7 @@ enum class Unexp_parser {
 };
 
 enum class Unexp_HTML {
-    // No value '0'
+    HTML_OK,
     CMF_unknownError = 1,
     CMF_noFontsToMinify,
     CMF_subsetterError,
