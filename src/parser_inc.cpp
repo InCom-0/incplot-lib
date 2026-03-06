@@ -30,7 +30,7 @@ using enum Unexp_parser;
 namespace {
 static inline bool parse_double(std::string_view sv, double &out) {
     // TODO: Remove this workaround once not needed
-#if defined(_LIBCPP_VERSION) && defined(_LIBCPP_HAS_NO_CHARCONV_FLOATING_POINT)
+#if defined(__APPLE__) && defined(_LIBCPP_VERSION)
     // libc++ without floating-point from_chars
     std::string tmp(sv);
     char       *end = nullptr;
