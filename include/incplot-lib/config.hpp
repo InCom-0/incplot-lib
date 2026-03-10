@@ -45,7 +45,7 @@ public:
     static inline char        space         = ' ';
     static inline char32_t    spaceU32      = U' ';
     static inline std::string elipsis       = "⁝";
-    static inline std::string elipsis_hor       = "…";
+    static inline std::string elipsis_hor   = "…";
 
     static inline std::array<char32_t, 9> blocks_ver{U' ', U'▁', U'▂', U'▃', U'▄', U'▅', U'▆', U'▇', U'█'};
     static inline std::array<char32_t, 9> blocks_hor{U' ', U'▏', U'▎', U'▍', U'▌', U'▋', U'▊', U'▉', U'█'};
@@ -59,7 +59,9 @@ public:
     static inline constexpr bool   display_filtered_bool_default       = true;
     static inline constexpr bool   htmlMode_bool_default               = false;
     static inline constexpr size_t htmlMode_fontSize_default           = 12uz;
-    static inline constexpr bool   forceRGB_bool_default               = false;
+    static inline constexpr double htmlMode_ratio_advw2em_default      = 0.5;
+
+    static inline constexpr bool forceRGB_bool_default = false;
 
 
     // COLORS

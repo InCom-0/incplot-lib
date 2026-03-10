@@ -22,6 +22,16 @@
             ]
         },
         {
+            "name": "MSYS2_ucrt64_gcc_None",
+            "hidden": false,
+            "inherits": [
+                "_common",
+                "_gcc",
+                "_none",
+                "MSYS_ucrt_PATH"
+            ]
+        },
+        {
             "name": "MSYS2_clang64_clang_Debug",
             "hidden": false,
             "inherits": [
@@ -144,11 +154,12 @@
         {
             "name": "_common",
             "hidden": true,
-            "binaryDir": "${sourceDir}/build/",
             "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/",
             "cacheVariables": {
                 "CMAKE_EXPORT_COMPILE_COMMANDS": true,
-                "CPM_SOURCE_CACHE": "../.cache/CPM"
+                "CPM_SOURCE_CACHE": "${sourceDir}/.cache/CPM",
+                "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
             }
         },
         {
@@ -163,6 +174,13 @@
             "hidden": true,
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "_none",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "None"
             }
         },
         {
@@ -185,17 +203,17 @@
         {
             "name": "_MSVC",
             "hidden": true,
-            "toolchainFile": "cmake/toolchain/Windows.MSVC.toolchain.cmake"
+            "toolchainFile": "cmake/WindowsToolchain/Windows.MSVC.toolchain.cmake"
         },
         {
             "name": "_windows_clang",
             "hidden": true,
-            "toolchainFile": "cmake/toolchain/Windows.Clang.toolchain.cmake"
+            "toolchainFile": "cmake/WindowsToolchain/Windows.Clang.toolchain.cmake"
         },
         {
             "name": "_windows_clang_cl",
             "hidden": true,
-            "toolchainFile": "cmake/toolchain/Windows.Clang.toolchain.cmake",
+            "toolchainFile": "cmake/WindowsToolchain/Windows.Clang.toolchain.cmake",
             "cacheVariables": {
                 "CMAKE_C_COMPILER_FRONTEND_VARIANT": "MSVC",
                 "CMAKE_CXX_COMPILER_FRONTEND_VARIANT": "MSVC"
@@ -206,6 +224,9 @@
             "hidden": true,
             "environment": {
                 "PATH": "C:/msys64/ucrt64/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64"
             },
             "vendor": {
                 "visualStudio": {
@@ -220,6 +241,9 @@
             "hidden": true,
             "environment": {
                 "PATH": "C:/msys64/clang64/bin;$penv{PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "C:/msys64/clang64"
             },
             "vendor": {
                 "visualStudio": {

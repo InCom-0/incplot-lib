@@ -12,8 +12,8 @@
 
 #include <incplot-lib/desired_plot.hpp>
 #include <incplot-lib/plot_structures.hpp>
-#include <incstd/incstd_all.hpp>
 #include <incplot-lib_private/detail.hpp>
+#include <incstd/incstd_all.hpp>
 
 
 namespace incom {
@@ -576,12 +576,19 @@ std::expected<DesiredPlot, incerr::incerr_code> DesiredPlot::guess_missingParams
 // }
 
 std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr_c> DesiredPlot::
-    create_minifiedFonts_woff2Base64_bestEffort(std::span<const uint32_t> codePointsToKeep) {
+    create_minifiedFonts_woff2Base64_bestEffort(std::span<const uint32_t> codePointsToKeep,
+                                                std::optional<double>     ratio_advw2em) {
 
     // There are no fonts to minify (makes no sense to call this in such a case)
     if (htmlMode_ttfs_toSubset.empty() && htmlMode_ttfs_catBackup.empty() && htmlMode_ttfs_lastResort.empty()) {
         return std::unexpected(incerr_c::make(Unexp_HTML::CMF_noFontsToMinify));
     }
+
+
+    auto comp = []() -> std::optional<double> { return std::nullopt; };
+
+
+    ratio_advw2em = ratio_advw2em.or_else(comp);
 
     // Subsetting
     otfccxx::Subsetter subsetter;
@@ -589,6 +596,8 @@ std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr
     for (auto const &oneTTF : htmlMode_ttfs_catBackup) { subsetter.add_ff_categoryBackup(oneTTF); }
     for (auto const &oneTTF : htmlMode_ttfs_lastResort) { subsetter.add_ff_lastResort(oneTTF); }
     subsetter.add_toKeep_CPs(codePointsToKeep);
+
+
 
     auto subsRes = subsetter.execute_bestEffort();
     if (not subsRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_subsetterError)); }
@@ -623,8 +632,8 @@ std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr
 }
 
 std::expected<std::vector<std::string>, incerr_c> DesiredPlot::create_minifiedFonts_woff2Base64(
-    std::span<const uint32_t> codePointsToKeep) {
-    return create_minifiedFonts_woff2Base64_bestEffort(codePointsToKeep)
+    std::span<const uint32_t> codePointsToKeep, std::optional<double> ratio_advw2em) {
+    return create_minifiedFonts_woff2Base64_bestEffort(codePointsToKeep, ratio_advw2em)
         .and_then([](std::pair<std::vector<std::string>, std::vector<uint32_t>> const &br)
                       -> std::expected<std::vector<std::string>, incerr_c> {
             if (br.second.empty()) { return br.first; }

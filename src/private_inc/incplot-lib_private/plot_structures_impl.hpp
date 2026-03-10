@@ -1337,8 +1337,6 @@ auto BarHM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
 }
 
 auto BarHM::compute_labels_hb(this auto &&self) -> compute_rt<decltype(self)> {
-
-    // TODO: Figure out a better logic for making sure the labels are short if at all possible
     auto olset = [](auto &var) -> size_t {
         if constexpr (std::same_as<std::string, std::ranges::range_value_t<std::remove_cvref_t<decltype(var)>>>) {
             return std::ranges::max(std::views::transform(var, [](auto const &a) { return detail::strlen_utf8(a); }));

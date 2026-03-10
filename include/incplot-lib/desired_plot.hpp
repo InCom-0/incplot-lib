@@ -225,10 +225,11 @@ public:
     // Takes the 'htmlMode_ttfs_*' and 'codePointsToKeep' and creates minified versions of those fonts
     // Uses otfccxx library under the hood to do this
     std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr_c>
-    create_minifiedFonts_woff2Base64_bestEffort(std::span<const uint32_t> codePointsToKeep);
+    create_minifiedFonts_woff2Base64_bestEffort(std::span<const uint32_t> codePointsToKeep,
+                                                std::optional<double>     ratio_advw2em = std::nullopt);
 
     std::expected<std::vector<std::string>, incerr_c> create_minifiedFonts_woff2Base64(
-        std::span<const uint32_t> codePointsToKeep);
+        std::span<const uint32_t> codePointsToKeep, std::optional<double> ratio_advw2em = std::nullopt);
 };
 
 

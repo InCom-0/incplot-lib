@@ -17,13 +17,13 @@ option(incplot-lib_USE_LOCAL_PACKAGES_ONLY "Forbid the build system from downloa
 option(incplot-lib_BUILD_DEMOS "Build demo executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
 option(incplot-lib_BUILD_TESTS "Build test executables for incplot-lib" ${PROJECT_IS_TOP_LEVEL})
 
-include(cmake/stdlibQuery.cmake)
+include(cmake/incom/StdlibQuery.cmake)
 
 
 #####################################################################
 ### Staging ###
 #####################################################################
-include(cmake/StageOutputs.cmake)
+include(cmake/incom/StageOutputs.cmake)
 if(incplot-lib_STAGE_OUTPUTS)
     stageOutputDirsFor(incplot-lib)
 endif()
