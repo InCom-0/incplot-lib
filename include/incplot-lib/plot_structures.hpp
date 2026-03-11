@@ -99,9 +99,9 @@ public:
 
     std::string              axisName_horTop = "";
     std::vector<std::string> labels_horTop;
-    std::vector<std::string> axis_horTop;
+    std::string              axis_horTop;
 
-    std::vector<std::string> axis_horBottom;
+    std::string              axis_horBottom;
     std::vector<std::string> labels_horBottom;
     std::string              axisName_horBottom = "";
 

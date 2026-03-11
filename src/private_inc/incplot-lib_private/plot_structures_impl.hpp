@@ -13,8 +13,9 @@
 #include <variant>
 
 #include <incplot-lib/plot_structures.hpp>
-#include <incstd/core/typegen.hpp>
 #include <incplot-lib_private/braille_drawer.hpp>
+#include <incstd/core/typegen.hpp>
+
 
 
 namespace incom {
@@ -377,13 +378,13 @@ auto BarV::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {
 
 auto BarV::compute_axis_vl(this auto &&self) -> compute_rt<decltype(self)> {
     if (self.dp.plot_type_name == incstd::typegen::get_typeIndex<plot_structures::BarV>()) {
-        self.axis_verLeft = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.areaHeight,
-                                                          self.areaHeight, self.dp.colScheme_brightBlack);
+        self.axis_verLeft = detail::create_tickMarkedAxis_v(Config::axisFiller_l, Config::axisTick_l, self.areaHeight,
+                                                            self.areaHeight, self.dp.colScheme_brightBlack);
     }
     // All else should have vl axis ticks according to numeric values
     else {
-        auto tmpAxis = detail::create_tickMarkedAxis(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
-                                                     self.areaHeight, self.dp.colScheme_brightBlack);
+        auto tmpAxis = detail::create_tickMarkedAxis_v(Config::axisFiller_l, Config::axisTick_l, self.axis_verLeftSteps,
+                                                       self.areaHeight, self.dp.colScheme_brightBlack);
         std::ranges::reverse(tmpAxis);
         self.axis_verLeft = std::move(tmpAxis);
     }
@@ -396,7 +397,7 @@ auto BarV::compute_axis_vr(this auto &&self) -> compute_rt<decltype(self)> {
 
 
 auto BarV::compute_axis_ht(this auto &&self) -> compute_rt<decltype(self)> {
-    self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
+    self.axis_horTop = std::string(self.areaWidth, ' ');
     return std::ref(self);
 }
 auto BarV::compute_axisName_ht(this auto &&self) -> compute_rt<decltype(self)> {
@@ -410,8 +411,8 @@ auto BarV::compute_labels_ht(this auto &&self) -> compute_rt<decltype(self)> {
 auto BarV::compute_axis_hb(this auto &&self) -> compute_rt<decltype(self)> {
     // Axis with ticks is contructed according to num of 'steps' which is the num of ticks and the areaWidth
     self.axis_horBottom =
-        detail::create_tickMarkedAxis(Config::axisFiller_b, Config::axisTick_b, self.axis_horBottomSteps,
-                                      self.areaWidth, self.dp.colScheme_brightBlack);
+        detail::create_tickMarkedAxis_h(Config::axisFiller_b, Config::axisTick_b, self.axis_horBottomSteps,
+                                        self.areaWidth, self.dp.colScheme_brightBlack);
     return std::ref(self);
 }
 auto BarV::compute_axisName_hb(this auto &&self) -> compute_rt<decltype(self)> {
@@ -628,7 +629,7 @@ auto BarV::compute_footer(this auto &&self) -> compute_rt<decltype(self)> {
         res1.append(std::format(
             "The following rows were filtered out because they contained extreme values outside {}σ from mean:\n",
             self.dp.filter_outsideStdDev.value()));
-            
+
         auto enumerated = std::views::transform(self.dp.filterFlags,
                                                 [ij = 0uz](auto const &item) mutable {
                                                     return std::tuple_cat(std::make_tuple(ij++), std::tie(item));
@@ -1062,13 +1063,13 @@ auto Scatter::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> 
 }
 
 auto Scatter::compute_axis_vr(this auto &&self) -> compute_rt<decltype(self)> {
-    self.axis_verRight = detail::create_tickMarkedAxis(Config::axisFiller_r, Config::axisTick_r, 0, self.areaHeight,
-                                                       self.dp.colScheme_brightBlack);
+    self.axis_verRight = detail::create_tickMarkedAxis_v(Config::axisFiller_r, Config::axisTick_r, 0, self.areaHeight,
+                                                         self.dp.colScheme_brightBlack);
     return std::ref(self);
 }
 
 auto Scatter::compute_axis_ht(this auto &&self) -> compute_rt<decltype(self)> {
-    for (long long i = 0; i < self.areaWidth; ++i) { self.axis_horTop.push_back(Config::axisFiller_t); }
+    for (long long i = 0; i < self.areaWidth; ++i) { self.axis_horTop.append(Config::axisFiller_t); }
     return std::ref(self);
 }
 
@@ -1161,7 +1162,7 @@ auto Multiline::compute_axis_ht(this auto &&self) -> compute_rt<decltype(self)> 
     // Below is a trick to call a member function as if 'self' was its parent type
     // return (&BarV::template compute_axis_ht<std::remove_cvref_t<decltype(self)>>)(std::move(self));
 
-    self.axis_horTop = std::vector(self.areaWidth, std::string(" "));
+    self.axis_horTop = std::string(self.areaWidth, ' ');
     return std::ref(self);
 }
 
@@ -1276,8 +1277,8 @@ auto BarHM::compute_descriptors(this auto &&self) -> compute_rt<decltype(self)> 
 }
 
 auto BarHM::compute_axis_hb(this auto &&self) -> compute_rt<decltype(self)> {
-    self.axis_horBottom.push_back(std::string{self.dp.colScheme_brightBlack});
-    for (size_t id = 0; id < self.areaWidth; ++id) { self.axis_horBottom.push_back(Config::axisFiller_b); }
+    self.axis_horBottom.append(self.dp.colScheme_brightBlack);
+    for (size_t id = 0; id < self.areaWidth; ++id) { self.axis_horBottom.append(Config::axisFiller_b); }
     return std::ref(self);
 };
 auto BarHM::compute_labels_vr(this auto &&self) -> compute_rt<decltype(self)> {

@@ -206,8 +206,9 @@ constexpr size_t get_axisFillerSize(size_t axisLength, size_t axisStepCount) {
     return (axisLength - axisStepCount) / (axisStepCount + 1);
 }
 
-constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string filler, std::string tick, size_t steps,
-                                                                size_t totalLength, std::string_view axisColor) {
+constexpr inline std::vector<std::string> create_tickMarkedAxis_v(std::string_view filler, std::string_view tick,
+                                                                  size_t const steps, size_t const totalLength,
+                                                                  std::string_view axisColor) {
     size_t fillerSize = get_axisFillerSize(totalLength, steps);
 
     std::vector<std::string> res;
@@ -223,6 +224,22 @@ constexpr inline std::vector<std::string> create_tickMarkedAxis(std::string fill
     }
     return res;
 }
+constexpr inline std::string create_tickMarkedAxis_h(std::string_view filler, std::string_view tick, size_t const steps,
+                                                     size_t const totalLength, std::string_view axisColor) {
+    size_t fillerSize = get_axisFillerSize(totalLength, steps);
+
+    std::string res{axisColor};
+    for (size_t i_step = 0; i_step < steps; ++i_step) {
+        for (size_t i_filler = 0; i_filler < fillerSize; ++i_filler) { res.append(filler); }
+        res.append(tick);
+    }
+    size_t sizeOfRest = totalLength - (steps) - (steps * fillerSize);
+    for (size_t i_filler = 0; i_filler < sizeOfRest; ++i_filler) { res.append(filler); }
+    res.append(ANSI::SGR_builder().reset_all().get());
+    return res;
+}
+
+
 constexpr inline size_t guess_stepsOnHorAxis(long long width, size_t maxLabelSize = Config::max_valLabelSize) {
     // Subtract the beginning and the end label sizes and -2 for spacing
     width += (-2 * maxLabelSize + 2) - 2;

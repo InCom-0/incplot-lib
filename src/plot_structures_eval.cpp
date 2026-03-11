@@ -12,8 +12,8 @@
 #include <variant>
 
 #include <incplot-lib/plot_structures.hpp>
-#include <incstd/core/algos.hpp>
 #include <incplot-lib_private/detail.hpp>
+#include <incstd/core/algos.hpp>
 
 
 namespace incom {
@@ -102,7 +102,8 @@ size_t Base::compute_lengthOfSelf() const {
              Config::areaCorner_br.size();
 
     // All top and bottom axes
-    for (int i = 0; i < areaWidth; i++) { lngth += (axis_horTop.at(i).size() + axis_horBottom.at(i).size()); }
+    lngth += axis_horTop.size();
+    lngth += axis_horBottom.size();
 
     // Main plot area
     for (int i = 0; i < areaHeight; ++i) {
@@ -155,7 +156,7 @@ std::string Base::build_plotAsString() const {
     result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
     result.append(labels_verLeft.front());
     result.append(areaCorner_tl);
-    for (auto const &toAppend : axis_horTop) { result.append(toAppend); }
+    result.append(axis_horTop);
     result.append(areaCorner_tr);
     result.append(Config::term_setDefault);
     result.append(labels_verRight.front());
@@ -186,7 +187,7 @@ std::string Base::build_plotAsString() const {
     result.append(std::string(pad_left + (Config::axis_verName_width_vl * axisName_verLeft_bool), Config::space));
     result.append(labels_verLeft.back());
     result.append(areaCorner_bl);
-    for (auto const &toAppend : axis_horBottom) { result.append(toAppend); }
+    result.append(axis_horBottom);
     result.append(areaCorner_br);
     result.append(Config::term_setDefault);
     result.append(labels_verRight.back());
