@@ -160,7 +160,6 @@ std::expected<input_t, incerr_c> Parser::assess_inputType(std::string_view const
     // CSV / TSV?
     if ((std::get<3>(count_symbols) != 0) && (std::get<3>(count_symbols) % (std::get<2>(count_symbols) + 1)) == 0) {
         // No brace at the beginning ... not ideal but good enough
-        // TODO: Possibly improve this heuristic
         if (sv.front() != '{' && sv.front() != '[') { return input_t::CSV; }
     }
 
@@ -266,9 +265,6 @@ std::expected<DataStore::DS_CtorObj, incerr_c> Parser::parse_usingCSV2(auto     
                 ++headerItem;
             }
             if (id != hdr_sz) { return std::unexpected(incerr_c::make(CSV_headerHasMoreItemsThanDataRow)); }
-            // Taking just the first row
-            // TODO: This is wierd ... looked into it ... seems the only reasonable way lol ... I must be doing
-            // something wrong :-)
             break;
         }
     }

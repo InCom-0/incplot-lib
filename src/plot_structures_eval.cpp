@@ -130,9 +130,6 @@ std::string Base::build_plotAsString() const {
     std::string result;
     result.reserve(compute_lengthOfSelf());
 
-    // TODO: Finish this
-    auto codePoint_set = compute_CPSinPS();
-
     // Add padding on top
     for (int i = 0; i < pad_top; ++i) { result.push_back('\n'); }
 
@@ -225,10 +222,11 @@ std::string Base::build_plotAsString() const {
 }
 
 
-// TODO: Improve this somehow so that only the actual visible codepoints get collected (not the ANSI sequences)
 ankerl::unordered_dense::set<uint32_t> Base::compute_CPSinPS() const {
     ankerl::unordered_dense::set<uint32_t> res;
 
+    // Note: We don't really need to worry about the codepoints that are part of the ANSI sequences
+    // There are only a few of those characters
     auto addCPs = [&](this auto const &self, auto const &from) {
         if constexpr (std::same_as<std::string, std::remove_cvref_t<decltype(from)>>) {
             std::u32string const tmpu32str = incom::terminal_plot::detail::convert_u32u8(from);
