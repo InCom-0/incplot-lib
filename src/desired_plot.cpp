@@ -584,7 +584,6 @@ std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr
         return std::unexpected(incerr_c::make(Unexp_HTML::CMF_noFontsToMinify));
     }
 
-
     auto comp = []() -> std::optional<double> { return std::nullopt; };
 
 
@@ -598,37 +597,57 @@ std::expected<std::pair<std::vector<std::string>, std::vector<uint32_t>>, incerr
     subsetter.add_toKeep_CPs(codePointsToKeep);
 
 
-
     auto subsRes = subsetter.execute_bestEffort();
     if (not subsRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_subsetterError)); }
 
 
-    // TODO: We need to find out the 'advanceWidth to emSize' ratio for the lastResort font.
-    // TODO: We will then use that to set that ratio for all the other plots
-    for (auto const &oneFont : std::views::reverse(subsRes->first) | std::views::take(1)) {
-        auto modi = otfccxx::Modifier(oneFont);
-    }
+    // Attempt to calculate advance width to em size ratio from the lastResort fonts (first one where it makes sense)
+    // If no such fonts or error when calculating, go to fallback found in config
+    auto obtain_advw2em = [&]() -> std::optional<std::pair<double, std::optional<size_t>>> {
+        for (auto const &fntId : std::get<1>(subsRes.value()).ff_lastResort_positions) {
+            if (fntId.has_value()) {
+                if (auto resExp =
+                        otfccxx::Modifier(std::get<0>(subsRes.value()).at(fntId.value())).calculate_ratio_advw2em()) {
+                    return std::make_pair(resExp.value(), fntId.value());
+                }
+            }
+        }
+        return std::nullopt;
+    };
+
+    auto const [target_ratio_advw2em, optID] =
+        obtain_advw2em().value_or(std::make_pair(Config::htmlMode_ratio_advw2em_default, std::nullopt));
+
 
     // Modification
     // TODO: Logic for modifying the individual minified fonts so that they are size-compatible
     std::vector<std::string> res;
-    for (auto const &oneFont : subsRes->first) {
+    for (size_t ID = 0; auto const &oneFont : std::get<0>(subsRes.value())) {
+        if (optID.has_value() && optID.value() == ID) {
+            auto pushRes = otfccxx::Converter::encode_Woff2(oneFont).and_then(otfccxx::Converter::encode_base64);
+            if (not pushRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_converterError)); }
+            else { res.push_back(pushRes.value()); }
+        }
+        else {
+            auto modi = otfccxx::Modifier(oneFont);
+            if (auto tmpRes = modi.change_makeMonospaced_byEmRatio(target_ratio_advw2em); not tmpRes.has_value()) {
+                return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
+            };
 
-        auto modi = otfccxx::Modifier(oneFont);
-        if (auto tmpRes = modi.change_makeMonospaced_byEmRatio(0.5); not tmpRes.has_value()) {
-            return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
-        };
+            auto exp_modifiedFont = modi.exportResult();
+            if (not exp_modifiedFont.has_value()) {
+                return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError));
+            }
 
-        auto exp_modifiedFont = modi.exportResult();
-        if (not exp_modifiedFont.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_modifierError)); }
-
-        auto pushRes =
-            otfccxx::Converter::encode_Woff2(exp_modifiedFont.value()).and_then(otfccxx::Converter::encode_base64);
-        if (not pushRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_converterError)); }
-        else { res.push_back(pushRes.value()); }
+            auto pushRes =
+                otfccxx::Converter::encode_Woff2(exp_modifiedFont.value()).and_then(otfccxx::Converter::encode_base64);
+            if (not pushRes.has_value()) { return std::unexpected(incerr_c::make(Unexp_HTML::CMF_converterError)); }
+            else { res.push_back(pushRes.value()); }
+        }
+        ID++;
     }
 
-    return std::make_pair(std::move(res), std::move(subsRes->second));
+    return std::make_pair(std::move(res), std::move(std::get<2>(subsRes.value())));
 }
 
 std::expected<std::vector<std::string>, incerr_c> DesiredPlot::create_minifiedFonts_woff2Base64(
