@@ -10,11 +10,12 @@
 #include <variant>
 
 #include <incplot-lib.hpp>
-#include <incstd/console/ansi2html.hpp>
-#include <incstd/core/variant_utils.hpp>
-#include <magic_enum/magic_enum.hpp>
 #include <incplot-lib_private/detail.hpp>
 #include <incplot-lib_private/plot_structures_impl.hpp>
+#include <incstd/console/ansi2html.hpp>
+#include <incstd/core/variant_utils.hpp>
+
+#include <magic_enum/magic_enum.hpp>
 
 
 namespace incom {
@@ -182,7 +183,13 @@ std::expected<DesiredPlot, incerr_c> evaluate_allPSpossibilities(DesiredPlot con
         auto res = std::ranges::max_element(
             fv, [](auto const &lhs, auto const &rhs) { return lhs.second.value().second < rhs.second.value().second; });
 
-        if (res == fv.end()) { return std::unexpected(incerr_c::make(EVAPS_impossibleToDrawAnyPlot)); }
+        if (res == fv.end()) {
+            return std::unexpected(
+                incerr_c::make(EVAPS_impossibleToDrawAnyPlot,
+                               "Incplot tried to guess suitable plot type, but no plot type was evaluated as drawable "
+                               "in the current settings/environment.\n"
+                               "The most common cause of this error is specifying incompatible plot sizing."sv));
+        }
         else { return res->second.value().first; }
     };
 
