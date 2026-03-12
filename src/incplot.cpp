@@ -121,9 +121,9 @@ std::string make_plot_collapseUnExp(DesiredPlot &&dp_ctrs, std::string_view inpu
     if (res.has_value()) { return res.value(); }
 
     const auto &error  = res.error();
-    std::string result = std::string("Error encountered. Error category is: ")
+    std::string result = std::string("Error encountered.\nError category is: ")
                              .append(error.category().name())
-                             .append("\n\nLikely cause: ")
+                             .append("\nError name is: ")
                              .append(error.message());
 
     if (not error.get_customMessage().empty()) {
