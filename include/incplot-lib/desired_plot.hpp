@@ -76,6 +76,7 @@ public:
 
     incom::standard::console::color_schemes::scheme16 colScheme = incstd::console::color_schemes::defaultScheme16;
     std::array<size_t, 12uz>                          colOrder;
+    std::optional<inc_sRGB>                           colScheme_HTMLbackgroundOverride = std::nullopt;
     std::vector<std::string>                          colScheme_fg_rawANSI;
     std::vector<std::string>                          colScheme_bg_rawANSI;
     std::string                                       colScheme_fg_default;
@@ -113,7 +114,8 @@ public:
 
         incom::standard::console::color_schemes::scheme16 colScheme = incstd::console::color_schemes::defaultScheme16;
         std::array<size_t, 12uz>                          colOrder  = Config::colOrderDefault;
-        std::array<ANSI::SGR_map, 12>                     colors    = Config::paletteSGR_native_fg;
+        std::optional<inc_sRGB>                           colScheme_HTMLbackgroundOverride = std::nullopt;
+        std::array<ANSI::SGR_map, 12>                     colors        = Config::paletteSGR_native_fg;
         std::array<ANSI::SGR_map, 12>                     color_bckgrnd = Config::paletteSGR_native_bg;
 
         std::optional<std::string> lts_colName           = std::nullopt;
@@ -173,7 +175,12 @@ public:
           values_colNames(std::move(dp_struct.v_colNames)), targetWidth(std::move(dp_struct.tar_width)),
           targetHeight(std::move(dp_struct.tar_height)), availableWidth(std::move(dp_struct.availableWidth)),
           availableHeight(std::move(dp_struct.availableHeight)), colScheme(std::move(dp_struct.colScheme)),
-          colOrder(std::move(dp_struct.colOrder)), colScheme_fg_rawANSI{}, colScheme_bg_rawANSI{},
+          colOrder(std::move(dp_struct.colOrder)),
+          colScheme_HTMLbackgroundOverride(std::move(dp_struct.colScheme_HTMLbackgroundOverride)),
+          colScheme_fg_rawANSI{}, colScheme_bg_rawANSI{},
+          colScheme_fg_default(ANSI::get_fg(dp_struct.colScheme.foreground)),
+          colScheme_bg_default(ANSI::get_bg(dp_struct.colScheme.backgrond)),
+          colScheme_brightBlack(ANSI::get_bg(dp_struct.colScheme.palette.at(8))),
 
           color_basePalette(std::move(dp_struct.colors)), color_bckgrndPalette(std::move(dp_struct.color_bckgrnd)),
           filter_outsideStdDev(std::move(dp_struct.filter_outsideStdDev)),
@@ -192,15 +199,18 @@ public:
           labelTS_colID(dp_struct.lts_colID), labelTS_colName(dp_struct.lts_colName), values_colIDs(dp_struct.v_colIDs),
           values_colNames(dp_struct.v_colNames), targetWidth(dp_struct.tar_width), targetHeight(dp_struct.tar_height),
           availableWidth(dp_struct.availableWidth), availableHeight(dp_struct.availableHeight),
-          colScheme(dp_struct.colScheme), colOrder(dp_struct.colOrder), colScheme_fg_rawANSI{}, colScheme_bg_rawANSI{},
+          colScheme(dp_struct.colScheme), colOrder(dp_struct.colOrder),
+          colScheme_HTMLbackgroundOverride(dp_struct.colScheme_HTMLbackgroundOverride),
+          colScheme_fg_rawANSI{}, colScheme_bg_rawANSI{},
           colScheme_fg_default(ANSI::get_fg(dp_struct.colScheme.foreground)),
           colScheme_bg_default(ANSI::get_bg(dp_struct.colScheme.backgrond)),
-          colScheme_brightBlack(ANSI::get_bg(dp_struct.colScheme.palette.at(8))), color_basePalette(dp_struct.colors),
-          color_bckgrndPalette(dp_struct.color_bckgrnd), filter_outsideStdDev(dp_struct.filter_outsideStdDev),
-          display_filtered_bool(dp_struct.display_filtered_bool), htmlMode_bool(dp_struct.htmlMode_bool),
-          htmlModeCanvas_bool(dp_struct.htmlModeCanvas_bool), htmlMode_fontSize(dp_struct.htmlMode_fontSize),
-          forceRGB_bool(dp_struct.forceRGB_bool), additionalInfo(dp_struct.additionalInfo),
-          htmlMode_ttfs_toSubset(dp_struct.htmlMode_ttfs_toSubset),
+          colScheme_brightBlack(ANSI::get_bg(dp_struct.colScheme.palette.at(8))),
+
+          color_basePalette(dp_struct.colors), color_bckgrndPalette(dp_struct.color_bckgrnd),
+          filter_outsideStdDev(dp_struct.filter_outsideStdDev), display_filtered_bool(dp_struct.display_filtered_bool),
+          htmlMode_bool(dp_struct.htmlMode_bool), htmlModeCanvas_bool(dp_struct.htmlModeCanvas_bool),
+          htmlMode_fontSize(dp_struct.htmlMode_fontSize), forceRGB_bool(dp_struct.forceRGB_bool),
+          additionalInfo(dp_struct.additionalInfo), htmlMode_ttfs_toSubset(dp_struct.htmlMode_ttfs_toSubset),
           htmlMode_ttfs_catBackup(dp_struct.htmlMode_ttfs_catBackup),
           htmlMode_ttfs_lastResort(dp_struct.htmlMode_ttfs_lastResort) {
         ctor_finisher(dp_struct);
