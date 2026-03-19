@@ -55,11 +55,12 @@ public:
     static inline std::array<char32_t, 4>    blocks_shades_LMD{U' ', U'░', U'▒', U'▓'};
 
     // DATA
-    static inline constexpr double filter_withinStdDevMultiple_default = 6.0;
-    static inline constexpr bool   display_filtered_bool_default       = true;
-    static inline constexpr bool   htmlMode_bool_default               = false;
-    static inline constexpr size_t htmlMode_fontSize_default           = 12uz;
-    static inline constexpr double htmlMode_ratio_advw2em_default      = 0.5;
+    static inline constexpr double           filter_withinStdDevMultiple_default = 6.0;
+    static inline constexpr bool             display_filtered_bool_default       = true;
+    static inline constexpr bool             htmlMode_bool_default               = false;
+    static inline constexpr size_t           htmlMode_fontSize_default           = 12uz;
+    static inline constexpr double           htmlMode_ratio_advw2em_default      = 0.5;
+    static inline constexpr std::string_view default_minifiedFontName{"incplot_minified_font"sv};
 
     static inline constexpr bool forceRGB_bool_default = false;
 

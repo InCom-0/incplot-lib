@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdint>
-#include <format>
 #include <functional>
 #include <ranges>
 #include <string>
@@ -81,7 +80,8 @@ std::expected<std::string, incerr_c> make_plot(DesiredPlot &&dp_ctrs, std::strin
                 auto ath_converter = incstd::console::AnsiToHtml(
                     AnsiToHtml::Options{.font_faces = std::vector<AnsiToHtml::Options::FontFace>{vi.begin(), vi.end()},
                                         .schm       = incstd::console::color_schemes::conv_s16s256(dp_ctrs.colScheme),
-                                        .schm_backgroundOverride = dp_ctrs.colScheme_HTMLbackgroundOverride});
+                                        .schm_backgroundOverride = dp_ctrs.colScheme_HTMLbackgroundOverride},
+                    std::string{incplot::Config::default_minifiedFontName});
 
                 std::string const ansiRes = ps.build_plotAsString();
                 if (canvas_mode) {
