@@ -10,7 +10,7 @@ include(cmake/lefticus/CPM.cmake)
 
 
 CPMAddPackage(
-    URI "gh:InCom-0/otfccxx#main"
+    URI "gh:InCom-0/otfccxx#vendoring"
     OPTIONS "otfccxx_BUILD_SHARED_LIB ${incplot-lib_BUILD_SHARED_LIB}"
     NAME otfccxx
 )
@@ -22,7 +22,15 @@ CPMAddPackage(
   EXCLUDE_FROM_ALL TRUE
 )
 
-CPMAddPackage("gh:p-ranav/csv2#master")
 CPMAddPackage("gh:InCom-0/incstd#main")
 CPMAddPackage("gh:InCom-0/incerr#main")
+
+
+########################################################
+### Vendored dependencies ###
+########################################################
+set(CPM_csv2_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/csv2)
+CPMAddPackage("gh:p-ranav/csv2#master")
+
+set(CPM_utf-cpp_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/utf-cpp)
 CPMAddPackage("gh:InCom-0/utf-cpp#master")
