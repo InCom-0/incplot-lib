@@ -17,7 +17,6 @@
 #include <incstd/core/typegen.hpp>
 
 
-
 namespace incom {
 namespace terminal_plot {
 namespace plot_structures {
@@ -650,7 +649,10 @@ auto BarV::compute_footer(this auto &&self) -> compute_rt<decltype(self)> {
         res1.clear();
     }
 
-    for (auto const &addInfoLine : self.dp.additionalInfo) { self.footer.push_back(addInfoLine); }
+    for (auto const &addInfoLine : self.dp.additionalInfo) {
+        self.footer.push_back(addInfoLine);
+        self.footer.back().push_back('\n');
+    }
     return std::ref(self);
 }
 // ### END BAR V ###
