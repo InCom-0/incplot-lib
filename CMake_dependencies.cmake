@@ -6,7 +6,7 @@ if(NOT DEFINED CPM_LOCAL_PACKAGES_ONLY)
         "CPM will not be forbidden from downloading packages. Will have to use local packages." FORCE)
 endif()
 
-include(cmake/lefticus/CPM.cmake)
+include(cmake/CPM_0.42.1.cmake)
 
 
 CPMAddPackage(
