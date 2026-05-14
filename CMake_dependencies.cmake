@@ -10,7 +10,7 @@ include(cmake/CPM_0.42.1.cmake)
 
 
 CPMAddPackage(
-    URI "gh:InCom-0/otfccxx#vendoring"
+    URI "gh:InCom-0/otfccxx#main"
     OPTIONS "otfccxx_BUILD_SHARED_LIB ${incplot-lib_BUILD_SHARED_LIB}"
     NAME otfccxx
 )
