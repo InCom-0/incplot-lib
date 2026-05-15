@@ -7,8 +7,9 @@
 #include <utility>
 #include <variant>
 
-#include <incstd/core/algos.hpp>
 #include <incplot-lib_private/detail.hpp>
+#include <incstd/core/algos.hpp>
+
 
 
 namespace incom {
@@ -38,7 +39,8 @@ private:
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)},
                        {std::vector<size_t>(numOf_categories, 0uz), std::vector<size_t>(numOf_categories, 0uz)}}}))),
-          m_colScheme{colScheme}, m_colOrder{colOrder} {};
+          m_colScheme{colScheme},
+          m_colOrder{colOrder} {};
 
     void compute_canvasColors() {
         ColorMixer cm(ColorMixer::compute_maxStepsPerColor(m_pointsCountPerPos_perColor), 3uz, m_colScheme.palette,
@@ -79,10 +81,10 @@ private:
                                                                                           double      ySteps,
                                                                                           double      xSteps) {
         // This seems a little wierd, but it actually works for the braille type unicode line drawing
-        int const totalSteps = std::max(0.0, ((ySteps)*Config::y_interpolationMultiplier) - 1.0) +
-                               std::max(0.0, ((xSteps)*Config::x_interpolationMultiplier) - 1.0);
-        double const yStepSize = (std::get<0>(pointB) - std::get<0>(pointA)) / static_cast<double>(totalSteps);
-        double const xStepSize = (std::get<1>(pointB) - std::get<1>(pointA)) / static_cast<double>(totalSteps);
+        int const    totalSteps = std::max(0.0, ((ySteps)*Config::y_interpolationMultiplier) - 1.0) +
+                                  std::max(0.0, ((xSteps)*Config::x_interpolationMultiplier) - 1.0);
+        double const yStepSize  = (std::get<0>(pointB) - std::get<0>(pointA)) / static_cast<double>(totalSteps);
+        double const xStepSize  = (std::get<1>(pointB) - std::get<1>(pointA)) / static_cast<double>(totalSteps);
 
         // Construct res and preallocate with zeros
         std::pair<std::vector<double>, std::vector<double>> res{
@@ -225,7 +227,8 @@ public:
                     //         pointA, pointB, (std::abs((std::get<0>(pointB) - std::get<0>(pointA)) / yStepSize)),
                     //         std::abs(std::get<1>(pointB) - std::get<1>(pointA)) / xStepSize);
 
-                    //     for (auto const &[first, second] : std::ranges::views::zip(intpLine.first, intpLine.second)) {
+                    //     for (auto const &[first, second] : std::ranges::views::zip(intpLine.first, intpLine.second))
+                    //     {
                     //         placePointOnCanvas(first, second, catID);
                     //     }
                     // }

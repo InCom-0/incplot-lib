@@ -11,7 +11,8 @@ using namespace incstd::color;
 
 ColorMixer::ColorMixer(std::vector<size_t> maxSteps_perColor, size_t num_colorsToSelect,
                        palette16 const &selectColorsFrom, std::array<size_t, 12uz> const &colOrder, inc_sRGB blackRGB)
-    : m_maxSteps_perColor(std::move(maxSteps_perColor)), m_blackColor(blackRGB),
+    : m_maxSteps_perColor(std::move(maxSteps_perColor)),
+      m_blackColor(blackRGB),
       m_stepSize_perColor(num_colorsToSelect, C_StepSize()) {
 
     maxSteps_perColor.resize(num_colorsToSelect);
